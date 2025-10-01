@@ -1,5 +1,6 @@
 # AcademiaSync
 
+
 ## Smart Learning Platform with OAuth Authentication & RBAC
 
 AcademiaSync is a comprehensive learning management system with Google OAuth authentication and role-based access control for Students, Teachers, and Admins.
@@ -15,8 +16,6 @@ AcademiaSync is a comprehensive learning management system with Google OAuth aut
 - Automatic token refresh
 - Secure logout with token invalidation
 
-**[📖 Quick Start Guide](./QUICK-START.md)** - Get up and running in 5 minutes!
-
 ## 🏗️ Architecture
 
 The project follows a microservices architecture:
@@ -30,6 +29,7 @@ The project follows a microservices architecture:
 
 - Docker Desktop installed and running
 - Docker Compose
+
 - Node.js 18+ (for local development)
 - pnpm (for frontend): `npm install -g pnpm`
 - Google OAuth credentials ([Setup Guide](./QUICK-START.md#step-1-get-google-oauth-credentials-2-minutes))
@@ -41,11 +41,13 @@ See **[QUICK-START.md](./QUICK-START.md)** for a step-by-step guide to get OAuth
 
 ### Option 2: Manual Setup
 
+
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
    cd AcademiaSync
    ```
+
 
 2. **Configure environment variables**
    ```bash
@@ -67,7 +69,7 @@ See **[QUICK-START.md](./QUICK-START.md)** for a step-by-step guide to get OAuth
    - Frontend: http://localhost:3000
    - User Service: http://localhost:5000/health
    - Course Service: http://localhost:5001/health
-   ```
+   
 
 5. **Stop all services**
    ```bash
@@ -305,3 +307,4 @@ MIT
 ---
 
 **Status**: ✅ Milestone 1 Complete - Authentication & RBAC Fully Implemented
+

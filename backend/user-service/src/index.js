@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const cookieParser = require('cookie-parser');
+
 require('dotenv').config();
 
 const app = express();
@@ -38,6 +39,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
 app.use(morgan('combined', { stream: accessLogStream })); // Log to file
 app.use(morgan('dev')); // Log to console
 
@@ -89,6 +91,7 @@ app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);
 app.use('/admin', adminRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

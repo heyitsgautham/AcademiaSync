@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     google_id VARCHAR(255) UNIQUE,
     password_hash VARCHAR(255),
+
     role VARCHAR(50) NOT NULL CHECK (
         role IN ('Student', 'Teacher', 'Admin')
     ),
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
@@ -96,6 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens (token);
 
+
 -- Insert seed data for testing
 -- Admin user
 INSERT INTO
@@ -114,6 +117,7 @@ VALUES (
         'Admin'
     )
 ON CONFLICT (email) DO NOTHING;
+
 
 -- Sample teacher
 INSERT INTO
@@ -135,6 +139,7 @@ VALUES (
     )
 ON CONFLICT (email) DO NOTHING;
 
+
 -- Sample student
 INSERT INTO
     users (
@@ -154,3 +159,4 @@ VALUES (
         20
     )
 ON CONFLICT (email) DO NOTHING;
+

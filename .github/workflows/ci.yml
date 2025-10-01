@@ -39,8 +39,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend/user-service
-        run: npm ci
-
+        run: npm install
       - name: Run tests
         working-directory: backend/user-service
         env:
@@ -84,7 +83,8 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend/course-service
-        run: npm ci
+        run: npm install
+
 
       - name: Run tests
         working-directory: backend/course-service

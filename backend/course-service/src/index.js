@@ -83,10 +83,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Course Service running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-});
+// Start server only if not in test environment
+let server;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`Course Service running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+  });
+}
 
-module.exports = app;
+module.exports = { app, pool, server };

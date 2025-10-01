@@ -1,0 +1,77 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: academiasync-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: academiasync
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - academiasync-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: academiasync-user-service
+    environment:
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: academiasync
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/user-service/logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - academiasync-network
+    restart: unless-stopped
+
+  # Course Service
+  course-service:
+    build:
+      context: ./backend/course-service
+      dockerfile: Dockerfile
+    container_name: academiasync-course-service
+    environment:
+      PORT: 5001
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: academiasync
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./backend/course-service/logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - academiasync-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  academiasync-network:
+    driver: bridge

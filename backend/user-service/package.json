@@ -16,7 +16,11 @@
     "pg": "^8.11.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "google-auth-library": "^9.4.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",

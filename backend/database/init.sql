@@ -4,7 +4,8 @@
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    google_id VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),
     role VARCHAR(50) NOT NULL CHECK (
         role IN ('Student', 'Teacher', 'Admin')
     ),
@@ -64,6 +65,16 @@ CREATE TABLE IF NOT EXISTS submissions (
     UNIQUE (assignment_id, student_id)
 );
 
+-- Refresh tokens table for JWT token management
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    token VARCHAR(500) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
@@ -81,6 +92,10 @@ CREATE INDEX IF NOT EXISTS idx_submissions_assignment ON submissions (assignment
 
 CREATE INDEX IF NOT EXISTS idx_submissions_student ON submissions (student_id);
 
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens (token);
+
 -- Insert seed data for testing
 -- Admin user
 INSERT INTO
@@ -97,7 +112,8 @@ VALUES (
         'Admin',
         'System',
         'Admin'
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;
 
 -- Sample teacher
 INSERT INTO
@@ -116,7 +132,8 @@ VALUES (
         'John',
         'Doe',
         'Computer Science'
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;
 
 -- Sample student
 INSERT INTO
@@ -135,4 +152,5 @@ VALUES (
         'Jane',
         'Smith',
         20
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;

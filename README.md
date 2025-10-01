@@ -1,24 +1,46 @@
 # AcademiaSync
 
-## Smart Learning Platform - Backend Infrastructure
 
-AcademiaSync is a comprehensive learning management system with role-based access control for Students, Teachers, and Admins.
+## Smart Learning Platform with OAuth Authentication & RBAC
+
+AcademiaSync is a comprehensive learning management system with Google OAuth authentication and role-based access control for Students, Teachers, and Admins.
+
+## ✨ Current Status
+
+**Milestone 1: Authentication & RBAC** - ✅ COMPLETE
+
+- Google OAuth integration with NextAuth.js
+- JWT-based authentication with httpOnly cookies
+- Role-based access control (Student, Teacher, Admin)
+- Protected dashboard routes for each role
+- Automatic token refresh
+- Secure logout with token invalidation
 
 ## 🏗️ Architecture
 
 The project follows a microservices architecture:
 
-- **User Service** (Port 5000): Handles authentication, user management, and role-based access
-- **Course Service** (Port 5001): Manages courses, assignments, enrollments, and submissions
+- **Frontend** (Port 3000): Next.js with NextAuth.js for OAuth
+- **User Service** (Port 5000): Authentication, user management, and role-based access
+- **Course Service** (Port 5001): Courses, assignments, enrollments, and submissions
 - **PostgreSQL Database** (Port 5432): Central data store for all services
 
 ## 📋 Prerequisites
 
 - Docker Desktop installed and running
 - Docker Compose
-- Ports 5000, 5001, and 5432 available
+
+- Node.js 18+ (for local development)
+- pnpm (for frontend): `npm install -g pnpm`
+- Google OAuth credentials ([Setup Guide](./QUICK-START.md#step-1-get-google-oauth-credentials-2-minutes))
 
 ## 🚀 Quick Start
+
+### Option 1: Follow the Quick Start Guide (Recommended)
+See **[QUICK-START.md](./QUICK-START.md)** for a step-by-step guide to get OAuth working in 5 minutes.
+
+### Option 2: Manual Setup
+
 
 1. **Clone the repository**
    ```bash
@@ -26,29 +48,28 @@ The project follows a microservices architecture:
    cd AcademiaSync
    ```
 
-2. **Start all services**
+
+2. **Configure environment variables**
+   ```bash
+   # Backend
+   cp backend/user-service/.env.example backend/user-service/.env
+   # Edit and add your Google Client ID
+   
+   # Frontend
+   cp frontend/.env.example frontend/.env.local
+   # Edit and add Google OAuth credentials
+   ```
+
+3. **Start all services**
    ```bash
    docker-compose up -d
    ```
 
-3. **Verify services are running**
-   ```bash
-   # Check User Service
-   curl http://localhost:5000/health
+4. **Access the application**
+   - Frontend: http://localhost:3000
+   - User Service: http://localhost:5000/health
+   - Course Service: http://localhost:5001/health
    
-   # Check Course Service
-   curl http://localhost:5001/health
-   ```
-
-4. **View logs**
-   ```bash
-   # All services
-   docker-compose logs -f
-   
-   # Specific service
-   docker-compose logs -f user-service
-   docker-compose logs -f course-service
-   ```
 
 5. **Stop all services**
    ```bash
@@ -206,30 +227,76 @@ Logs are automatically created and rotated by the Morgan middleware.
 
 ## 🔐 Security Notes
 
+- JWT tokens stored in httpOnly cookies (XSS protection)
+- Refresh tokens invalidated on logout
+- Role-based authorization on all protected routes
+- CORS configured for frontend-backend communication
 - Default credentials are for development only
-- Change passwords in production
+- Change secrets in production
 - Use environment variables for sensitive data
-- Never commit `.env` files to version control
+- Never commit `.env` or `.env.local` files to version control
 
-## 📚 Tech Stack
+## 📚 Documentation
 
-- **Backend Framework**: Express.js (Node.js 20)
-- **Database**: PostgreSQL 16
-- **Containerization**: Docker & Docker Compose
+- **[QUICK-START.md](./QUICK-START.md)** - Get started in 5 minutes
+- **[MILESTONE-1-IMPLEMENTATION.md](./MILESTONE-1-IMPLEMENTATION.md)** - Detailed implementation guide
+- **[MILESTONE-1-SUMMARY.md](./MILESTONE-1-SUMMARY.md)** - Quick reference and file structure
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Authentication**: NextAuth.js with Google OAuth
+- **UI**: React, TailwindCSS, shadcn/ui
+- **State Management**: React Query (planned)
+
+### Backend
+- **Framework**: Express.js (Node.js 20)
+- **Authentication**: JWT (jsonwebtoken) with httpOnly cookies
+- **OAuth**: Google Auth Library
+- **Database**: PostgreSQL 16 with pg driver
 - **Logging**: Morgan
 - **Testing**: Jest & Supertest
 
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Reverse Proxy**: (planned)
+- **CI/CD**: (planned)
+
 ## 🗺️ Roadmap
 
-- [x] Milestone 0: Project Bootstrap & Infrastructure Setup
-- [ ] Milestone 1: Authentication & Authorization
-- [ ] Milestone 2: Course Management
-- [ ] Milestone 3: Assignment System
-- [ ] Milestone 4: Student Management
-- [ ] Milestone 5: Admin Analytics
-- [ ] Milestone 6: Frontend Development
+### Milestone 1 - Authentication & RBAC ✅ COMPLETE
+- [x] Google OAuth integration
+- [x] JWT authentication with refresh tokens
+- [x] Role-based access control
+- [x] Protected dashboard routes
+- [x] Logout with token invalidation
 
-## 📄 License
+### Milestone 2 - Dashboard Implementation (Next)
+- [ ] Student profile management
+- [ ] Teacher course creation
+- [ ] Admin analytics dashboard
+- [ ] Real-time notifications
+
+### Milestone 3 - Course Management
+- [ ] Course CRUD operations
+- [ ] Student enrollment
+- [ ] Course materials upload
+- [ ] Course calendar
+
+### Milestone 4 - Assignments & Grading
+- [ ] Assignment creation (Teachers)
+- [ ] Assignment submission (Students)
+- [ ] Grading interface (Teachers)
+- [ ] Feedback system
+
+### Milestone 5 - Analytics & Reporting
+- [ ] Student progress tracking
+- [ ] Teacher performance metrics
+- [ ] Admin system-wide analytics
+- [ ] Export reports
+
+##  License
 
 MIT
 
@@ -239,4 +306,5 @@ MIT
 
 ---
 
-**Status**: ✅ Milestone 0 Complete - Infrastructure Ready
+**Status**: ✅ Milestone 1 Complete - Authentication & RBAC Fully Implemented
+

@@ -113,7 +113,9 @@ VALUES (
         'Admin',
         'System',
         'Admin'
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;
+
 
 -- Sample teacher
 INSERT INTO
@@ -132,7 +134,9 @@ VALUES (
         'John',
         'Doe',
         'Computer Science'
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;
+
 
 -- Sample student
 INSERT INTO
@@ -151,4 +155,6 @@ VALUES (
         'Jane',
         'Smith',
         20
-    ) ON CONFLICT (email) DO NOTHING;
+    )
+ON CONFLICT (email) DO NOTHING;
+

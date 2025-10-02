@@ -3,13 +3,13 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu, X, Plus, Search } from "lucide-react"
-import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import { DashboardTopbar } from "@/components/dashboard-topbar"
-import { DashboardLogo } from "@/components/dashboard-logo"
+import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
+import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
+import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { CourseCard } from "@/components/course-card"
-import { CourseModal } from "@/components/course-modal"
+import { TeacherCourseCard } from "@/components/teacher-course-card"
+import { TeacherCourseModal } from "@/components/teacher-course-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { courseApi } from "@/lib/api-client"
 
@@ -27,7 +27,10 @@ export default function CoursesPage() {
     queryFn: courseApi.getCourses,
   })
 
-  const filteredCourses = courses?.filter((course: any) =>
+  // Safe access with fallback
+  const coursesArray = Array.isArray(courses) ? courses : []
+
+  const filteredCourses = coursesArray.filter((course: any) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
@@ -52,12 +55,12 @@ export default function CoursesPage() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <DashboardLogo />
+          <TeacherDashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <DashboardSidebar />
+        <TeacherDashboardSidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -68,7 +71,7 @@ export default function CoursesPage() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Courses</h2>
           </div>
-          <DashboardTopbar />
+          <TeacherDashboardTopbar />
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -103,7 +106,7 @@ export default function CoursesPage() {
             ) : filteredCourses && filteredCourses.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredCourses?.map((course: any) => (
-                  <CourseCard key={course.id} course={course} onEdit={handleEditCourse} />
+                  <TeacherCourseCard key={course.id} course={course} onEdit={handleEditCourse} />
                 ))}
               </div>
             ) : (
@@ -115,7 +118,7 @@ export default function CoursesPage() {
         </main>
       </div>
 
-      <CourseModal open={courseModalOpen} onOpenChange={setCourseModalOpen} course={selectedCourse} />
+      <TeacherCourseModal open={courseModalOpen} onOpenChange={setCourseModalOpen} course={selectedCourse} />
     </div>
   )
 }

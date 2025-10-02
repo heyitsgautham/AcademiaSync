@@ -25,18 +25,23 @@ interface AssignmentsByCourseProps {
   onEdit: (assignment: any) => void
 }
 
-export function AssignmentsByCourse({ assignmentsByCourse, searchQuery, onEdit }: AssignmentsByCourseProps) {
+export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, onEdit }: AssignmentsByCourseProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const filteredData = assignmentsByCourse
-    ?.map((course) => ({
+  // Safe access with fallback
+  const coursesArray = Array.isArray(assignmentsByCourse) ? assignmentsByCourse : []
+
+  const filteredData = coursesArray
+    .map((course) => ({
       ...course,
-      assignments: course.assignments.filter((assignment: any) =>
-        assignment.title.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
+      assignments: Array.isArray(course.assignments)
+        ? course.assignments.filter((assignment: any) =>
+          assignment.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+        : [],
     }))
     .filter((course) => course.assignments.length > 0)
 

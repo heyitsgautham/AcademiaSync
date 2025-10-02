@@ -54,7 +54,11 @@ export function EnrollCoursesModal({ open, onOpenChange }: EnrollCoursesModalPro
     },
   })
 
-  const filteredCourses = courses.filter((course) => course.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Safe access to courses with fallback - ensure it's always an array
+  const coursesArray = Array.isArray(courses) ? courses : []
+  const filteredCourses = coursesArray.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

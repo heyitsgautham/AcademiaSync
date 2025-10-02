@@ -22,7 +22,7 @@ interface CreateCourseModalProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function CreateCourseModal({ open, onOpenChange }: CreateCourseModalProps) {
+export function TeacherCreateCourseModal({ open, onOpenChange }: CreateCourseModalProps) {
   const [courseName, setCourseName] = useState("")
   const [description, setDescription] = useState("")
   const [specialization, setSpecialization] = useState("")

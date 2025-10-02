@@ -14,7 +14,7 @@ interface StatCardsProps {
   isLoading: boolean
 }
 
-export function StatCards({ stats, isLoading }: StatCardsProps) {
+export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
   const cards = [
     {
       title: "Total Courses",

@@ -11,7 +11,9 @@ interface Assignment {
   name: string
   course: string
   dueDate: string
+  question?: string
   status: "Pending" | "Submitted" | "Graded"
+  submission?: string
   grade?: number
   feedback?: string
   submittedAt?: string

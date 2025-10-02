@@ -14,7 +14,7 @@ import { LogOut, Settings } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
-export function DashboardTopbar() {
+export function TeacherDashboardTopbar() {
   const { data: session } = useSession()
   const router = useRouter()
 

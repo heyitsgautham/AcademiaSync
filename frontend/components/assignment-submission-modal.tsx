@@ -22,6 +22,7 @@ interface Assignment {
   name: string
   course: string
   dueDate: string
+  question?: string
 }
 
 interface AssignmentSubmissionModalProps {

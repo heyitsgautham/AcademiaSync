@@ -16,7 +16,7 @@ interface AnalyticsSectionProps {
 
 const COLORS = ["#34d399", "#fbbf24"]
 
-export function AnalyticsSection({ analytics, isLoading }: AnalyticsSectionProps) {
+export function TeacherAnalyticsSection({ analytics, isLoading }: AnalyticsSectionProps) {
   if (isLoading) {
     return (
       <Card>

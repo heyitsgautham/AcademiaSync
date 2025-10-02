@@ -14,7 +14,7 @@ interface StudentDetailModalProps {
   student: any
 }
 
-export function StudentDetailModal({ open, onOpenChange, student }: StudentDetailModalProps) {
+export function TeacherStudentDetailModal({ open, onOpenChange, student }: StudentDetailModalProps) {
   const { data: studentDetails, isLoading } = useQuery({
     queryKey: ["student-details", student?.id],
     queryFn: async () => {

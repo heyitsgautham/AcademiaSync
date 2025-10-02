@@ -38,7 +38,7 @@ interface CourseCardProps {
   onEdit: (course: any) => void
 }
 
-export function CourseCard({ course, onEdit }: CourseCardProps) {
+export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()

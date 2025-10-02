@@ -13,17 +13,22 @@ interface StudentsByCourseProps {
   onStudentClick: (student: any) => void
 }
 
-export function StudentsByCourse({ studentsByCourse, searchQuery, onStudentClick }: StudentsByCourseProps) {
+export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStudentClick }: StudentsByCourseProps) {
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
 
-  const filteredData = studentsByCourse
-    ?.map((course) => ({
+  // Safe access with fallback
+  const coursesArray = Array.isArray(studentsByCourse) ? studentsByCourse : []
+
+  const filteredData = coursesArray
+    .map((course) => ({
       ...course,
-      students: course.students.filter(
-        (student: any) =>
-          student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
+      students: Array.isArray(course.students)
+        ? course.students.filter(
+          (student: any) =>
+            student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            student.email.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+        : [],
     }))
     .filter((course) => course.students.length > 0)
 

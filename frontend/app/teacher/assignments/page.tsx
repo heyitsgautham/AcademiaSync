@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Menu, X, Plus, Search } from "lucide-react"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardTopbar } from "@/components/dashboard-topbar"
+import { DashboardLogo } from "@/components/dashboard-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AssignmentsByCourse } from "@/components/assignments-by-course"
@@ -82,7 +83,7 @@ export default function AssignmentsPage() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <h1 className="text-xl font-bold text-primary">AcademiaSync</h1>
+          <DashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>

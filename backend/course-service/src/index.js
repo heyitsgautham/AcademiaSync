@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -31,8 +32,12 @@ const accessLogStream = fs.createWriteStream(
 );
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://frontend:3000'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan('combined', { stream: accessLogStream })); // Log to file
 app.use(morgan('dev')); // Log to console
 
@@ -73,6 +78,13 @@ app.get('/', (req, res) => {
     description: 'Course management service for AcademiaSync'
   });
 });
+
+// API Routes
+const coursesRouter = require('./routes/courses')(pool);
+const assignmentsRouter = require('./routes/assignments')(pool);
+
+app.use('/api/teacher/courses', coursesRouter);
+app.use('/api/teacher', assignmentsRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

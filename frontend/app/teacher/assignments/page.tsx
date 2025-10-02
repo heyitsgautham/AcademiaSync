@@ -3,13 +3,13 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu, X, Plus, Search } from "lucide-react"
-import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
-import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
-import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
+import { DashboardTopbar } from "@/components/dashboard-topbar"
+import { DashboardLogo } from "@/components/dashboard-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { TeacherAssignmentsByCourse } from "@/components/teacher-assignments-by-course"
-import { TeacherAssignmentModal } from "@/components/teacher-assignment-modal"
+import { AssignmentsByCourse } from "@/components/assignments-by-course"
+import { AssignmentModal } from "@/components/assignment-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { courseApi } from "@/lib/api-client"
@@ -83,12 +83,12 @@ export default function AssignmentsPage() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <TeacherDashboardLogo />
+          <DashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <TeacherDashboardSidebar />
+        <DashboardSidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -99,7 +99,7 @@ export default function AssignmentsPage() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Assignments</h2>
           </div>
-          <TeacherDashboardTopbar />
+          <DashboardTopbar />
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -152,7 +152,7 @@ export default function AssignmentsPage() {
                 ))}
               </div>
             ) : assignmentsByCourse && assignmentsByCourse.length > 0 ? (
-              <TeacherAssignmentsByCourse
+              <AssignmentsByCourse
                 assignmentsByCourse={assignmentsByCourse}
                 searchQuery={searchQuery}
                 onEdit={handleEditAssignment}
@@ -171,7 +171,7 @@ export default function AssignmentsPage() {
       </div>
 
       {selectedCourseId && (
-        <TeacherAssignmentModal
+        <AssignmentModal
           open={assignmentModalOpen}
           onOpenChange={setAssignmentModalOpen}
           assignment={selectedAssignment}

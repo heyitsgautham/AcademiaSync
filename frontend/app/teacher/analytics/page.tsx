@@ -3,10 +3,10 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu, X } from "lucide-react"
-import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
-import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
-import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
-import { TeacherAnalyticsCharts } from "@/components/teacher-analytics-charts"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
+import { DashboardTopbar } from "@/components/dashboard-topbar"
+import { DashboardLogo } from "@/components/dashboard-logo"
+import { AnalyticsCharts } from "@/components/analytics-charts"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Force dynamic rendering
@@ -35,12 +35,12 @@ export default function AnalyticsPage() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <TeacherDashboardLogo />
+          <DashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <TeacherDashboardSidebar />
+        <DashboardSidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -51,7 +51,7 @@ export default function AnalyticsPage() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Analytics</h2>
           </div>
-          <TeacherDashboardTopbar />
+          <DashboardTopbar />
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
               </TabsList>
 
               <TabsContent value={timeFilter} className="mt-6">
-                <TeacherAnalyticsCharts data={analyticsData} isLoading={isLoading} />
+                <AnalyticsCharts data={analyticsData} isLoading={isLoading} />
               </TabsContent>
             </Tabs>
           </div>

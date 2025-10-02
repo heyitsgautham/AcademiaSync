@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { GraduationCap } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { StudentStatCards } from "@/components/student-stat-cards"
+import { StudentAssignmentsTable } from "@/components/student-assignments-table"
+import { StudentAnalyticsCharts } from "@/components/student-analytics-charts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function StudentDashboard() {
     const { data: session, status } = useSession()

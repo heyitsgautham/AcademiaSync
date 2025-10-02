@@ -21,7 +21,7 @@ export default function StudentDashboard() {
                 router.push("/login")
                 return
             }
-            
+
             // Fetch dashboard data from backend
             fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/student/dashboard`, {
                 credentials: "include"
@@ -65,7 +65,7 @@ export default function StudentDashboard() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Welcome, {session?.user?.firstName || "Student"}!</CardTitle>
+                        <CardTitle>Welcome, {session?.user?.name || "Student"}!</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">

@@ -1,9 +1,13 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions, Session, User } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
+import { Account, Profile } from "next-auth";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+// Use Docker service name for server-side requests (NextAuth callbacks run on server)
+// This is because the frontend container needs to communicate with user-service container
+const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -39,7 +43,7 @@ export const authOptions = {
         },
     },
     callbacks: {
-        async signIn({ account, profile }) {
+        async signIn({ account, profile }: { account: Account | null; profile?: Profile }) {
             if (account?.provider === "google" && account.id_token) {
                 try {
                     // Send Google ID token to backend
@@ -56,9 +60,22 @@ export const authOptions = {
 
                     if (response.ok) {
                         const data = await response.json();
-                        // Store user data in account for use in jwt callback
-                        account.userData = data.user;
-                        account.userRole = data.role;
+
+                        // Extract access token from Set-Cookie header
+                        const setCookieHeader = response.headers.get('set-cookie');
+                        let backendAccessToken = null;
+
+                        if (setCookieHeader) {
+                            const accessTokenMatch = setCookieHeader.match(/accessToken=([^;]+)/);
+                            if (accessTokenMatch) {
+                                backendAccessToken = accessTokenMatch[1];
+                            }
+                        }
+
+                        // Store user data and backend token in account for use in jwt callback
+                        (account as any).userData = data.user;
+                        (account as any).userRole = data.role;
+                        (account as any).backendAccessToken = backendAccessToken;
                         return true;
                     } else {
                         console.error("Backend authentication failed:", await response.text());
@@ -70,19 +87,25 @@ export const authOptions = {
             }
             return true;
         },
-        async jwt({ token, account }) {
-            // Persist user data and role to the token
-            if (account?.userData) {
-                token.user = account.userData;
-                token.role = account.userRole;
+        async jwt({ token, account }: { token: JWT; account: Account | null }) {
+            // Persist user data, role, and backend token to the JWT token
+            if (account && 'userData' in account && 'userRole' in account) {
+                token.user = (account as any).userData;
+                token.role = (account as any).userRole;
+                token.backendAccessToken = (account as any).backendAccessToken;
             }
             return token;
         },
-        async session({ session, token }) {
-            // Add user data and role to the session
+        async session({ session, token }: { session: Session; token: JWT }) {
+            // Add user data, role, and backend token to the session
             if (token.user) {
                 session.user = token.user;
+            }
+            if (token.role) {
                 session.role = token.role;
+            }
+            if (token.backendAccessToken) {
+                (session as any).backendAccessToken = token.backendAccessToken;
             }
             return session;
         },
@@ -91,7 +114,7 @@ export const authOptions = {
         signIn: "/login",
     },
     session: {
-        strategy: "jwt",
+        strategy: "jwt" as const,
     },
 };
 

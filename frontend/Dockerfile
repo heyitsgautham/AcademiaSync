@@ -14,11 +14,8 @@ RUN pnpm install
 # Copy application files
 COPY . .
 
-# Build the application
-RUN pnpm build
-
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["pnpm", "start"]
+# Start the application in development mode (skip build for now)
+CMD ["pnpm", "dev"]

@@ -13,22 +13,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { courseApi } from "@/lib/api-client"
 
-interface AssignmentModalProps {
+interface CourseModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  assignment?: any
-  courseId: number | string
+  course?: any
 }
 
-const assignmentSchema = yup.object({
-  title: yup.string().required("Assignment title is required"),
+const courseSchema = yup.object({
+  title: yup.string().required("Course title is required"),
   description: yup.string().required("Description is required"),
-  due_date: yup.string().nullable(),
+  weeks: yup.number().positive("Weeks must be positive").nullable(),
 })
 
-type AssignmentFormData = yup.InferType<typeof assignmentSchema>
+type CourseFormData = yup.InferType<typeof courseSchema>
 
-export function AssignmentModal({ open, onOpenChange, assignment, courseId }: AssignmentModalProps) {
+export function TeacherCourseModal({ open, onOpenChange, course }: CourseModalProps) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -37,76 +36,72 @@ export function AssignmentModal({ open, onOpenChange, assignment, courseId }: As
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<AssignmentFormData>({
-    resolver: yupResolver(assignmentSchema),
+  } = useForm<CourseFormData>({
+    resolver: yupResolver(courseSchema),
   })
 
   useEffect(() => {
-    if (assignment) {
-      // Convert timestamp to date input format
-      const dueDate = assignment.due_date ? new Date(assignment.due_date).toISOString().split('T')[0] : null
+    if (course) {
       reset({
-        title: assignment.title || "",
-        description: assignment.description || "",
-        due_date: dueDate,
+        title: course.title || "",
+        description: course.description || "",
+        weeks: course.weeks || null,
       })
     } else {
-      reset({ title: "", description: "", due_date: null })
+      reset({ title: "", description: "", weeks: null })
     }
-  }, [assignment, reset])
+  }, [course, reset])
 
   const createMutation = useMutation({
-    mutationFn: (data: { title: string; description: string; due_date?: string }) =>
-      courseApi.createAssignment(courseId, data),
+    mutationFn: courseApi.createCourse,
     onSuccess: () => {
-      // Invalidate both the specific course assignments and all assignments
-      queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
-      queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["courses"] })
       toast({
         title: "Success",
-        description: "Assignment created successfully",
+        description: "Course created successfully",
       })
       onOpenChange(false)
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create assignment",
+        description: error.message || "Failed to create course",
         variant: "destructive",
       })
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: { title: string; description: string; due_date?: string }) =>
-      courseApi.updateAssignment(assignment.id, data),
+    mutationFn: (data: CourseFormData) => courseApi.updateCourse(course.id, {
+      title: data.title,
+      description: data.description,
+      weeks: data.weeks ?? undefined,
+    }),
     onSuccess: () => {
-      // Invalidate both the specific course assignments and all assignments
-      queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
-      queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["courses"] })
       toast({
         title: "Success",
-        description: "Assignment updated successfully",
+        description: "Course updated successfully",
       })
       onOpenChange(false)
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update assignment",
+        description: error.message || "Failed to update course",
         variant: "destructive",
       })
     },
   })
 
-  const onSubmit = (data: AssignmentFormData) => {
+  const onSubmit = (data: CourseFormData) => {
     const payload = {
       title: data.title,
       description: data.description,
-      due_date: data.due_date || undefined,
+      weeks: data.weeks ?? undefined,
     }
 
-    if (assignment) {
+    if (course) {
       updateMutation.mutate(payload)
     } else {
       createMutation.mutate(payload)
@@ -117,31 +112,31 @@ export function AssignmentModal({ open, onOpenChange, assignment, courseId }: As
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{assignment ? "Edit Assignment" : "Create New Assignment"}</DialogTitle>
+          <DialogTitle>{course ? "Edit Course" : "Create New Course"}</DialogTitle>
           <DialogDescription>
-            {assignment ? "Update the assignment details below." : "Fill in the details to create a new assignment."}
+            {course ? "Update the course details below." : "Fill in the details to create a new course."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Assignment Title</Label>
-            <Input id="title" placeholder="e.g., React Hooks Exercise" {...register("title")} />
+            <Label htmlFor="title">Course Title</Label>
+            <Input id="title" placeholder="e.g., Introduction to React" {...register("title")} />
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Assignment instructions..."
+              placeholder="Brief description of the course..."
               {...register("description")}
               rows={4}
             />
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="due_date">Due Date</Label>
-            <Input id="due_date" type="date" {...register("due_date")} />
-            {errors.due_date && <p className="text-sm text-destructive">{errors.due_date.message}</p>}
+            <Label htmlFor="weeks">Duration (weeks)</Label>
+            <Input id="weeks" type="number" placeholder="e.g., 8" {...register("weeks")} />
+            {errors.weeks && <p className="text-sm text-destructive">{errors.weeks.message}</p>}
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -154,9 +149,9 @@ export function AssignmentModal({ open, onOpenChange, assignment, courseId }: As
             >
               {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
-                : assignment
-                  ? "Update Assignment"
-                  : "Create Assignment"}
+                : course
+                  ? "Update Course"
+                  : "Create Course"}
             </Button>
           </div>
         </form>

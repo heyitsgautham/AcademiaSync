@@ -18,7 +18,7 @@ interface RecentActivityProps {
   isLoading: boolean
 }
 
-export function RecentActivity({ submissions, isLoading }: RecentActivityProps) {
+export function TeacherRecentActivity({ submissions, isLoading }: RecentActivityProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":

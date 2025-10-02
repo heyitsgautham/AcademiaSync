@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Camera } from "lucide-react"
 
-export function SettingsSections() {
+export function TeacherSettingsSections() {
   const [profileData, setProfileData] = useState({
     name: "Dr. Sarah Johnson",
     email: "sarah.johnson@smartlearning.com",

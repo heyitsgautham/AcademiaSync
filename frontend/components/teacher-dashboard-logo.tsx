@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
-export function DashboardLogo() {
+export function TeacherDashboardLogo() {
   const { data: session } = useSession()
   const router = useRouter()
 

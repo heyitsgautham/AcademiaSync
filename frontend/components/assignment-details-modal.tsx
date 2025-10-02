@@ -8,7 +8,9 @@ interface Assignment {
   name: string
   course: string
   dueDate: string
+  question?: string
   status: "Pending" | "Submitted" | "Graded"
+  submission?: string
   grade?: number
   feedback?: string
   submittedAt?: string
@@ -30,6 +32,36 @@ export function AssignmentDetailsModal({ open, onOpenChange, assignment }: Assig
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Assignment Question */}
+          {assignment.question && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Assignment Question
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{assignment.question}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Student Submission */}
+          {assignment.submission && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  Your Submission
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{assignment.submission}</p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Status */}
           <Card>
             <CardHeader>

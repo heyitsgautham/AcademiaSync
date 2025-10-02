@@ -13,7 +13,9 @@ interface Assignment {
   name: string
   course: string
   dueDate: string
+  question?: string
   status: "Pending" | "Submitted" | "Graded"
+  submission?: string
   grade?: number
   feedback?: string
   submittedAt?: string
@@ -42,13 +44,6 @@ export default function StudentAssignmentsPage() {
     },
   })
 
-  const filteredAssignments = data?.assignments.filter((assignment) => {
-    const courseMatch =
-      selectedCourse === "all" || assignment.course === data.courses.find((c) => c.id === selectedCourse)?.title
-    const statusMatch = statusFilter === "all" || assignment.status === statusFilter
-    return courseMatch && statusMatch
-  })
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -59,6 +54,17 @@ export default function StudentAssignmentsPage() {
   }
 
   if (!data) return null
+
+  // Safe access to data with fallbacks
+  const assignments = data.assignments || []
+  const courses = data.courses || []
+
+  const filteredAssignments = assignments.filter((assignment) => {
+    const courseMatch =
+      selectedCourse === "all" || assignment.course === courses.find((c) => c.id === selectedCourse)?.title
+    const statusMatch = statusFilter === "all" || assignment.status === statusFilter
+    return courseMatch && statusMatch
+  })
 
   return (
     <div className="p-6 space-y-6">
@@ -77,7 +83,7 @@ export default function StudentAssignmentsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              {data.courses.map((course) => (
+              {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.title}
                 </SelectItem>
@@ -97,7 +103,7 @@ export default function StudentAssignmentsPage() {
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-6">
-          <StudentAssignmentsTable assignments={filteredAssignments || []} />
+          <StudentAssignmentsTable assignments={filteredAssignments} />
         </TabsContent>
       </Tabs>
     </div>

@@ -8,7 +8,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     <StudentThemeWrapper>
       <StudentDashboardSidebar />
       <div className="md:pl-64">
-        <StudentDashboardTopbar studentName="John Doe" studentEmail="john.doe@example.com" />
+        <StudentDashboardTopbar />
         <main className="min-h-[calc(100vh-4rem)] bg-background">{children}</main>
       </div>
     </StudentThemeWrapper>

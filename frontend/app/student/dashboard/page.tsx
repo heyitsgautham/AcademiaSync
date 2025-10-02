@@ -68,20 +68,41 @@ export default function StudentDashboardPage() {
 
   if (!data) return null
 
+  // Construct student name with fallback (similar to dashboard-topbar pattern)
+  const studentName = data.student?.name || "Student"
+
+  // Safe access to stats with fallback values
+  const stats = {
+    totalCourses: data.stats?.totalCourses || 0,
+    assignmentsDue: data.stats?.assignmentsDue || 0,
+    assignmentsCompleted: data.stats?.assignmentsCompleted || 0,
+    averageGrade: data.stats?.averageGrade || 0,
+  }
+
+  // Safe access to assignments with fallback values
+  const upcomingPendingAssignments = data.upcomingPendingAssignments || []
+  const gradedAssignments = data.gradedAssignments || []
+
+  // Safe access to analytics with fallback values
+  const analytics = {
+    gradesData: data.analytics?.gradesData || [],
+    courseProgressData: data.analytics?.courseProgressData || [],
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold">Welcome back, {data.student.name}!</h1>
+        <h1 className="text-3xl font-bold">Welcome back, {studentName}!</h1>
         <p className="text-muted-foreground mt-1">Here's what's happening with your courses today.</p>
       </div>
 
       {/* Stat Cards */}
       <StudentStatCards
-        totalCourses={data.stats.totalCourses}
-        assignmentsDue={data.stats.assignmentsDue}
-        assignmentsCompleted={data.stats.assignmentsCompleted}
-        averageGrade={data.stats.averageGrade}
+        totalCourses={stats.totalCourses}
+        assignmentsDue={stats.assignmentsDue}
+        assignmentsCompleted={stats.assignmentsCompleted}
+        averageGrade={stats.averageGrade}
       />
 
       <Card>
@@ -90,7 +111,7 @@ export default function StudentDashboardPage() {
           <CardDescription>Assignments that need your attention</CardDescription>
         </CardHeader>
         <CardContent>
-          <StudentAssignmentsTable assignments={data.upcomingPendingAssignments} />
+          <StudentAssignmentsTable assignments={upcomingPendingAssignments} />
         </CardContent>
       </Card>
 
@@ -100,7 +121,7 @@ export default function StudentDashboardPage() {
           <CardDescription>Recently graded assignments with feedback</CardDescription>
         </CardHeader>
         <CardContent>
-          <StudentAssignmentsTable assignments={data.gradedAssignments} />
+          <StudentAssignmentsTable assignments={gradedAssignments} />
         </CardContent>
       </Card>
 
@@ -108,8 +129,8 @@ export default function StudentDashboardPage() {
       <div>
         <h2 className="text-2xl font-bold mb-4">Analytics</h2>
         <StudentAnalyticsCharts
-          gradesData={data.analytics.gradesData}
-          courseProgressData={data.analytics.courseProgressData}
+          gradesData={analytics.gradesData}
+          courseProgressData={analytics.courseProgressData}
         />
       </div>
     </div>

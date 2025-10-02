@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu, X, Search } from "lucide-react"
-import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import { DashboardTopbar } from "@/components/dashboard-topbar"
-import { DashboardLogo } from "@/components/dashboard-logo"
+import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
+import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
+import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
 import { Input } from "@/components/ui/input"
-import { StudentsByCourse } from "@/components/students-by-course"
-import { StudentDetailModal } from "@/components/student-detail-modal"
+import { TeacherStudentsByCourse } from "@/components/teacher-students-by-course"
+import { TeacherStudentDetailModal } from "@/components/teacher-student-detail-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Force dynamic rendering
@@ -44,12 +44,12 @@ export default function StudentsPage() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <DashboardLogo />
+          <TeacherDashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <DashboardSidebar />
+        <TeacherDashboardSidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -60,7 +60,7 @@ export default function StudentsPage() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Students</h2>
           </div>
-          <DashboardTopbar />
+          <TeacherDashboardTopbar />
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -87,7 +87,7 @@ export default function StudentsPage() {
                 ))}
               </div>
             ) : (
-              <StudentsByCourse
+              <TeacherStudentsByCourse
                 studentsByCourse={studentsByCourse}
                 searchQuery={searchQuery}
                 onStudentClick={handleStudentClick}
@@ -97,7 +97,7 @@ export default function StudentsPage() {
         </main>
       </div>
 
-      <StudentDetailModal open={studentModalOpen} onOpenChange={setStudentModalOpen} student={selectedStudent} />
+      <TeacherStudentDetailModal open={studentModalOpen} onOpenChange={setStudentModalOpen} student={selectedStudent} />
     </div>
   )
 }

@@ -65,7 +65,7 @@ export function StudentDashboardSidebar() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <BookOpen className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-sidebar-foreground">Smart Learning</span>
+              <span className="font-semibold text-sidebar-foreground">AcademiaSync</span>
             </Link>
           </div>
 
@@ -94,7 +94,7 @@ export function StudentDashboardSidebar() {
 
           {/* Footer */}
           <div className="border-t p-4">
-            <p className="text-xs text-muted-foreground">© Smart Learning Platform 2025</p>
+            <p className="text-xs text-muted-foreground">© AcademiaSync  2025</p>
           </div>
         </div>
       </aside>

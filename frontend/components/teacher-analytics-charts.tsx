@@ -31,7 +31,7 @@ const GRADE_COLORS = {
   F: "#ef4444", // Red
 }
 
-export function AnalyticsCharts({ data, isLoading }: AnalyticsChartsProps) {
+export function TeacherAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps) {
   if (isLoading) {
     return (
       <div className="grid gap-6 md:grid-cols-2">

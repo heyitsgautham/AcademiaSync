@@ -1,51 +1,48 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+
+const COURSE_SERVICE_URL = process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001";
 
 export async function GET() {
-  // Mock data - replace with real database queries
-  const data = {
-    student: {
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com",
-    },
-    courses: [
-      {
-        id: "1",
-        title: "Introduction to Computer Science",
-        instructor: "Dr. Sarah Smith",
-        progress: 75,
-      },
-      {
-        id: "2",
-        title: "Web Development Fundamentals",
-        instructor: "Prof. Michael Chen",
-        progress: 60,
-      },
-      {
-        id: "3",
-        title: "Data Structures and Algorithms",
-        instructor: "Dr. Emily Brown",
-        progress: 45,
-      },
-      {
-        id: "4",
-        title: "Database Management Systems",
-        instructor: "Prof. David Wilson",
-        progress: 90,
-      },
-      {
-        id: "5",
-        title: "Mobile App Development",
-        instructor: "Dr. Lisa Anderson",
-        progress: 30,
-      },
-      {
-        id: "6",
-        title: "Software Engineering Principles",
-        instructor: "Prof. John Davis",
-        progress: 55,
-      },
-    ],
-  }
+  try {
+    const session = await getServerSession(authOptions)
+    console.log("[Student Courses API] Session exists:", !!session)
+    console.log("[Student Courses API] Has backend token:", !!(session as any)?.backendAccessToken)
 
-  return NextResponse.json(data)
+    if (!session || !(session as any).backendAccessToken) {
+      console.log("[Student Courses API] Unauthorized - no session or token")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    console.log("[Student Courses API] Fetching from:", `${COURSE_SERVICE_URL}/api/student/courses`)
+    const response = await fetch(`${COURSE_SERVICE_URL}/api/student/courses`, {
+      headers: {
+        'Authorization': `Bearer ${(session as any).backendAccessToken}`,
+      },
+    })
+
+    console.log("[Student Courses API] Response status:", response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[Student Courses API] Error response:", errorText)
+      try {
+        const error = JSON.parse(errorText)
+        return NextResponse.json(error, { status: response.status })
+      } catch {
+        return NextResponse.json({ error: errorText }, { status: response.status })
+      }
+    }
+
+    const data = await response.json()
+    console.log("[Student Courses API] Success - courses count:", data.courses?.length || 0)
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("[Student Courses API] Exception:", error)
+    return NextResponse.json({
+      error: "Internal server error",
+      message: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
+  }
 }

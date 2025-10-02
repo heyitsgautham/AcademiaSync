@@ -36,10 +36,6 @@ export default function StudentCoursesPage() {
     },
   })
 
-  const filteredCourses = data?.courses.filter((course) =>
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -54,6 +50,13 @@ export default function StudentCoursesPage() {
   }
 
   if (!data) return null
+
+  // Safe access to courses with fallback
+  const courses = data.courses || []
+
+  const filteredCourses = courses.filter((course) =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   return (
     <>

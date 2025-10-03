@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { Loader2, Check } from "lucide-react"
 
 interface TeacherProfile {
   id: number
@@ -33,6 +33,15 @@ export function TeacherSettingsSections() {
     specialization: "",
   })
 
+  const [originalData, setOriginalData] = useState({
+    first_name: "",
+    last_name: "",
+    age: "",
+    specialization: "",
+  })
+
+  const [hasChanges, setHasChanges] = useState(false)
+
   // Fetch teacher profile
   const { data: profile, isLoading } = useQuery<TeacherProfile>({
     queryKey: ["teacher-profile"],
@@ -45,17 +54,30 @@ export function TeacherSettingsSections() {
     },
   })
 
-  // Update form when profile data loads (only if form is pristine)
+  // Update form when profile data loads
   useEffect(() => {
     if (profile) {
-      setProfileData({
+      const data = {
         first_name: profile.first_name || "",
         last_name: profile.last_name || "",
         age: profile.age?.toString() || "",
         specialization: profile.specialization || "",
-      })
+      }
+      setProfileData(data)
+      setOriginalData(data)
+      setHasChanges(false)
     }
   }, [profile])
+
+  // Check for changes whenever profileData changes
+  useEffect(() => {
+    const changed =
+      profileData.first_name !== originalData.first_name ||
+      profileData.last_name !== originalData.last_name ||
+      profileData.age !== originalData.age ||
+      profileData.specialization !== originalData.specialization
+    setHasChanges(changed)
+  }, [profileData, originalData])
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
@@ -78,8 +100,17 @@ export function TeacherSettingsSections() {
 
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["teacher-profile"] })
+      // Update original data to reflect saved state
+      const savedData = {
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        age: data.age?.toString() || "",
+        specialization: data.specialization || "",
+      }
+      setOriginalData(savedData)
+      setHasChanges(false)
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -195,13 +226,18 @@ export function TeacherSettingsSections() {
           <div className="flex justify-end">
             <Button
               onClick={handleProfileSave}
-              disabled={updateProfileMutation.isPending}
+              disabled={updateProfileMutation.isPending || !hasChanges}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {updateProfileMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
+                </>
+              ) : !hasChanges ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Saved
                 </>
               ) : (
                 "Save Changes"

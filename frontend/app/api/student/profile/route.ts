@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         const data = await response.json()
         return NextResponse.json(data)
     } catch (error) {
-        console.error("Error fetching teacher profile:", error)
+        console.error("Error fetching student profile:", error)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 }
@@ -48,8 +48,8 @@ export async function PUT(request: Request) {
         }
 
         // Validate age if provided
-        if (body.age !== null && body.age !== undefined && (body.age < 18 || body.age > 100)) {
-            return NextResponse.json({ error: "Age must be between 18 and 100" }, { status: 400 })
+        if (body.age !== null && body.age !== undefined && (body.age < 10 || body.age > 100)) {
+            return NextResponse.json({ error: "Age must be between 10 and 100" }, { status: 400 })
         }
 
         const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
@@ -62,7 +62,6 @@ export async function PUT(request: Request) {
                 first_name: body.first_name,
                 last_name: body.last_name,
                 age: body.age,
-                specialization: body.specialization,
             }),
         })
 
@@ -74,7 +73,7 @@ export async function PUT(request: Request) {
         const data = await response.json()
         return NextResponse.json(data)
     } catch (error) {
-        console.error("Error updating teacher profile:", error)
+        console.error("Error updating student profile:", error)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 }

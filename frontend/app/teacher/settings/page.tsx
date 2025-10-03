@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
-import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import { DashboardTopbar } from "@/components/dashboard-topbar"
-import { DashboardLogo } from "@/components/dashboard-logo"
-import { SettingsSections } from "@/components/settings-sections"
+import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
+import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
+import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
+import { TeacherSettingsSections } from "@/components/teacher-settings-sections"
 
 export default function SettingsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -17,17 +17,16 @@ export default function SettingsPage() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <DashboardLogo />
+          <TeacherDashboardLogo />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <DashboardSidebar />
+        <TeacherDashboardSidebar />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -38,7 +37,7 @@ export default function SettingsPage() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Settings</h2>
           </div>
-          <DashboardTopbar />
+          <TeacherDashboardTopbar />
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -48,7 +47,7 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
             </div>
 
-            <SettingsSections />
+            <TeacherSettingsSections />
           </div>
         </main>
       </div>

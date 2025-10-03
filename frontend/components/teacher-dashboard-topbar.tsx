@@ -18,11 +18,11 @@ export function TeacherDashboardTopbar() {
   const { data: session } = useSession()
   const router = useRouter()
 
-  const user = session?.user as { 
-    firstName?: string; 
-    lastName?: string; 
-    name?: string; 
-    email?: string; 
+  const user = session?.user as {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email?: string;
     image?: string;
     profilePicture?: string;
   } | undefined
@@ -71,8 +71,8 @@ export function TeacherDashboardTopbar() {
           </div>
           <Avatar className="h-9 w-9">
             {profilePicture && (
-              <AvatarImage 
-                src={profilePicture} 
+              <AvatarImage
+                src={profilePicture}
                 alt={userName}
                 referrerPolicy="no-referrer"
               />

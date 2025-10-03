@@ -72,7 +72,13 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, courseF
                     >
                       <div className="flex items-center gap-4">
                         <Avatar>
-                          <AvatarImage src={student.avatar || "/placeholder.svg"} alt={student.name} />
+                          {student.avatar && (
+                            <AvatarImage
+                              src={student.avatar}
+                              alt={student.name}
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
                           <AvatarFallback>
                             {student.name
                               .split(" ")
@@ -85,11 +91,7 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, courseF
                           <p className="text-sm text-muted-foreground">{student.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">Performance</p>
-                          <p className="text-2xl font-bold text-primary">{student.performance}%</p>
-                        </div>
+                      <div className="flex items-center gap-4 justify-end">
                         <Badge
                           variant={
                             student.performance >= 80
@@ -105,6 +107,10 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, courseF
                               ? "Good"
                               : "Needs Improvement"}
                         </Badge>
+                        <div className="text-right w-20">
+                          <p className="text-sm font-medium text-muted-foreground">Grade</p>
+                          <p className="text-2xl font-bold text-primary">{student.performance}%</p>
+                        </div>
                       </div>
                     </div>
                   ))}

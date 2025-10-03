@@ -87,7 +87,13 @@ export function TeacherRecentActivity({ submissions, isLoading }: RecentActivity
                 className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50 cursor-pointer"
               >
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={submission.studentAvatar || "/placeholder.svg"} alt={submission.studentName} />
+                  {submission.studentAvatar && (
+                    <AvatarImage
+                      src={submission.studentAvatar}
+                      alt={submission.studentName}
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
                   <AvatarFallback className="bg-primary/10 text-primary">
                     {submission.studentName
                       .split(" ")

@@ -1,22 +1,40 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 export async function GET() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 900))
+  try {
+    const session = await getServerSession(authOptions)
 
-  const analytics = {
-    studentsPerCourse: [
-      { course: "CS 101", students: 45 },
-      { course: "Web Dev", students: 38 },
-      { course: "Database", students: 32 },
-      { course: "Algorithms", students: 28 },
-      { course: "ML", students: 25 },
-    ],
-    assignmentStatus: [
-      { name: "Completed", value: 156 },
-      { name: "Pending", value: 23 },
-    ],
+    if (!session?.backendAccessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const COURSE_SERVICE_URL =
+      process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
+
+    const response = await fetch(`${COURSE_SERVICE_URL}/api/teacher/analytics`, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return NextResponse.json(
+        { error: errorData.error || "Failed to fetch analytics" },
+        { status: response.status }
+      )
+    }
+
+    const analytics = await response.json()
+    return NextResponse.json(analytics)
+  } catch (error) {
+    console.error("Error fetching teacher analytics:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json(analytics)
 }

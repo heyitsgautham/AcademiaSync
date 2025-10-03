@@ -210,6 +210,7 @@ export function TeacherAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps
               />
               <YAxis
                 domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
                 tick={{ fill: mutedForegroundColor }}
                 allowDecimals={false}
               />

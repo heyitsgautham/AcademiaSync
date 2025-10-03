@@ -115,11 +115,11 @@ module.exports = (pool) => {
             const completionRatesResult = await pool.query(
                 `SELECT 
                     a.title as assignment,
-                    ROUND((COUNT(s.id)::numeric / NULLIF(COUNT(DISTINCT e.student_id), 0) * 100)::numeric, 2) as rate
+                    ROUND((COUNT(DISTINCT s.student_id)::numeric / NULLIF(COUNT(DISTINCT e.student_id), 0) * 100)::numeric, 2) as rate
                  FROM assignments a
                  INNER JOIN courses c ON a.course_id = c.id
                  LEFT JOIN enrollments e ON c.id = e.course_id
-                 LEFT JOIN submissions s ON a.id = s.assignment_id
+                 LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
                  WHERE c.teacher_id = $1
                  GROUP BY a.id, a.title
                  HAVING COUNT(DISTINCT e.student_id) > 0
@@ -130,7 +130,7 @@ module.exports = (pool) => {
 
             const completionRates = completionRatesResult.rows.map(row => ({
                 assignment: row.assignment,
-                rate: parseFloat(row.rate) || 0
+                rate: Math.min(parseFloat(row.rate) || 0, 100) // Cap at 100%
             }));
 
             // 4. Grade Distribution - Count of grades in each range

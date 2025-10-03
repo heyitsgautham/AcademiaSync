@@ -73,8 +73,8 @@ export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
       {cards.map((card) => {
         const Icon = card.icon
         return (
-          <Card 
-            key={card.title} 
+          <Card
+            key={card.title}
             className="transition-all hover:shadow-lg cursor-pointer hover:scale-105"
             onClick={() => router.push(card.href)}
           >

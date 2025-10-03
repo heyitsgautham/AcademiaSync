@@ -100,6 +100,10 @@ export const authOptions: AuthOptions = {
             // Add user data, role, and backend token to the session
             if (token.user) {
                 session.user = token.user;
+                // Map profilePicture to image for NextAuth compatibility
+                if ((token.user as any).profilePicture) {
+                    (session.user as any).image = (token.user as any).profilePicture;
+                }
             }
             if (token.role) {
                 session.role = token.role;

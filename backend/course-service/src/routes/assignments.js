@@ -465,7 +465,7 @@ module.exports = (pool) => {
                 const lateSubmissions = parseInt(assignment.late_submissions) || 0;
                 const notSubmitted = totalStudents - totalSubmissions;
                 const submittedNotGraded = totalSubmissions - gradedSubmissions;
-                const averageGrade = assignment.average_grade 
+                const averageGrade = assignment.average_grade
                     ? parseFloat(assignment.average_grade).toFixed(1)
                     : null;
 
@@ -514,6 +514,82 @@ module.exports = (pool) => {
             });
         }
     });
+
+    // Get recent submissions for teacher's courses
+    router.get('/recent-submissions', authenticate, authorize('teacher'), async (req, res) => {
+        try {
+            const teacherId = req.user.id;
+            const limit = parseInt(req.query.limit) || 10;
+
+            // Get recent submissions with student, course, and assignment details
+            const result = await pool.query(
+                `SELECT 
+                    s.id,
+                    s.submitted_at,
+                    s.grade,
+                    u.id as student_id,
+                    u.first_name || ' ' || u.last_name as student_name,
+                    c.id as course_id,
+                    c.title as course_title,
+                    a.id as assignment_id,
+                    a.title as assignment_title,
+                    a.due_date,
+                    CASE 
+                        WHEN s.grade IS NOT NULL THEN 'completed'
+                        WHEN s.submitted_at > a.due_date THEN 'late'
+                        ELSE 'pending'
+                    END as status
+                 FROM submissions s
+                 INNER JOIN assignments a ON s.assignment_id = a.id
+                 INNER JOIN courses c ON a.course_id = c.id
+                 INNER JOIN users u ON s.student_id = u.id
+                 WHERE c.teacher_id = $1
+                 ORDER BY s.submitted_at DESC
+                 LIMIT $2`,
+                [teacherId, limit]
+            );
+
+            // Transform the data to match the frontend format
+            const submissions = result.rows.map(row => ({
+                id: row.id.toString(),
+                studentId: row.student_id,
+                studentName: row.student_name,
+                studentAvatar: `/diverse-student-studying.png`, // Default avatar
+                course: row.course_title,
+                courseId: row.course_id,
+                assignment: row.assignment_title,
+                assignmentId: row.assignment_id,
+                status: row.status,
+                submittedAt: formatTimeAgo(new Date(row.submitted_at)),
+                grade: row.grade
+            }));
+
+            res.json(submissions);
+        } catch (error) {
+            console.error('Error fetching recent submissions:', error);
+            res.status(500).json({
+                error: 'Internal server error',
+                message: error.message
+            });
+        }
+    });
+
+    // Helper function to format time ago
+    function formatTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) {
+            return diffMins <= 1 ? '1 minute ago' : `${diffMins} minutes ago`;
+        } else if (diffHours < 24) {
+            return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+        } else {
+            return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+        }
+    }
 
     return router;
 };

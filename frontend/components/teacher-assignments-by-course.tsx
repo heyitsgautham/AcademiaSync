@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,19 +23,22 @@ import { courseApi } from "@/lib/api-client"
 interface AssignmentsByCourseProps {
   assignmentsByCourse: any[]
   searchQuery: string
+  courseFilter?: string
   onEdit: (assignment: any) => void
 }
 
-export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, onEdit }: AssignmentsByCourseProps) {
+export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, courseFilter, onEdit }: AssignmentsByCourseProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   // Safe access with fallback
   const coursesArray = Array.isArray(assignmentsByCourse) ? assignmentsByCourse : []
 
   const filteredData = coursesArray
+    .filter((course) => !courseFilter || course.courseId.toString() === courseFilter)
     .map((course) => ({
       ...course,
       assignments: Array.isArray(course.assignments)
@@ -95,12 +99,18 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, o
                 {course.assignments.map((assignment: any) => (
                   <div
                     key={assignment.id}
-                    className="flex flex-col gap-4 p-4 rounded-lg border border-border hover:bg-accent transition-colors"
+                    className="flex flex-col gap-4 p-4 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                    onClick={() => router.push(`/teacher/assignments/${assignment.id}/submissions`)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-semibold text-lg">{assignment.title}</h3>
+                          {assignment.submitted_not_graded > 0 && (
+                            <Badge variant="default" className="bg-orange-500">
+                              {assignment.submitted_not_graded} Pending Review
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground mb-3">{assignment.description}</p>
                         <div className="flex flex-wrap gap-4 text-sm">
@@ -110,17 +120,29 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, o
                           </div>
                           <div className="flex items-center gap-1">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{assignment.submission_count || 0} submissions</span>
+                            <span>
+                              {assignment.total_submissions || 0}/{assignment.total_students || 0} submissions
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(assignment)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(assignment)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                        {assignment.average_grade !== null && assignment.average_grade !== undefined && (
+                          <div className="flex flex-col items-center justify-center px-3">
+                            <span className="text-xs font-bold text-muted-foreground">Avg Grade</span>
+                            <span className="text-3xl font-extrabold text-primary">
+                              {assignment.average_grade}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(assignment)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(assignment)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

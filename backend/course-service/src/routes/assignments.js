@@ -529,6 +529,7 @@ module.exports = (pool) => {
                     s.grade,
                     u.id as student_id,
                     u.first_name || ' ' || u.last_name as student_name,
+                    u.profile_picture,
                     c.id as course_id,
                     c.title as course_title,
                     a.id as assignment_id,
@@ -554,7 +555,7 @@ module.exports = (pool) => {
                 id: row.id.toString(),
                 studentId: row.student_id,
                 studentName: row.student_name,
-                studentAvatar: `/diverse-student-studying.png`, // Default avatar
+                studentAvatar: row.profile_picture || null,
                 course: row.course_title,
                 courseId: row.course_id,
                 assignment: row.assignment_title,

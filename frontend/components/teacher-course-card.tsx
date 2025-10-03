@@ -78,7 +78,7 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
 
   const studentsEnrolled = course.studentsEnrolled || course.students_enrolled || 0
   const progress = course.progress || 0
-  const color = course.color || "bg-blue-500"
+  const color = course.color || "bg-lime-500"
 
   return (
     <>

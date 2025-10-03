@@ -27,13 +27,14 @@ module.exports = (pool) => {
                             u.first_name,
                             u.last_name,
                             u.email,
+                            u.profile_picture,
                             COALESCE(AVG(s.grade), 0) as performance
                          FROM enrollments e
                          INNER JOIN users u ON e.student_id = u.id
                          LEFT JOIN submissions s ON s.student_id = u.id
                          LEFT JOIN assignments a ON s.assignment_id = a.id AND a.course_id = e.course_id
                          WHERE e.course_id = $1 AND u.role = 'Student'
-                         GROUP BY u.id, u.first_name, u.last_name, u.email
+                         GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture
                          ORDER BY u.last_name, u.first_name`,
                         [course.course_id]
                     );
@@ -43,7 +44,7 @@ module.exports = (pool) => {
                         id: student.id.toString(),
                         name: `${student.first_name} ${student.last_name}`,
                         email: student.email,
-                        avatar: null, // Can be added later if user profile pictures are implemented
+                        avatar: student.profile_picture || null,
                         performance: parseFloat(student.performance).toFixed(0)
                     }));
 

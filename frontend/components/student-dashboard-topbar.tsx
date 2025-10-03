@@ -77,8 +77,8 @@ export function StudentDashboardTopbar() {
             </div>
             <Avatar className="h-9 w-9">
               {userImage ? (
-                <AvatarImage 
-                  src={userImage} 
+                <AvatarImage
+                  src={userImage}
                   alt={userName}
                   referrerPolicy="no-referrer"
                 />

@@ -1,13 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { StudentCourseCard } from "@/components/student-course-card"
-import { EnrollCoursesModal } from "@/components/enroll-courses-modal"
+import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { StudentCourseCard } from "@/components/student-course-card"
+import { EnrollCoursesModal } from "@/components/enroll-courses-modal"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Search } from "lucide-react"
-import { useState } from "react"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 interface Course {
   id: string
@@ -36,23 +39,8 @@ export default function StudentCoursesPage() {
     },
   })
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (!data) return null
-
   // Safe access to courses with fallback
-  const courses = data.courses || []
+  const courses = data?.courses || []
 
   const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -60,47 +48,48 @@ export default function StudentCoursesPage() {
 
   return (
     <>
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">My Courses</h1>
-            <p className="text-muted-foreground mt-1">Manage and track your enrolled courses</p>
-          </div>
-          <Button onClick={() => setEnrollModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Enroll in Course
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {/* Courses Grid */}
-        {filteredCourses && filteredCourses.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <StudentCourseCard key={course.id} {...course} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground">No courses found</p>
-            <Button onClick={() => setEnrollModalOpen(true)} className="mt-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Enroll in Your First Course
+      <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground lg:text-3xl">My Courses</h1>
+              <p className="text-sm text-muted-foreground mt-1">Manage and track your enrolled courses</p>
+            </div>
+            <Button onClick={() => setEnrollModalOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Enroll in Course
             </Button>
           </div>
-        )}
-      </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-lg" />
+              ))}
+            </div>
+          ) : filteredCourses && filteredCourses.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredCourses.map((course) => (
+                <StudentCourseCard key={course.id} {...course} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12">
+              <p className="text-muted-foreground">No courses found. Enroll in your first course to get started!</p>
+            </div>
+          )}
+        </div>
+      </main>
 
       <EnrollCoursesModal open={enrollModalOpen} onOpenChange={setEnrollModalOpen} />
     </>

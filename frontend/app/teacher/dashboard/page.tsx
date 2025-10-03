@@ -3,13 +3,13 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Menu, X } from "lucide-react"
-import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import { DashboardTopbar } from "@/components/dashboard-topbar"
-import { DashboardLogo } from "@/components/dashboard-logo"
-import { StatCards } from "@/components/stat-cards"
-import { RecentActivity } from "@/components/recent-activity"
-import { AnalyticsSection } from "@/components/analytics-section"
-import { CreateCourseModal } from "@/components/create-course-modal"
+import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
+import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
+import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
+import { TeacherStatCards } from "@/components/teacher-stat-cards"
+import { TeacherRecentActivity } from "@/components/teacher-recent-activity"
+import { TeacherAnalyticsSection } from "@/components/teacher-analytics-section"
+import { TeacherCreateCourseModal } from "@/components/teacher-create-course-modal"
 import { Button } from "@/components/ui/button"
 
 // Force dynamic rendering
@@ -56,7 +56,7 @@ export default function TeacherDashboard() {
           }`}
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
-          <DashboardLogo />
+          <TeacherDashboardLogo />
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-sidebar-foreground"
@@ -65,7 +65,7 @@ export default function TeacherDashboard() {
             <X className="h-6 w-6" />
           </button>
         </div>
-        <DashboardSidebar />
+        <TeacherDashboardSidebar />
       </aside>
 
       {/* Main content */}
@@ -78,7 +78,7 @@ export default function TeacherDashboard() {
           <div className="flex-1 lg:flex-none">
             <h2 className="text-lg font-semibold text-foreground lg:hidden">Dashboard</h2>
           </div>
-          <DashboardTopbar />
+          <TeacherDashboardTopbar />
         </header>
 
         {/* Main content area */}
@@ -92,23 +92,23 @@ export default function TeacherDashboard() {
                   Welcome back! Here's what's happening with your courses.
                 </p>
               </div>
-             
+
             </div>
 
             {/* Stat cards */}
-            <StatCards stats={stats} isLoading={statsLoading} />
+            <TeacherStatCards stats={stats} isLoading={statsLoading} />
 
             {/* Recent Activity and Analytics */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <RecentActivity submissions={recentSubmissions} isLoading={submissionsLoading} />
-              <AnalyticsSection analytics={analytics} isLoading={analyticsLoading} />
+              <TeacherRecentActivity submissions={recentSubmissions} isLoading={submissionsLoading} />
+              <TeacherAnalyticsSection analytics={analytics} isLoading={analyticsLoading} />
             </div>
           </div>
         </main>
       </div>
 
       {/* Create Course Modal */}
-      <CreateCourseModal open={createCourseOpen} onOpenChange={setCreateCourseOpen} />
+      <TeacherCreateCourseModal open={createCourseOpen} onOpenChange={setCreateCourseOpen} />
     </div>
   )
 }

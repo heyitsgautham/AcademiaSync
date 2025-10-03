@@ -181,6 +181,7 @@ module.exports = (pool) => {
         SELECT 
           a.id,
           a.title as name,
+          c.id as course_id,
           c.title as course,
           TO_CHAR(a.due_date, 'YYYY-MM-DD') as "dueDate",
           a.description as question,

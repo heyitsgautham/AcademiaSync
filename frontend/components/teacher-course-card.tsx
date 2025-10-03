@@ -85,8 +85,8 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
         <div className={`h-2 ${color}`} />
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-lg ${color} bg-opacity-10`}>
+          <div className="flex items-start gap-2">
+            <div className={`p-2 rounded-lg ${color} bg-opacity-10 flex-shrink-0`}>
               <BookOpen className="h-5 w-5" />
             </div>
             <CardTitle className="text-lg font-semibold line-clamp-2 min-h-[3.5rem]">{course.title}</CardTitle>

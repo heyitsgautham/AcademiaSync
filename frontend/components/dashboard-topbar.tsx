@@ -18,12 +18,29 @@ export function DashboardTopbar() {
   const { data: session } = useSession()
   const router = useRouter()
 
+  const user = session?.user as { 
+    firstName?: string; 
+    lastName?: string; 
+    name?: string; 
+    email?: string; 
+    image?: string;
+    profilePicture?: string;
+  } | undefined
+
   // Construct full name from firstName and lastName
-  const firstName = session?.user?.firstName || ""
-  const lastName = session?.user?.lastName || ""
-  const userName = firstName && lastName ? `${firstName} ${lastName}` : session?.user?.name || "User"
-  const userEmail = session?.user?.email || ""
-  const userImage = session?.user?.image || "/placeholder-user.jpg"
+  const firstName = user?.firstName || ""
+  const lastName = user?.lastName || ""
+  let userName = "User";
+  if (firstName && lastName) {
+    userName = `${firstName} ${lastName}`;
+  } else if (firstName) {
+    userName = firstName;
+  } else if (user?.name) {
+    userName = user.name;
+  }
+  const userEmail = user?.email || ""
+  const profilePicture = user?.image || user?.profilePicture
+  const userImage = profilePicture || "/placeholder-user.jpg"
 
   // Get initials for avatar fallback
   const getInitials = (name: string) => {
@@ -53,7 +70,13 @@ export function DashboardTopbar() {
             <p className="text-xs text-muted-foreground">Teacher</p>
           </div>
           <Avatar className="h-9 w-9">
-            <AvatarImage src={userImage} alt={userName} />
+            {profilePicture && (
+              <AvatarImage 
+                src={profilePicture} 
+                alt={userName}
+                referrerPolicy="no-referrer"
+              />
+            )}
             <AvatarFallback className="bg-primary text-primary-foreground">{getInitials(userName)}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>

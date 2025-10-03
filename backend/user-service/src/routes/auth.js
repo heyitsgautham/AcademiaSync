@@ -47,7 +47,7 @@ router.post('/google', async (req, res) => {
         }
 
         const payload = ticket.getPayload();
-        const { sub: googleId, email, given_name, family_name } = payload;
+        const { sub: googleId, email, given_name, family_name, picture } = payload;
 
         // Check if user exists
         const dbPool = getPool();
@@ -60,22 +60,23 @@ router.post('/google', async (req, res) => {
         if (userResult.rows.length === 0) {
             // Create new user with Student role by default
             const insertResult = await dbPool.query(
-                `INSERT INTO users (email, google_id, first_name, last_name, role) 
-         VALUES ($1, $2, $3, $4, $5) 
+                `INSERT INTO users (email, google_id, first_name, last_name, profile_picture, role) 
+         VALUES ($1, $2, $3, $4, $5, $6) 
          RETURNING *`,
-                [email, googleId, given_name || 'User', family_name || '', 'Student']
+                [email, googleId, given_name || 'User', family_name || '', picture || null, 'Student']
             );
             user = insertResult.rows[0];
         } else {
             user = userResult.rows[0];
 
-            // Update google_id if not set
-            if (!user.google_id) {
+            // Update google_id and profile_picture if not set or if picture changed
+            if (!user.google_id || user.profile_picture !== picture) {
                 await dbPool.query(
-                    'UPDATE users SET google_id = $1 WHERE id = $2',
-                    [googleId, user.id]
+                    'UPDATE users SET google_id = $1, profile_picture = $2 WHERE id = $3',
+                    [googleId, picture || null, user.id]
                 );
                 user.google_id = googleId;
+                user.profile_picture = picture;
             }
         }
 
@@ -115,6 +116,7 @@ router.post('/google', async (req, res) => {
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
+                profilePicture: user.profile_picture,
                 role: user.role
             }
         });

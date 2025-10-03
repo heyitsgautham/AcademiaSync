@@ -34,12 +34,12 @@ export default function AssignmentsPage() {
   useEffect(() => {
     const courseIdParam = searchParams.get('courseId')
     const statusParam = searchParams.get('status')
-    
+
     if (courseIdParam) {
       setCourseFilterId(courseIdParam)
       setSelectedCourseId(courseIdParam) // Also set for the create assignment dropdown
     }
-    
+
     if (statusParam) {
       setStatusFilter(statusParam)
     }
@@ -55,7 +55,7 @@ export default function AssignmentsPage() {
   const { data: assignmentsWithStatus, isLoading: assignmentsLoading } = useQuery({
     queryKey: ["assignments-with-status", statusFilter],
     queryFn: async () => {
-      const url = statusFilter 
+      const url = statusFilter
         ? `/api/teacher/assignments-with-status?status=${statusFilter}`
         : '/api/teacher/assignments-with-status'
       const res = await fetch(url)
@@ -66,12 +66,12 @@ export default function AssignmentsPage() {
   // Group assignments by course for display
   const assignmentsByCourse = assignmentsWithStatus && courses
     ? courses.map((course: any) => ({
-        courseId: course.id,
-        courseName: course.title,
-        assignments: Array.isArray(assignmentsWithStatus)
-          ? assignmentsWithStatus.filter((a: any) => a.course_id === course.id)
-          : [],
-      })).filter((c: any) => c.assignments.length > 0)
+      courseId: course.id,
+      courseName: course.title,
+      assignments: Array.isArray(assignmentsWithStatus)
+        ? assignmentsWithStatus.filter((a: any) => a.course_id === course.id)
+        : [],
+    })).filter((c: any) => c.assignments.length > 0)
     : []
 
   const handleCreateAssignment = () => {

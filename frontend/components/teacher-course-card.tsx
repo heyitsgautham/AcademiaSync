@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, Users, TrendingUp, MoreVertical, Edit, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { BookOpen, Users, TrendingUp, MoreVertical, Edit, Trash2, UserCheck, ClipboardList } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const deleteMutation = useMutation({
     mutationFn: () => courseApi.deleteCourse(course.id),
@@ -66,9 +68,17 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
     deleteMutation.mutate()
   }
 
+  const handleViewStudents = () => {
+    router.push(`/teacher/students?courseId=${course.id}`)
+  }
+
+  const handleViewAssignments = () => {
+    router.push(`/teacher/assignments?courseId=${course.id}`)
+  }
+
   const studentsEnrolled = course.studentsEnrolled || course.students_enrolled || 0
   const progress = course.progress || 0
-  const color = course.color || "bg-blue-500"
+  const color = course.color || "bg-lime-500"
 
   return (
     <>
@@ -79,7 +89,7 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
             <div className={`p-2 rounded-lg ${color} bg-opacity-10`}>
               <BookOpen className="h-5 w-5" />
             </div>
-            <CardTitle className="text-lg font-semibold">{course.title}</CardTitle>
+            <CardTitle className="text-lg font-semibold line-clamp-2 min-h-[3.5rem]">{course.title}</CardTitle>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -112,12 +122,24 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col items-start gap-2">
-          <div className="w-full flex items-center justify-between text-xs text-muted-foreground">
-            <span>Course Progress</span>
-            <span>{progress}%</span>
+        <CardFooter className="flex flex-col items-start gap-3">
+          <div className="w-full flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={handleViewStudents}>
+              <UserCheck className="h-4 w-4 mr-2" />
+              View Students
+            </Button>
+            <Button variant="outline" className="flex-1" onClick={handleViewAssignments}>
+              <ClipboardList className="h-4 w-4 mr-2" />
+              View Assignments
+            </Button>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Course Progress</span>
+              <span>{progress}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
         </CardFooter>
       </Card>
 

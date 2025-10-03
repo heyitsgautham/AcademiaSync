@@ -1,56 +1,39 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 export async function GET() {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    const session = await getServerSession(authOptions)
 
-  const submissions = [
-    {
-      id: "1",
-      studentName: "Emma Wilson",
-      studentAvatar: "/diverse-student-studying.png",
-      course: "Computer Science 101",
-      assignment: "Data Structures Project",
-      status: "completed" as const,
-      submittedAt: "2 hours ago",
-    },
-    {
-      id: "2",
-      studentName: "Michael Chen",
-      studentAvatar: "/diverse-students-studying.png",
-      course: "Web Development",
-      assignment: "React Portfolio",
-      status: "pending" as const,
-      submittedAt: "5 hours ago",
-    },
-    {
-      id: "3",
-      studentName: "Sophia Rodriguez",
-      studentAvatar: "/diverse-students-studying.png",
-      course: "Database Systems",
-      assignment: "SQL Query Optimization",
-      status: "completed" as const,
-      submittedAt: "1 day ago",
-    },
-    {
-      id: "4",
-      studentName: "James Anderson",
-      studentAvatar: "/diverse-group-studying.png",
-      course: "Algorithms",
-      assignment: "Sorting Algorithms",
-      status: "late" as const,
-      submittedAt: "2 days ago",
-    },
-    {
-      id: "5",
-      studentName: "Olivia Martinez",
-      studentAvatar: "/student5-artwork.png",
-      course: "Machine Learning",
-      assignment: "Linear Regression Model",
-      status: "completed" as const,
-      submittedAt: "3 days ago",
-    },
-  ]
+    if (!session?.backendAccessToken) {
+      console.error("No backend access token found in session")
+      // Return empty array instead of error to prevent frontend crash
+      return NextResponse.json([])
+    }
 
-  return NextResponse.json(submissions)
+    const COURSE_SERVICE_URL =
+      process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
+
+    const response = await fetch(`${COURSE_SERVICE_URL}/api/teacher/recent-submissions?limit=5`, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error("Failed to fetch recent submissions:", errorData)
+      // Return empty array instead of error to prevent frontend crash
+      return NextResponse.json([])
+    }
+
+    const submissions = await response.json()
+    return NextResponse.json(submissions)
+  } catch (error) {
+    console.error("Error fetching recent submissions:", error)
+    // Return empty array instead of error to prevent frontend crash
+    return NextResponse.json([])
+  }
 }

@@ -1,13 +1,18 @@
 const { verifyAccessToken } = require('../utils/jwt');
 
 /**
- * Middleware to verify JWT access token from cookies
+ * Middleware to verify JWT access token from cookies or Authorization header
  * Attaches user info to req.user if token is valid
  */
 const authenticate = (req, res, next) => {
     try {
-        // Get token from cookie
-        const token = req.cookies.accessToken;
+        // Support both cookies and Authorization header
+        let token = null;
+        if (req.cookies?.accessToken) {
+            token = req.cookies.accessToken;
+        } else if (req.headers.authorization?.startsWith('Bearer ')) {
+            token = req.headers.authorization.substring(7);
+        }
 
         if (!token) {
             return res.status(401).json({

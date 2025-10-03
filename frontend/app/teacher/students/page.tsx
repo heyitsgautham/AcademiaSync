@@ -1,15 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Menu, X, Search } from "lucide-react"
 import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
 import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
 import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { TeacherStudentsByCourse } from "@/components/teacher-students-by-course"
 import { TeacherStudentDetailModal } from "@/components/teacher-student-detail-modal"
 import { Skeleton } from "@/components/ui/skeleton"
+import { courseApi } from "@/lib/api-client"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -19,6 +23,24 @@ export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [studentModalOpen, setStudentModalOpen] = useState(false)
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("")
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get courseId from URL query params if present
+  useEffect(() => {
+    const courseIdParam = searchParams.get('courseId')
+    if (courseIdParam) {
+      setSelectedCourseId(courseIdParam)
+    }
+  }, [searchParams])
+
+  // Fetch all courses
+  const { data: courses, isLoading: coursesLoading } = useQuery({
+    queryKey: ["courses"],
+    queryFn: courseApi.getCourses,
+  })
 
   const { data: studentsByCourse, isLoading } = useQuery({
     queryKey: ["students-by-course"],
@@ -31,6 +53,23 @@ export default function StudentsPage() {
   const handleStudentClick = (student: any) => {
     setSelectedStudent(student)
     setStudentModalOpen(true)
+  }
+
+  const handleCourseFilterChange = (value: string) => {
+    setSelectedCourseId(value)
+    // Update URL without page reload
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set('courseId', value)
+    } else {
+      params.delete('courseId')
+    }
+    router.push(`/teacher/students?${params.toString()}`, { scroll: false })
+  }
+
+  const handleClearFilter = () => {
+    setSelectedCourseId("")
+    router.push('/teacher/students', { scroll: false })
   }
 
   return (
@@ -70,17 +109,40 @@ export default function StudentsPage() {
               <p className="text-sm text-muted-foreground mt-1">View and manage students across all courses</p>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search students..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search students..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              {courses && courses.length > 0 && (
+                <div className="flex gap-2">
+                  <Select value={selectedCourseId} onValueChange={handleCourseFilterChange}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course: any) => (
+                        <SelectItem key={course.id} value={course.id.toString()}>
+                          {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedCourseId && (
+                    <Button variant="outline" onClick={handleClearFilter}>
+                      Clear Filter
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
-            {isLoading ? (
+            {isLoading || coursesLoading ? (
               <div className="space-y-6">
                 {[...Array(3)].map((_, i) => (
                   <Skeleton key={i} className="h-64 rounded-lg" />
@@ -90,6 +152,7 @@ export default function StudentsPage() {
               <TeacherStudentsByCourse
                 studentsByCourse={studentsByCourse}
                 searchQuery={searchQuery}
+                courseFilter={selectedCourseId}
                 onStudentClick={handleStudentClick}
               />
             )}

@@ -88,6 +88,7 @@ app.use('/api/teacher/courses', coursesRouter);
 app.use('/api/teacher', assignmentsRouter);
 app.use('/api/student', studentRouter);
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);

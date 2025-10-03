@@ -10,16 +10,18 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 interface StudentsByCourseProps {
   studentsByCourse: any[]
   searchQuery: string
+  courseFilter?: string
   onStudentClick: (student: any) => void
 }
 
-export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStudentClick }: StudentsByCourseProps) {
+export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, courseFilter, onStudentClick }: StudentsByCourseProps) {
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
 
   // Safe access with fallback
   const coursesArray = Array.isArray(studentsByCourse) ? studentsByCourse : []
 
   const filteredData = coursesArray
+    .filter((course) => !courseFilter || course.courseId.toString() === courseFilter)
     .map((course) => ({
       ...course,
       students: Array.isArray(course.students)

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Menu, X, Plus, Search } from "lucide-react"
 import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
 import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
@@ -23,6 +24,26 @@ export default function AssignmentsPage() {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<string>("")
+  const [courseFilterId, setCourseFilterId] = useState<string>("")
+  const [statusFilter, setStatusFilter] = useState<string>("")
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get courseId and status from URL query params if present
+  useEffect(() => {
+    const courseIdParam = searchParams.get('courseId')
+    const statusParam = searchParams.get('status')
+    
+    if (courseIdParam) {
+      setCourseFilterId(courseIdParam)
+      setSelectedCourseId(courseIdParam) // Also set for the create assignment dropdown
+    }
+    
+    if (statusParam) {
+      setStatusFilter(statusParam)
+    }
+  }, [searchParams])
 
   // Fetch all courses
   const { data: courses, isLoading: coursesLoading } = useQuery({
@@ -30,34 +51,28 @@ export default function AssignmentsPage() {
     queryFn: courseApi.getCourses,
   })
 
-  // Fetch assignments for each course
-  const { data: assignmentsByCourse, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ["all-assignments", courses],
+  // Fetch assignments with status information
+  const { data: assignmentsWithStatus, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ["assignments-with-status", statusFilter],
     queryFn: async () => {
-      if (!courses || courses.length === 0) return []
-
-      const assignmentsPromises = courses.map(async (course: any) => {
-        try {
-          const assignments = await courseApi.getAssignments(course.id)
-          return {
-            courseId: course.id,
-            courseName: course.title,
-            assignments: assignments || [],
-          }
-        } catch (error) {
-          console.error(`Error fetching assignments for course ${course.id}:`, error)
-          return {
-            courseId: course.id,
-            courseName: course.title,
-            assignments: [],
-          }
-        }
-      })
-
-      return Promise.all(assignmentsPromises)
+      const url = statusFilter 
+        ? `/api/teacher/assignments-with-status?status=${statusFilter}`
+        : '/api/teacher/assignments-with-status'
+      const res = await fetch(url)
+      return res.json()
     },
-    enabled: !!courses && courses.length > 0,
   })
+
+  // Group assignments by course for display
+  const assignmentsByCourse = assignmentsWithStatus && courses
+    ? courses.map((course: any) => ({
+        courseId: course.id,
+        courseName: course.title,
+        assignments: Array.isArray(assignmentsWithStatus)
+          ? assignmentsWithStatus.filter((a: any) => a.course_id === course.id)
+          : [],
+      })).filter((c: any) => c.assignments.length > 0)
+    : []
 
   const handleCreateAssignment = () => {
     setSelectedAssignment(null)
@@ -68,6 +83,37 @@ export default function AssignmentsPage() {
     setSelectedAssignment(assignment)
     setSelectedCourseId(assignment.course_id)
     setAssignmentModalOpen(true)
+  }
+
+  const handleCourseFilterChange = (value: string) => {
+    setCourseFilterId(value)
+    // Update URL without page reload
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set('courseId', value)
+    } else {
+      params.delete('courseId')
+    }
+    router.push(`/teacher/assignments?${params.toString()}`, { scroll: false })
+  }
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value)
+    // Update URL without page reload
+    const params = new URLSearchParams(searchParams.toString())
+    if (value) {
+      params.set('status', value)
+    } else {
+      params.delete('status')
+    }
+    router.push(`/teacher/assignments?${params.toString()}`, { scroll: false })
+  }
+
+  const handleClearFilter = () => {
+    setCourseFilterId("")
+    setSelectedCourseId("") // Also clear the selected course for assignment creation
+    setStatusFilter("")
+    router.push('/teacher/assignments', { scroll: false })
   }
 
   const isLoading = coursesLoading || assignmentsLoading
@@ -135,14 +181,48 @@ export default function AssignmentsPage() {
               ) : null}
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search assignments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search assignments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              {courses && courses.length > 0 && (
+                <div className="flex gap-2">
+                  <Select value={courseFilterId} onValueChange={handleCourseFilterChange}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course: any) => (
+                        <SelectItem key={course.id} value={course.id.toString()}>
+                          {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="not-submitted">Not Submitted</SelectItem>
+                      <SelectItem value="graded">Graded</SelectItem>
+                      <SelectItem value="late">Late</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(courseFilterId || statusFilter) && (
+                    <Button variant="outline" onClick={handleClearFilter}>
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             {isLoading ? (
@@ -155,6 +235,7 @@ export default function AssignmentsPage() {
               <TeacherAssignmentsByCourse
                 assignmentsByCourse={assignmentsByCourse}
                 searchQuery={searchQuery}
+                courseFilter={courseFilterId}
                 onEdit={handleEditAssignment}
               />
             ) : (

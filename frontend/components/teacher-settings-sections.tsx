@@ -1,36 +1,136 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
+
+interface TeacherProfile {
+  id: number
+  email: string
+  first_name: string
+  last_name: string
+  age: number | null
+  specialization: string | null
+  role: string
+}
 
 export function TeacherSettingsSections() {
+  const { data: session } = useSession()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+
   const [profileData, setProfileData] = useState({
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@smartlearning.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Passionate educator with 10+ years of experience in computer science.",
+    first_name: "",
+    last_name: "",
+    age: "",
+    specialization: "",
   })
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    assignmentReminders: true,
-    studentMessages: true,
-    weeklyReports: false,
+  // Fetch teacher profile
+  const { data: profile, isLoading } = useQuery<TeacherProfile>({
+    queryKey: ["teacher-profile"],
+    queryFn: async () => {
+      const res = await fetch("/api/teacher/profile")
+      if (!res.ok) {
+        throw new Error("Failed to fetch profile")
+      }
+      return res.json()
+    },
+  })
+
+  // Update form when profile data loads (only if form is pristine)
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        age: profile.age?.toString() || "",
+        specialization: profile.specialization || "",
+      })
+    }
+  }, [profile])
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: typeof profileData) => {
+      const res = await fetch("/api/teacher/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          age: data.age ? parseInt(data.age) : null,
+          specialization: data.specialization,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Failed to update profile")
+      }
+
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teacher-profile"] })
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
   })
 
   const handleProfileSave = () => {
-    console.log("Save profile:", profileData)
+    // Validation
+    if (!profileData.first_name.trim() || !profileData.last_name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "First name and last name are required",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (profileData.age && (parseInt(profileData.age) < 18 || parseInt(profileData.age) > 100)) {
+      toast({
+        title: "Validation Error",
+        description: "Age must be between 18 and 100",
+        variant: "destructive",
+      })
+      return
+    }
+
+    updateProfileMutation.mutate(profileData)
   }
 
-  const handleNotificationsSave = () => {
-    console.log("Save notifications:", notifications)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Unable to load profile data</p>
+      </div>
+    )
   }
 
   return (
@@ -39,170 +139,74 @@ export function TeacherSettingsSections() {
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your personal information and profile picture</CardDescription>
+          <CardDescription>Update your personal information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src="/placeholder.svg?height=96&width=96" alt="Profile" />
-                <AvatarFallback>SJ</AvatarFallback>
-              </Avatar>
-              <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 h-8 w-8 rounded-full">
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
-            <div>
-              <h3 className="font-semibold">Profile Picture</h3>
-              <p className="text-sm text-muted-foreground">JPG, PNG or GIF. Max size 2MB.</p>
-            </div>
-          </div>
-
-          <Separator />
-
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="first_name">First Name *</Label>
               <Input
-                id="name"
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                id="first_name"
+                value={profileData.first_name}
+                onChange={(e) => setProfileData({ ...profileData, first_name: e.target.value })}
+                placeholder="Enter first name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last Name *</Label>
+              <Input
+                id="last_name"
+                value={profileData.last_name}
+                onChange={(e) => setProfileData({ ...profileData, last_name: e.target.value })}
+                placeholder="Enter last name"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileData.email}
-                onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-              />
+              <Input id="email" type="email" value={profile?.email || ""} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">Email cannot be changed (linked to Google account)</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="age">Age</Label>
               <Input
-                id="phone"
-                value={profileData.phone}
-                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                id="age"
+                type="number"
+                min="18"
+                max="100"
+                value={profileData.age}
+                onChange={(e) => setProfileData({ ...profileData, age: e.target.value })}
+                placeholder="Enter age"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+            <Label htmlFor="specialization">Specialization</Label>
             <Input
-              id="bio"
-              value={profileData.bio}
-              onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={handleProfileSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Save Changes
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Manage how you receive notifications</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notifications">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive email updates about your account</p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={notifications.emailNotifications}
-              onCheckedChange={(checked) => setNotifications({ ...notifications, emailNotifications: checked })}
+              id="specialization"
+              value={profileData.specialization}
+              onChange={(e) => setProfileData({ ...profileData, specialization: e.target.value })}
+              placeholder="e.g., Computer Science, Mathematics, Physics"
             />
           </div>
 
           <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="assignment-reminders">Assignment Reminders</Label>
-              <p className="text-sm text-muted-foreground">Get notified about upcoming assignment deadlines</p>
-            </div>
-            <Switch
-              id="assignment-reminders"
-              checked={notifications.assignmentReminders}
-              onCheckedChange={(checked) => setNotifications({ ...notifications, assignmentReminders: checked })}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="student-messages">Student Messages</Label>
-              <p className="text-sm text-muted-foreground">Receive notifications when students send messages</p>
-            </div>
-            <Switch
-              id="student-messages"
-              checked={notifications.studentMessages}
-              onCheckedChange={(checked) => setNotifications({ ...notifications, studentMessages: checked })}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="weekly-reports">Weekly Reports</Label>
-              <p className="text-sm text-muted-foreground">Get weekly summary of your courses and students</p>
-            </div>
-            <Switch
-              id="weekly-reports"
-              checked={notifications.weeklyReports}
-              onCheckedChange={(checked) => setNotifications({ ...notifications, weeklyReports: checked })}
-            />
-          </div>
 
           <div className="flex justify-end">
             <Button
-              onClick={handleNotificationsSave}
+              onClick={handleProfileSave}
+              disabled={updateProfileMutation.isPending}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Save Preferences
+              {updateProfileMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
-          <CardDescription>Manage your account security and preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Change Password</Label>
-            <Button variant="outline">Update Password</Button>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <Label>Two-Factor Authentication</Label>
-            <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-            <Button variant="outline">Enable 2FA</Button>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <Label className="text-destructive">Danger Zone</Label>
-            <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
-            <Button variant="destructive">Delete Account</Button>
           </div>
         </CardContent>
       </Card>

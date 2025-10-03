@@ -86,11 +86,13 @@ const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/dashboard');
 const teacherRoutes = require('./routes/teacher');
 const adminRoutes = require('./routes/admin');
+const usersRoutes = require('./routes/users');
 
 app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api/users', usersRoutes);
 
 
 // Error handling middleware

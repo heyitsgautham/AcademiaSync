@@ -1,4 +1,5 @@
 import { BookOpen, Users, TrendingUp, FileText } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -6,7 +7,7 @@ interface Stats {
   totalCourses: number
   totalStudents: number
   averageGrade: number
-  pendingAssignments: number
+  pendingAssignmentsToGrade: number
 }
 
 interface StatCardsProps {
@@ -15,6 +16,8 @@ interface StatCardsProps {
 }
 
 export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
+  const router = useRouter()
+
   const cards = [
     {
       title: "Total Courses",
@@ -22,6 +25,7 @@ export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
       icon: BookOpen,
       color: "text-chart-1",
       bgColor: "bg-chart-1/10",
+      href: "/teacher/courses",
     },
     {
       title: "Total Students",
@@ -29,6 +33,7 @@ export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
       icon: Users,
       color: "text-chart-4",
       bgColor: "bg-chart-4/10",
+      href: "/teacher/students",
     },
     {
       title: "Average Grade",
@@ -36,13 +41,15 @@ export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
       icon: TrendingUp,
       color: "text-chart-3",
       bgColor: "bg-chart-3/10",
+      href: "/teacher/assignments?status=graded",
     },
     {
-      title: "Pending Assignments",
-      value: stats?.pendingAssignments ?? 0,
+      title: "Pending Reviews",
+      value: stats?.pendingAssignmentsToGrade ?? 0,
       icon: FileText,
       color: "text-chart-2",
       bgColor: "bg-chart-2/10",
+      href: "/teacher/assignments?status=submitted",
     },
   ]
 
@@ -66,7 +73,11 @@ export function TeacherStatCards({ stats, isLoading }: StatCardsProps) {
       {cards.map((card) => {
         const Icon = card.icon
         return (
-          <Card key={card.title} className="transition-shadow hover:shadow-lg">
+          <Card
+            key={card.title}
+            className="transition-all hover:shadow-lg cursor-pointer hover:scale-105"
+            onClick={() => router.push(card.href)}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

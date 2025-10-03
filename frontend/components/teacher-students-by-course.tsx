@@ -10,16 +10,18 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 interface StudentsByCourseProps {
   studentsByCourse: any[]
   searchQuery: string
+  courseFilter?: string
   onStudentClick: (student: any) => void
 }
 
-export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStudentClick }: StudentsByCourseProps) {
+export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, courseFilter, onStudentClick }: StudentsByCourseProps) {
   const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
 
   // Safe access with fallback
   const coursesArray = Array.isArray(studentsByCourse) ? studentsByCourse : []
 
   const filteredData = coursesArray
+    .filter((course) => !courseFilter || course.courseId.toString() === courseFilter)
     .map((course) => ({
       ...course,
       students: Array.isArray(course.students)
@@ -70,7 +72,13 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStude
                     >
                       <div className="flex items-center gap-4">
                         <Avatar>
-                          <AvatarImage src={student.avatar || "/placeholder.svg"} alt={student.name} />
+                          {student.avatar && (
+                            <AvatarImage
+                              src={student.avatar}
+                              alt={student.name}
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
                           <AvatarFallback>
                             {student.name
                               .split(" ")
@@ -83,11 +91,7 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStude
                           <p className="text-sm text-muted-foreground">{student.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium">Performance</p>
-                          <p className="text-2xl font-bold text-primary">{student.performance}%</p>
-                        </div>
+                      <div className="flex items-center gap-4 justify-end">
                         <Badge
                           variant={
                             student.performance >= 80
@@ -103,6 +107,10 @@ export function TeacherStudentsByCourse({ studentsByCourse, searchQuery, onStude
                               ? "Good"
                               : "Needs Improvement"}
                         </Badge>
+                        <div className="text-right w-20">
+                          <p className="text-sm font-medium text-muted-foreground">Grade</p>
+                          <p className="text-2xl font-bold text-primary">{student.performance}%</p>
+                        </div>
                       </div>
                     </div>
                   ))}

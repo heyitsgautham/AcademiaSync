@@ -62,7 +62,13 @@ export function TeacherStudentDetailModal({ open, onOpenChange, student }: Stude
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={student.avatar || "/placeholder.svg"} alt={student.name} />
+              {student.avatar && (
+                <AvatarImage
+                  src={student.avatar}
+                  alt={student.name}
+                  referrerPolicy="no-referrer"
+                />
+              )}
               <AvatarFallback>
                 {student.name
                   .split(" ")

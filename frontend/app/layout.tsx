@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "AcademiaSync",
   description: "Created with AcademiaSync",
   generator: "AcademiaSync",
+  referrer: "no-referrer",
 }
 
 export default function RootLayout({
@@ -22,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="referrer" content="no-referrer" />
+      </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>
           <AuthProvider>

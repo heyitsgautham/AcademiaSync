@@ -89,7 +89,7 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
             <div className={`p-2 rounded-lg ${color} bg-opacity-10`}>
               <BookOpen className="h-5 w-5" />
             </div>
-            <CardTitle className="text-lg font-semibold">{course.title}</CardTitle>
+            <CardTitle className="text-lg font-semibold line-clamp-2 min-h-[3.5rem]">{course.title}</CardTitle>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

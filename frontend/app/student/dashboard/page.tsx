@@ -2,10 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { StudentStatCards } from "@/components/student-stat-cards"
-import { StudentAssignmentsTable } from "@/components/student-assignments-table"
-import { StudentAnalyticsCharts } from "@/components/student-analytics-charts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { StudentRecentActivity } from "@/components/student-recent-activity"
+import { StudentDashboardAnalytics } from "@/components/student-dashboard-analytics"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 interface DashboardData {
   student: {
@@ -15,32 +16,22 @@ interface DashboardData {
   stats: {
     totalCourses: number
     assignmentsDue: number
-    assignmentsCompleted: number
     averageGrade: number
+    gradedAssignments: number
   }
-  upcomingPendingAssignments: Array<{
+  recentActivity: Array<{
     id: string
-    name: string
+    assignmentId: number
+    assignment: string
+    courseId: number
     course: string
-    dueDate: string
-    status: "Pending" | "Submitted" | "Graded"
+    submittedAt: string
     grade?: number
-    feedback?: string
-    submittedAt?: string
-  }>
-  gradedAssignments: Array<{
-    id: string
-    name: string
-    course: string
-    dueDate: string
-    status: "Pending" | "Submitted" | "Graded"
-    grade?: number
-    feedback?: string
-    submittedAt?: string
+    status: "graded" | "submitted"
   }>
   analytics: {
-    gradesData: Array<{ week: string; grade: number }>
-    courseProgressData: Array<{ course: string; progress: number; color: string }>
+    courseProgress: Array<{ course: string; progress: number }>
+    submissionStatus: Array<{ name: string; value: number }>
   }
 }
 
@@ -53,87 +44,41 @@ export default function StudentDashboardPage() {
     },
   })
 
-
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (!data) return null
-
-  // Construct student name with fallback (similar to dashboard-topbar pattern)
-  const studentName = data.student?.name || "Student"
-
-  // Safe access to stats with fallback values
+  // Safe access to data with fallback values
+  const studentName = data?.student?.name || "Student"
   const stats = {
-    totalCourses: data.stats?.totalCourses || 0,
-    assignmentsDue: data.stats?.assignmentsDue || 0,
-    assignmentsCompleted: data.stats?.assignmentsCompleted || 0,
-    averageGrade: data.stats?.averageGrade || 0,
+    totalCourses: data?.stats?.totalCourses || 0,
+    assignmentsDue: data?.stats?.assignmentsDue || 0,
+    averageGrade: data?.stats?.averageGrade || 0,
+    gradedAssignments: data?.stats?.gradedAssignments || 0,
   }
-
-  // Safe access to assignments with fallback values
-  const upcomingPendingAssignments = data.upcomingPendingAssignments || []
-  const gradedAssignments = data.gradedAssignments || []
-
-  // Safe access to analytics with fallback values
+  const recentActivity = data?.recentActivity || []
   const analytics = {
-    gradesData: data.analytics?.gradesData || [],
-    courseProgressData: data.analytics?.courseProgressData || [],
+    courseProgress: data?.analytics?.courseProgress || [],
+    submissionStatus: data?.analytics?.submissionStatus || [],
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold">Welcome back, {studentName}!</h1>
-        <p className="text-muted-foreground mt-1">Here's what's happening with your courses today.</p>
-      </div>
+    <div className="p-4 lg:p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back, {studentName}! Here's what's happening with your courses.
+          </p>
+        </div>
 
-      {/* Stat Cards */}
-      <StudentStatCards
-        totalCourses={stats.totalCourses}
-        assignmentsDue={stats.assignmentsDue}
-        assignmentsCompleted={stats.assignmentsCompleted}
-        averageGrade={stats.averageGrade}
-      />
+        {/* Stat cards */}
+        <StudentStatCards stats={stats} isLoading={isLoading} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Pending Assignments</CardTitle>
-          <CardDescription>Assignments that need your attention</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StudentAssignmentsTable assignments={upcomingPendingAssignments} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Graded Assignments</CardTitle>
-          <CardDescription>Recently graded assignments with feedback</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StudentAssignmentsTable assignments={gradedAssignments} />
-        </CardContent>
-      </Card>
-
-      {/* Analytics Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-        <StudentAnalyticsCharts
-          gradesData={analytics.gradesData}
-          courseProgressData={analytics.courseProgressData}
-        />
+        {/* Recent Activity and Analytics */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <StudentRecentActivity activity={recentActivity} isLoading={isLoading} />
+          <StudentDashboardAnalytics analytics={analytics} isLoading={isLoading} />
+        </div>
       </div>
     </div>
   )
 }
+

@@ -181,6 +181,7 @@ module.exports = (pool) => {
         SELECT 
           a.id,
           a.title as name,
+          c.id as course_id,
           c.title as course,
           TO_CHAR(a.due_date, 'YYYY-MM-DD') as "dueDate",
           a.description as question,
@@ -291,6 +292,14 @@ module.exports = (pool) => {
         try {
             const studentId = req.user.id;
 
+            // Get student info
+            const studentQuery = `
+        SELECT CONCAT(first_name, ' ', last_name) as name, email
+        FROM users
+        WHERE id = $1
+      `;
+            const studentResult = await pool.query(studentQuery, [studentId]);
+
             // Get enrolled courses count
             const coursesQuery = `
         SELECT COUNT(*) as count
@@ -299,8 +308,8 @@ module.exports = (pool) => {
       `;
             const coursesResult = await pool.query(coursesQuery, [studentId]);
 
-            // Get pending assignments count (not submitted)
-            const pendingQuery = `
+            // Get assignments due count (pending assignments)
+            const assignmentsDueQuery = `
         SELECT COUNT(*) as count
         FROM assignments a
         INNER JOIN courses c ON a.course_id = c.id
@@ -308,15 +317,15 @@ module.exports = (pool) => {
         LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = $1
         WHERE s.id IS NULL
       `;
-            const pendingResult = await pool.query(pendingQuery, [studentId]);
+            const assignmentsDueResult = await pool.query(assignmentsDueQuery, [studentId]);
 
-            // Get submitted assignments count
-            const submittedQuery = `
+            // Get graded assignments count
+            const gradedAssignmentsQuery = `
         SELECT COUNT(*) as count
         FROM submissions
-        WHERE student_id = $1
+        WHERE student_id = $1 AND grade IS NOT NULL
       `;
-            const submittedResult = await pool.query(submittedQuery, [studentId]);
+            const gradedAssignmentsResult = await pool.query(gradedAssignmentsQuery, [studentId]);
 
             // Get average grade
             const gradeQuery = `
@@ -326,13 +335,21 @@ module.exports = (pool) => {
       `;
             const gradeResult = await pool.query(gradeQuery, [studentId]);
 
-            // Get recent activity (last 5 submissions)
+            // Get recent activity (last 5 submissions with more details)
             const activityQuery = `
         SELECT 
+          s.id,
+          s.assignment_id as "assignmentId",
+          a.id as "assignmentId",
           a.title as assignment,
+          c.id as "courseId",
           c.title as course,
-          TO_CHAR(s.submitted_at, 'YYYY-MM-DD HH24:MI') as submittedAt,
-          s.grade
+          TO_CHAR(s.submitted_at, 'Mon DD, YYYY HH24:MI') as "submittedAt",
+          s.grade,
+          CASE
+            WHEN s.grade IS NOT NULL THEN 'graded'
+            ELSE 'submitted'
+          END as status
         FROM submissions s
         INNER JOIN assignments a ON s.assignment_id = a.id
         INNER JOIN courses c ON a.course_id = c.id
@@ -342,17 +359,230 @@ module.exports = (pool) => {
       `;
             const activityResult = await pool.query(activityQuery, [studentId]);
 
+            // Analytics: Course Progress (for dashboard chart 1)
+            const courseProgressQuery = `
+        SELECT 
+          c.title as course,
+          ROUND((COUNT(DISTINCT s.assignment_id)::numeric / NULLIF(COUNT(DISTINCT a.id), 0) * 100)::numeric, 2) as progress
+        FROM courses c
+        INNER JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN assignments a ON c.id = a.course_id
+        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+        WHERE e.student_id = $1
+        GROUP BY c.id, c.title
+        HAVING COUNT(DISTINCT a.id) > 0
+        ORDER BY progress DESC
+        LIMIT 5
+      `;
+            const courseProgressResult = await pool.query(courseProgressQuery, [studentId]);
+
+            // Analytics: Submission Status (for dashboard chart 2)
+            const submissionStatusQuery = `
+        SELECT 
+          'Graded' as name,
+          COUNT(CASE WHEN s.grade IS NOT NULL THEN 1 END) as value
+        FROM assignments a
+        INNER JOIN courses c ON a.course_id = c.id
+        INNER JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+        WHERE e.student_id = $1
+        UNION ALL
+        SELECT 
+          'Submitted' as name,
+          COUNT(CASE WHEN s.id IS NOT NULL AND s.grade IS NULL THEN 1 END) as value
+        FROM assignments a
+        INNER JOIN courses c ON a.course_id = c.id
+        INNER JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+        WHERE e.student_id = $1
+        UNION ALL
+        SELECT 
+          'Pending' as name,
+          COUNT(CASE WHEN s.id IS NULL THEN 1 END) as value
+        FROM assignments a
+        INNER JOIN courses c ON a.course_id = c.id
+        INNER JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+        WHERE e.student_id = $1
+      `;
+            const submissionStatusResult = await pool.query(submissionStatusQuery, [studentId]);
+
             res.json({
-                enrolledCourses: parseInt(coursesResult.rows[0].count),
-                pendingAssignments: parseInt(pendingResult.rows[0].count),
-                submittedAssignments: parseInt(submittedResult.rows[0].count),
-                averageGrade: gradeResult.rows[0].average || 0,
-                recentActivity: activityResult.rows
+                student: studentResult.rows[0] || { name: 'Student', email: '' },
+                stats: {
+                    totalCourses: parseInt(coursesResult.rows[0].count) || 0,
+                    assignmentsDue: parseInt(assignmentsDueResult.rows[0].count) || 0,
+                    averageGrade: parseFloat(gradeResult.rows[0].average) || 0,
+                    gradedAssignments: parseInt(gradedAssignmentsResult.rows[0].count) || 0
+                },
+                recentActivity: activityResult.rows,
+                analytics: {
+                    courseProgress: courseProgressResult.rows.map(row => ({
+                        course: row.course,
+                        progress: Math.min(parseFloat(row.progress) || 0, 100)
+                    })),
+                    submissionStatus: submissionStatusResult.rows.map(row => ({
+                        name: row.name,
+                        value: parseInt(row.value) || 0
+                    }))
+                }
             });
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
             res.status(500).json({
                 error: 'Failed to fetch dashboard data',
+                message: error.message
+            });
+        }
+    });
+
+    /**
+     * GET /api/student/analytics
+     * Returns detailed analytics data for the student
+     * Query params: filter (weekly, biweekly, monthly)
+     */
+    router.get('/analytics', async (req, res) => {
+        try {
+            const studentId = req.user.id;
+            const filter = req.query.filter || 'weekly';
+
+            // Determine time interval and grouping
+            let interval, dateFormat, gradesGroupBy, completionGroupBy;
+            switch (filter) {
+                case 'weekly':
+                    interval = '7 weeks';
+                    dateFormat = 'YYYY-IW'; // ISO week number
+                    gradesGroupBy = `TO_CHAR(s.submitted_at, 'YYYY-IW')`;
+                    completionGroupBy = `TO_CHAR(a.due_date, 'YYYY-IW')`;
+                    break;
+                case 'biweekly':
+                    interval = '14 weeks';
+                    dateFormat = 'YYYY-IW';
+                    gradesGroupBy = `TO_CHAR(s.submitted_at, 'YYYY-IW')`;
+                    completionGroupBy = `TO_CHAR(a.due_date, 'YYYY-IW')`;
+                    break;
+                case 'monthly':
+                    interval = '6 months';
+                    dateFormat = 'Mon YYYY';
+                    gradesGroupBy = `TO_CHAR(s.submitted_at, 'Mon YYYY'), EXTRACT(YEAR FROM s.submitted_at), EXTRACT(MONTH FROM s.submitted_at)`;
+                    completionGroupBy = `TO_CHAR(a.due_date, 'Mon YYYY'), EXTRACT(YEAR FROM a.due_date), EXTRACT(MONTH FROM a.due_date)`;
+                    break;
+                default:
+                    interval = '7 weeks';
+                    dateFormat = 'YYYY-IW';
+                    gradesGroupBy = `TO_CHAR(s.submitted_at, 'YYYY-IW')`;
+                    completionGroupBy = `TO_CHAR(a.due_date, 'YYYY-IW')`;
+            }
+
+            // 1. Grade Trends - Average grade over time
+            const gradeTrendsQuery = `
+                SELECT 
+                    TO_CHAR(s.submitted_at, '${dateFormat}') as period,
+                    ROUND(AVG(s.grade)::numeric, 2) as grade
+                FROM submissions s
+                WHERE s.student_id = $1 
+                  AND s.grade IS NOT NULL
+                  AND s.submitted_at >= NOW() - INTERVAL '${interval}'
+                GROUP BY ${gradesGroupBy}
+                ORDER BY ${gradesGroupBy}
+            `;
+            const gradeTrendsResult = await pool.query(gradeTrendsQuery, [studentId]);
+
+            // 2. Assignment Completion - Completed vs Total assignments over time
+            const completionQuery = `
+                SELECT 
+                    TO_CHAR(a.due_date, '${dateFormat}') as period,
+                    COUNT(CASE WHEN s.id IS NOT NULL THEN 1 END) as completed,
+                    COUNT(a.id) as total
+                FROM assignments a
+                INNER JOIN enrollments e ON a.course_id = e.course_id
+                LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+                WHERE e.student_id = $1
+                  AND a.due_date >= NOW() - INTERVAL '${interval}'
+                GROUP BY ${completionGroupBy}
+                ORDER BY ${completionGroupBy}
+            `;
+            const completionResult = await pool.query(completionQuery, [studentId]);
+
+            // 3. Course Progress - Progress percentage per course
+            const courseProgressQuery = `
+                SELECT 
+                    c.title as course,
+                    ROUND((COUNT(DISTINCT s.assignment_id)::numeric / NULLIF(COUNT(DISTINCT a.id), 0) * 100)::numeric, 2) as progress
+                FROM courses c
+                INNER JOIN enrollments e ON c.id = e.course_id
+                LEFT JOIN assignments a ON c.id = a.course_id
+                LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
+                WHERE e.student_id = $1
+                GROUP BY c.id, c.title
+                HAVING COUNT(DISTINCT a.id) > 0
+                ORDER BY progress DESC
+                LIMIT 5
+            `;
+            const courseProgressResult = await pool.query(courseProgressQuery, [studentId]);
+
+            // 4. Grade Distribution - Count of grades in each range
+            const gradeDistributionQuery = `
+                SELECT 
+                    grade_range as name,
+                    COUNT(*) as value
+                FROM (
+                    SELECT 
+                        CASE 
+                            WHEN s.grade >= 90 THEN 'A (90-100)'
+                            WHEN s.grade >= 80 THEN 'B (80-89)'
+                            WHEN s.grade >= 70 THEN 'C (70-79)'
+                            WHEN s.grade >= 60 THEN 'D (60-69)'
+                            ELSE 'F (0-59)'
+                        END as grade_range,
+                        CASE 
+                            WHEN s.grade >= 90 THEN 1
+                            WHEN s.grade >= 80 THEN 2
+                            WHEN s.grade >= 70 THEN 3
+                            WHEN s.grade >= 60 THEN 4
+                            ELSE 5
+                        END as sort_order
+                    FROM submissions s
+                    WHERE s.student_id = $1 
+                      AND s.grade IS NOT NULL
+                ) subquery
+                GROUP BY grade_range, sort_order
+                ORDER BY sort_order
+            `;
+            const gradeDistributionResult = await pool.query(gradeDistributionQuery, [studentId]);
+
+            // Format the data
+            const gradeTrends = gradeTrendsResult.rows.map(row => ({
+                period: row.period,
+                grade: parseFloat(row.grade) || 0
+            }));
+
+            const assignmentCompletion = completionResult.rows.map(row => ({
+                period: row.period,
+                completed: parseInt(row.completed) || 0,
+                total: parseInt(row.total) || 0
+            }));
+
+            const courseProgress = courseProgressResult.rows.map(row => ({
+                course: row.course,
+                progress: Math.min(parseFloat(row.progress) || 0, 100) // Cap at 100%
+            }));
+
+            const gradeDistribution = gradeDistributionResult.rows.map(row => ({
+                name: row.name,
+                value: parseInt(row.value) || 0
+            }));
+
+            res.json({
+                gradeTrends,
+                assignmentCompletion,
+                courseProgress,
+                gradeDistribution
+            });
+        } catch (error) {
+            console.error('Error fetching student analytics:', error);
+            res.status(500).json({
+                error: 'Failed to fetch student analytics',
                 message: error.message
             });
         }

@@ -30,7 +30,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <AuthProvider>
             <QueryProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
                 {children}
               </ThemeProvider>
             </QueryProvider>

@@ -49,7 +49,7 @@ export default function LoginPage() {
             <Button
               onClick={handleGoogleLogin}
               variant="outline"
-              className="w-full h-12 text-base bg-transparent"
+              className="w-full h-12 text-base bg-transparent cursor-pointer"
               size="lg"
               disabled={isLoading}
             >

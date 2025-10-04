@@ -145,6 +145,77 @@
   --sidebar-ring: rgba(59, 130, 246, 0.3);
 }
 
+/* Added red theme for admin dashboard */
+.admin-theme {
+  --background: #ffffff;
+  --foreground: #1e293b;
+  --card: #fef2f2;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: #fef2f2;
+  --secondary-foreground: #1e293b;
+  --muted: #fef2f2;
+  --muted-foreground: #64748b;
+  --accent: #ef4444;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #fef2f2;
+  --ring: rgba(220, 38, 38, 0.3);
+  --chart-1: #dc2626;
+  --chart-2: #f97316;
+  --chart-3: #eab308;
+  --chart-4: #8b5cf6;
+  --chart-5: #ec4899;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #fef2f2;
+  --sidebar-primary-foreground: #1e293b;
+  --sidebar-accent: #dc2626;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: rgba(220, 38, 38, 0.3);
+}
+
+.admin-theme.dark {
+  --background: #1c1917;
+  --foreground: #fef2f2;
+  --card: #292524;
+  --card-foreground: #fef2f2;
+  --popover: #1c1917;
+  --popover-foreground: #fef2f2;
+  --primary: #ef4444;
+  --primary-foreground: #ffffff;
+  --secondary: #292524;
+  --secondary-foreground: #fef2f2;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --accent: #f87171;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #44403c;
+  --input: #292524;
+  --ring: rgba(239, 68, 68, 0.3);
+  --chart-1: #dc2626;
+  --chart-2: #f97316;
+  --chart-3: #eab308;
+  --chart-4: #8b5cf6;
+  --chart-5: #ec4899;
+  --sidebar: #1c1917;
+  --sidebar-foreground: #fef2f2;
+  --sidebar-primary: #292524;
+  --sidebar-primary-foreground: #fef2f2;
+  --sidebar-accent: #dc2626;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #44403c;
+  --sidebar-ring: rgba(239, 68, 68, 0.3);
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

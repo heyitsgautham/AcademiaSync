@@ -1,108 +1,124 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Menu, X } from "lucide-react"
+import { AdminThemeWrapper } from "@/components/admin-theme-wrapper"
+import { AdminDashboardSidebar } from "@/components/admin-dashboard-sidebar"
+import { AdminDashboardTopbar } from "@/components/admin-dashboard-topbar"
+import { AdminDashboardLogo } from "@/components/admin-dashboard-logo"
+import { AdminStatCards } from "@/components/admin-stat-cards"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { GraduationCap } from "lucide-react"
+
+// Force dynamic rendering
+export const dynamic = "force-dynamic"
 
 export default function AdminDashboard() {
-    const { data: session, status } = useSession()
-    const router = useRouter()
-    const [dashboardData, setDashboardData] = useState<any>(null)
+    const [sidebarOpen, setSidebarOpen] = useState(false)
 
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login")
-        } else if (status === "authenticated") {
-            // Check if user has correct role
-            if (session?.role?.toLowerCase() !== "admin") {
-                router.push("/login")
-                return
-            }
-            
-            // Fetch dashboard data from backend
-            fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/admin/dashboard`, {
-                credentials: "include"
-            })
-                .then(res => res.json())
-                .then(data => setDashboardData(data))
-                .catch(err => console.error("Error fetching dashboard:", err))
-        }
-    }, [status, session, router])
-
-    const handleLogout = async () => {
-        // Call backend logout
-        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/auth/logout`, {
-            method: "POST",
-            credentials: "include"
-        })
-        // Sign out from NextAuth
-        await signOut({ callbackUrl: "/" })
-    }
-
-    if (status === "loading") {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p>Loading...</p>
-            </div>
-        )
-    }
+    const { data: stats, isLoading: statsLoading } = useQuery({
+        queryKey: ["admin-stats"],
+        queryFn: async () => {
+            const res = await fetch("/api/admin/stats")
+            return res.json()
+        },
+    })
 
     return (
-        <div className="min-h-screen bg-background p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                        <GraduationCap className="h-10 w-10 text-primary" />
-                        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <AdminThemeWrapper>
+            <div className="flex h-screen bg-background">
+                {/* Mobile sidebar overlay */}
+                {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+                {/* Sidebar */}
+                <aside
+                    className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                        }`}
+                >
+                    <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border lg:justify-center">
+                        <AdminDashboardLogo />
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground" aria-label="Close sidebar">
+                            <X className="h-6 w-6" />
+                        </button>
                     </div>
-                    <Button onClick={handleLogout} variant="outline">
-                        Logout
-                    </Button>
-                </div>
+                    <AdminDashboardSidebar />
+                </aside>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Welcome, Admin!</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Email</p>
-                                <p className="font-medium">{session?.user?.email}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Role</p>
-                                <p className="font-medium">{session?.role || "Admin"}</p>
-                            </div>
-                            {dashboardData && (
-                                <div className="mt-6 p-4 bg-muted rounded-lg">
-                                    <p className="text-sm font-medium mb-2">Backend Response:</p>
-                                    <pre className="text-xs overflow-auto">
-                                        {JSON.stringify(dashboardData, null, 2)}
-                                    </pre>
-                                </div>
-                            )}
+                {/* Main content */}
+                <div className="flex flex-1 flex-col overflow-hidden">
+                    {/* Top navbar */}
+                    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+                        <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-foreground" aria-label="Open sidebar">
+                            <Menu className="h-6 w-6" />
+                        </button>
+                        <div className="flex-1 lg:flex-none">
+                            <h2 className="text-lg font-semibold text-foreground lg:hidden">Dashboard</h2>
                         </div>
-                    </CardContent>
-                </Card>
+                        <AdminDashboardTopbar />
+                    </header>
 
-                <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Features Coming Soon</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                            <li>View analytics and reports</li>
-                            <li>Manage teachers</li>
-                            <li>Manage students</li>
-                            <li>System configuration</li>
-                        </ul>
-                    </CardContent>
-                </Card>
+                    {/* Main content area */}
+                    <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+                        <div className="mx-auto max-w-7xl space-y-6">
+                            {/* Header */}
+                            <div>
+                                <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Admin Dashboard</h1>
+                                <p className="text-sm text-muted-foreground mt-1">System overview and management</p>
+                            </div>
+
+                            {/* Stat cards */}
+                            <AdminStatCards stats={stats} isLoading={statsLoading} />
+
+                            {/* Quick Links */}
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/teachers"}>
+                                    <CardHeader>
+                                        <CardTitle className="text-base font-semibold text-foreground">Teacher Management</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                            Manage teachers, create new accounts, update specializations, and view teacher statistics.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/students"}>
+                                    <CardHeader>
+                                        <CardTitle className="text-base font-semibold text-foreground">Student Management</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                            View all students, manage enrollments, and promote users to teacher or admin roles.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/analytics"}>
+                                    <CardHeader>
+                                        <CardTitle className="text-base font-semibold text-foreground">Analytics</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                            View detailed analytics including students per teacher, course distributions, and performance metrics.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/settings"}>
+                                    <CardHeader>
+                                        <CardTitle className="text-base font-semibold text-foreground">Settings</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">
+                                            Update your admin profile information and manage your account settings.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </main>
+                </div>
             </div>
-        </div>
+        </AdminThemeWrapper>
     )
 }

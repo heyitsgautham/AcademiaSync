@@ -7,6 +7,9 @@ import { Account, Profile } from "next-auth";
 // This is because the frontend container needs to communicate with user-service container
 const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000";
 
+// Determine if we're in production (Cloud Run uses HTTPS)
+const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
+
 export const authOptions: AuthOptions = {
     providers: [
         GoogleProvider({
@@ -14,31 +17,32 @@ export const authOptions: AuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         }),
     ],
+    useSecureCookies: isProduction,
     cookies: {
         sessionToken: {
-            name: `next-auth.session-token`,
+            name: isProduction ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: false, // Set to true in production with HTTPS
+                secure: isProduction,
             },
         },
         callbackUrl: {
-            name: `next-auth.callback-url`,
+            name: isProduction ? `__Secure-next-auth.callback-url` : `next-auth.callback-url`,
             options: {
                 sameSite: 'lax',
                 path: '/',
-                secure: false,
+                secure: isProduction,
             },
         },
         csrfToken: {
-            name: `next-auth.csrf-token`,
+            name: isProduction ? `__Host-next-auth.csrf-token` : `next-auth.csrf-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: false,
+                secure: isProduction,
             },
         },
     },

@@ -17,9 +17,54 @@ const getPool = () => {
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
- * POST /auth/google
- * Authenticate user with Google OAuth
- * Body: { idToken: string }
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Authenticate with Google OAuth
+ *     tags: [Authentication]
+ *     description: Authenticate user using Google OAuth ID token. Creates new user if doesn't exist.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - idToken
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Google OAuth ID token
+ *     responses:
+ *       200:
+ *         description: Successfully authenticated
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               description: Sets accessToken and refreshToken cookies
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Authentication successful
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request - Missing ID token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Invalid Google token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/google', async (req, res) => {
     try {
@@ -130,8 +175,36 @@ router.post('/google', async (req, res) => {
 });
 
 /**
- * POST /auth/refresh
- * Refresh access token using refresh token
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     description: Get a new access token using the refresh token cookie
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully refreshed token
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               description: Sets new accessToken cookie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Token refreshed successfully
+ *       401:
+ *         description: Unauthorized - Invalid or missing refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/refresh', async (req, res) => {
     try {
@@ -218,8 +291,31 @@ router.post('/refresh', async (req, res) => {
 });
 
 /**
- * POST /auth/logout
- * Logout user and invalidate refresh token
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     description: Logout user and invalidate refresh token. Clears authentication cookies.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logout successful
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/logout', async (req, res) => {
     try {

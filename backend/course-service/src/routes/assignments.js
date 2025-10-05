@@ -1,9 +1,44 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
+const { addAssignmentLinks, addCourseLinks } = require('../utils/hateoas');
 
 module.exports = (pool) => {
-    // Get all assignments for a specific course
+    /**
+     * @swagger
+     * /api/teacher/courses/{courseId}/assignments:
+     *   get:
+     *     summary: Get all assignments for a specific course
+     *     tags: [Assignments]
+     *     description: Retrieve all assignments for a course with submission counts (teacher can only access their own courses)
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: courseId
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: Course ID
+     *     responses:
+     *       200:
+     *         description: List of assignments
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/Assignment'
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       404:
+     *         description: Course not found or access denied
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/courses/:courseId/assignments', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { courseId } = req.params;
@@ -33,7 +68,21 @@ module.exports = (pool) => {
                 [courseId]
             );
 
-            res.json(result.rows);
+            const assignmentsWithLinks = result.rows.map(assignment =>
+                addAssignmentLinks(assignment, req.user.role, true)
+            );
+
+            res.json({
+                assignments: assignmentsWithLinks,
+                _links: [
+                    {
+                        rel: 'course',
+                        href: `http://localhost:5001/teacher/courses/${courseId}`,
+                        method: 'GET',
+                        description: 'Get parent course'
+                    }
+                ]
+            });
         } catch (error) {
             console.error('Error fetching assignments:', error);
             res.status(500).json({
@@ -43,7 +92,64 @@ module.exports = (pool) => {
         }
     });
 
-    // Create a new assignment for a course
+    /**
+     * @swagger
+     * /api/teacher/courses/{courseId}/assignments:
+     *   post:
+     *     summary: Create a new assignment for a course
+     *     tags: [Assignments]
+     *     description: Create a new assignment for a specific course (teacher must own the course)
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: courseId
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: Course ID
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - title
+     *               - description
+     *             properties:
+     *               title:
+     *                 type: string
+     *                 description: Assignment title
+     *                 example: React Hooks Implementation
+     *               description:
+     *                 type: string
+     *                 description: Assignment description
+     *                 example: Implement a custom React hook for data fetching
+     *               due_date:
+     *                 type: string
+     *                 format: date-time
+     *                 description: Assignment due date
+     *                 example: 2025-10-15T23:59:59Z
+     *     responses:
+     *       201:
+     *         description: Assignment created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Assignment'
+     *       400:
+     *         description: Bad request - Missing required fields
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       404:
+     *         description: Course not found or access denied
+     *       500:
+     *         description: Internal server error
+     */
     router.post('/courses/:courseId/assignments', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { courseId } = req.params;

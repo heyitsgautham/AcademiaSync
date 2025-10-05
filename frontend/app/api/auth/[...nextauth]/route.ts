@@ -110,6 +110,32 @@ export const authOptions: AuthOptions = {
             }
             if (token.backendAccessToken) {
                 (session as any).backendAccessToken = token.backendAccessToken;
+
+                // Fetch fresh user data from backend to get updated profile info
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
+                        headers: {
+                            Authorization: `Bearer ${token.backendAccessToken}`,
+                        },
+                    });
+
+                    if (response.ok) {
+                        const freshUserData = await response.json();
+                        // Update session with fresh data, mapping snake_case to camelCase
+                        session.user = {
+                            ...session.user,
+                            name: freshUserData.first_name && freshUserData.last_name
+                                ? `${freshUserData.first_name} ${freshUserData.last_name}`
+                                : freshUserData.first_name,
+                            firstName: freshUserData.first_name,
+                            lastName: freshUserData.last_name,
+                            ...freshUserData
+                        };
+                    }
+                } catch (error) {
+                    console.error("Error fetching fresh user data:", error);
+                    // Continue with cached data if fetch fails
+                }
             }
             return session;
         },

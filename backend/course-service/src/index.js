@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 require('dotenv').config();
 
 const app = express();
@@ -75,9 +77,17 @@ app.get('/', (req, res) => {
   res.json({
     service: 'Course Service',
     version: '1.0.0',
-    description: 'Course management service for AcademiaSync'
+    description: 'Course management service for AcademiaSync',
+    documentation: '/api-docs'
   });
 });
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'AcademiaSync Course Service API',
+}));
 
 // API Routes
 const coursesRouter = require('./routes/courses')(pool);

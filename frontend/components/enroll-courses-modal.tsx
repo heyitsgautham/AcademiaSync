@@ -31,7 +31,9 @@ export function EnrollCoursesModal({ open, onOpenChange }: EnrollCoursesModalPro
     queryKey: ["available-courses"],
     queryFn: async () => {
       const res = await fetch("/api/student/available-courses")
-      return res.json()
+      const data = await res.json()
+      // Handle HATEOAS response structure
+      return (data as any)?.courses || data || []
     },
   })
 
@@ -47,6 +49,8 @@ export function EnrollCoursesModal({ open, onOpenChange }: EnrollCoursesModalPro
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["student-courses"] })
       queryClient.invalidateQueries({ queryKey: ["student-dashboard"] })
+      queryClient.invalidateQueries({ queryKey: ["student-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["available-courses"] })
       toast({
         title: "Enrolled successfully",
         description: "You have been enrolled in the course.",

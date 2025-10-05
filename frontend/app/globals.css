@@ -3,7 +3,80 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Default theme - Black and White for landing page */
 :root {
+  --background: #ffffff;
+  --foreground: #1e293b;
+  --card: #f8fafc;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #334155;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #f1f5f9;
+  --ring: rgba(15, 23, 42, 0.2);
+  --chart-1: #64748b;
+  --chart-2: #94a3b8;
+  --chart-3: #cbd5e1;
+  --chart-4: #475569;
+  --chart-5: #334155;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #f8fafc;
+  --sidebar-primary-foreground: #1e293b;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: rgba(15, 23, 42, 0.2);
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #f1f5f9;
+  --primary-foreground: #0f172a;
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #cbd5e1;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: rgba(241, 245, 249, 0.2);
+  --chart-1: #94a3b8;
+  --chart-2: #64748b;
+  --chart-3: #475569;
+  --chart-4: #cbd5e1;
+  --chart-5: #e2e8f0;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #1e293b;
+  --sidebar-primary-foreground: #f1f5f9;
+  --sidebar-accent: #cbd5e1;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #334155;
+  --sidebar-ring: rgba(241, 245, 249, 0.2);
+}
+
+/* Green theme for teacher dashboard */
+.teacher-theme {
   --background: #ffffff;
   --foreground: #374151;
   --card: #f0fdf4;
@@ -28,7 +101,6 @@
   --chart-3: #34d399;
   --chart-4: #3b82f6;
   --chart-5: #9333ea;
-  --radius: 0.5rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #374151;
   --sidebar-primary: #f0fdf4;
@@ -39,7 +111,7 @@
   --sidebar-ring: rgba(20, 184, 166, 0.5);
 }
 
-.dark {
+.teacher-theme.dark {
   --background: #1f2937;
   --foreground: #f9fafb;
   --card: #374151;

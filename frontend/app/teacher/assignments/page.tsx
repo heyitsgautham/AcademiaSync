@@ -46,10 +46,14 @@ export default function AssignmentsPage() {
   }, [searchParams])
 
   // Fetch all courses
-  const { data: courses, isLoading: coursesLoading } = useQuery({
+  const { data: coursesResponse, isLoading: coursesLoading } = useQuery({
     queryKey: ["courses"],
     queryFn: courseApi.getCourses,
   })
+
+  // Safe access with fallback - handle HATEOAS response structure
+  const courses = (coursesResponse as any)?.courses || coursesResponse || []
+  const coursesArray = Array.isArray(courses) ? courses : []
 
   // Fetch assignments with status information
   const { data: assignmentsWithStatus, isLoading: assignmentsLoading } = useQuery({
@@ -64,8 +68,8 @@ export default function AssignmentsPage() {
   })
 
   // Group assignments by course for display
-  const assignmentsByCourse = assignmentsWithStatus && courses
-    ? courses.map((course: any) => ({
+  const assignmentsByCourse = assignmentsWithStatus && coursesArray
+    ? coursesArray.map((course: any) => ({
       courseId: course.id,
       courseName: course.title,
       assignments: Array.isArray(assignmentsWithStatus)
@@ -155,14 +159,14 @@ export default function AssignmentsPage() {
                 <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Assignments</h1>
                 <p className="text-sm text-muted-foreground mt-1">Create and manage assignments across courses</p>
               </div>
-              {courses && courses.length > 0 ? (
+              {coursesArray && coursesArray.length > 0 ? (
                 <div className="flex gap-2">
                   <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Select course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courses.map((course: any) => (
+                      {coursesArray.map((course: any) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
@@ -191,14 +195,14 @@ export default function AssignmentsPage() {
                   className="pl-10"
                 />
               </div>
-              {courses && courses.length > 0 && (
+              {coursesArray && coursesArray.length > 0 && (
                 <div className="flex gap-2">
                   <Select value={courseFilterId} onValueChange={handleCourseFilterChange}>
                     <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courses.map((course: any) => (
+                      {coursesArray.map((course: any) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
@@ -241,7 +245,7 @@ export default function AssignmentsPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">
-                  {courses && courses.length === 0
+                  {coursesArray && coursesArray.length === 0
                     ? "Create a course first before adding assignments."
                     : "No assignments found. Create your first assignment!"}
                 </p>

@@ -21,13 +21,17 @@ export default function AdminTeachersPage() {
     const [modalMode, setModalMode] = useState<"create" | "edit">("create")
     const queryClient = useQueryClient()
 
-    const { data: teachers, isLoading } = useQuery({
+    const { data: teachersResponse, isLoading } = useQuery({
         queryKey: ["admin-teachers"],
         queryFn: async () => {
             const res = await fetch("/api/admin/teachers")
             return res.json()
         },
     })
+
+    // Safe access with fallback - handle HATEOAS response structure
+    const teachers = (teachersResponse as any)?.teachers || teachersResponse || []
+    const teachersArray = Array.isArray(teachers) ? teachers : []
 
     const handleCreateTeacher = () => {
         setSelectedTeacher(null)
@@ -99,7 +103,7 @@ export default function AdminTeachersPage() {
 
                             {/* Teachers Table */}
                             <AdminTeachersTable
-                                teachers={teachers || []}
+                                teachers={teachersArray || []}
                                 isLoading={isLoading}
                                 onEdit={handleEditTeacher}
                                 onDelete={handleDeleteTeacher}

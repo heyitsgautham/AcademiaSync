@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
+const { addCourseLinks, addAssignmentLinks, addSubmissionLinks, addStudentDashboardLinks } = require('../utils/hateoas');
 
 /**
  * Student routes for course enrollment and assignment submission
@@ -14,8 +15,41 @@ module.exports = (pool) => {
     router.use(authorize('Student'));
 
     /**
-     * GET /api/student/available-courses
-     * Returns all courses the student is NOT enrolled in
+     * @swagger
+     * /api/student/available-courses:
+     *   get:
+     *     summary: Get available courses for enrollment
+     *     tags: [Student]
+     *     description: Returns all courses that the authenticated student is NOT enrolled in
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: List of available courses
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   id:
+     *                     type: integer
+     *                   title:
+     *                     type: string
+     *                   description:
+     *                     type: string
+     *                   instructor:
+     *                     type: string
+     *                   duration:
+     *                     type: string
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Student role required
+     *       500:
+     *         description: Internal server error
      */
     router.get('/available-courses', async (req, res) => {
         try {
@@ -39,7 +73,14 @@ module.exports = (pool) => {
       `;
 
             const result = await pool.query(query, [studentId]);
-            res.json(result.rows);
+            const coursesWithLinks = result.rows.map(course =>
+                addCourseLinks(course, 'Student', false)
+            );
+
+            res.json({
+                courses: coursesWithLinks,
+                _links: addStudentDashboardLinks()
+            });
         } catch (error) {
             console.error('Error fetching available courses:', error);
             res.status(500).json({
@@ -50,8 +91,49 @@ module.exports = (pool) => {
     });
 
     /**
-     * POST /api/student/enroll
-     * Enrolls student in a course
+     * @swagger
+     * /api/student/enroll:
+     *   post:
+     *     summary: Enroll in a course
+     *     tags: [Enrollments]
+     *     description: Enrolls the authenticated student in a specified course
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - courseId
+     *             properties:
+     *               courseId:
+     *                 type: integer
+     *                 example: 1
+     *     responses:
+     *       200:
+     *         description: Successfully enrolled
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *       400:
+     *         description: Bad request - Missing courseId or course not found
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Student role required
+     *       409:
+     *         description: Conflict - Already enrolled in this course
+     *       500:
+     *         description: Internal server error
      */
     router.post('/enroll', async (req, res) => {
         try {
@@ -111,8 +193,49 @@ module.exports = (pool) => {
     });
 
     /**
-     * GET /api/student/courses
-     * Returns all courses the student IS enrolled in
+     * @swagger
+     * /api/student/courses:
+     *   get:
+     *     summary: Get enrolled courses
+     *     tags: [Student]
+     *     description: Returns all courses that the authenticated student IS enrolled in with progress
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: List of enrolled courses with student info
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 student:
+     *                   type: object
+     *                   properties:
+     *                     name:
+     *                       type: string
+     *                     email:
+     *                       type: string
+     *                 courses:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       id:
+     *                         type: integer
+     *                       title:
+     *                         type: string
+     *                       instructor:
+     *                         type: string
+     *                       progress:
+     *                         type: number
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Student role required
+     *       500:
+     *         description: Internal server error
      */
     router.get('/courses', async (req, res) => {
         try {
@@ -131,7 +254,9 @@ module.exports = (pool) => {
         SELECT 
           c.id,
           c.title,
+          c.description,
           CONCAT(u.first_name, ' ', u.last_name) as instructor,
+          u.profile_picture as "instructorPicture",
           CASE 
             WHEN COUNT(a.id) = 0 THEN 0
             ELSE ROUND((COUNT(s.id)::numeric / COUNT(a.id)::numeric) * 100)
@@ -142,7 +267,7 @@ module.exports = (pool) => {
         LEFT JOIN assignments a ON c.id = a.course_id
         LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = $1
         WHERE e.student_id = $1
-        GROUP BY c.id, c.title, u.first_name, u.last_name
+        GROUP BY c.id, c.title, c.description, u.first_name, u.last_name, u.profile_picture
         ORDER BY c.created_at DESC
       `;
             const coursesResult = await pool.query(coursesQuery, [studentId]);
@@ -161,8 +286,40 @@ module.exports = (pool) => {
     });
 
     /**
-     * GET /api/student/assignments
-     * Returns all assignments for enrolled courses
+     * @swagger
+     * /api/student/assignments:
+     *   get:
+     *     summary: Get all assignments for enrolled courses
+     *     tags: [Student]
+     *     description: Returns all assignments across all enrolled courses with submission status
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: List of assignments with student info
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 student:
+     *                   type: object
+     *                   properties:
+     *                     name:
+     *                       type: string
+     *                     email:
+     *                       type: string
+     *                 assignments:
+     *                   type: array
+     *                   items:
+     *                     $ref: '#/components/schemas/Submission'
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Student role required
+     *       500:
+     *         description: Internal server error
      */
     router.get('/assignments', async (req, res) => {
         try {
@@ -227,8 +384,130 @@ module.exports = (pool) => {
     });
 
     /**
-     * POST /api/student/submit-assignment
-     * Submit or update an assignment submission
+     * @swagger
+     * /api/student/assignments/{assignmentId}:
+     *   get:
+     *     summary: Get single assignment details
+     *     tags: [Student]
+     *     description: Returns details of a specific assignment with submission status
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: assignmentId
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: The assignment ID
+     *     responses:
+     *       200:
+     *         description: Assignment details
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Student not enrolled in course
+     *       404:
+     *         description: Assignment not found
+     *       500:
+     *         description: Internal server error
+     */
+    router.get('/assignments/:assignmentId', async (req, res) => {
+        try {
+            const studentId = req.user.id;
+            const { assignmentId } = req.params;
+
+            // Get assignment details with submission
+            const query = `
+        SELECT 
+          a.id,
+          a.title as name,
+          c.id as "courseId",
+          c.title as course,
+          TO_CHAR(a.due_date, 'YYYY-MM-DD HH24:MI') as "dueDate",
+          a.description as question,
+          CASE
+            WHEN s.id IS NULL THEN 'Pending'
+            WHEN s.grade IS NULL THEN 'Submitted'
+            ELSE 'Graded'
+          END as status,
+          s.submission_text as submission,
+          s.grade,
+          s.feedback,
+          TO_CHAR(s.submitted_at, 'YYYY-MM-DD HH24:MI') as "submittedAt"
+        FROM assignments a
+        INNER JOIN courses c ON a.course_id = c.id
+        INNER JOIN enrollments e ON c.id = e.course_id AND e.student_id = $1
+        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = $1
+        WHERE a.id = $2
+      `;
+            const result = await pool.query(query, [studentId, assignmentId]);
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({
+                    error: 'Assignment not found or you are not enrolled in this course'
+                });
+            }
+
+            res.json(result.rows[0]);
+        } catch (error) {
+            console.error('Error fetching assignment details:', error);
+            res.status(500).json({
+                error: 'Failed to fetch assignment details',
+                message: error.message
+            });
+        }
+    });
+
+    /**
+     * @swagger
+     * /api/student/submit-assignment:
+     *   post:
+     *     summary: Submit or update an assignment
+     *     tags: [Submissions]
+     *     description: Submit or update an assignment submission for the authenticated student
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - assignmentId
+     *               - submission
+     *             properties:
+     *               assignmentId:
+     *                 type: integer
+     *                 example: 1
+     *               submission:
+     *                 type: string
+     *                 example: My assignment submission text
+     *               fileName:
+     *                 type: string
+     *                 example: assignment.pdf
+     *     responses:
+     *       200:
+     *         description: Assignment submitted successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *       400:
+     *         description: Bad request - Missing required fields
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Assignment not found or not enrolled in course
+     *       500:
+     *         description: Internal server error
      */
     router.post('/submit-assignment', async (req, res) => {
         try {

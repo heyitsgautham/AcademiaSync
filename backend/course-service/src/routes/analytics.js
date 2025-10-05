@@ -3,7 +3,50 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 
 module.exports = (pool) => {
-    // Get teacher analytics data
+    /**
+     * @swagger
+     * /api/teacher/analytics:
+     *   get:
+     *     summary: Get teacher analytics data
+     *     tags: [Analytics]
+     *     description: Retrieve analytics data including students per course and assignment status
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: Analytics data retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 studentsPerCourse:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       course:
+     *                         type: string
+     *                       students:
+     *                         type: integer
+     *                 assignmentStatus:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       name:
+     *                         type: string
+     *                         enum: [Completed, Pending]
+     *                       value:
+     *                         type: integer
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const teacherId = req.user.id;
@@ -64,7 +107,49 @@ module.exports = (pool) => {
         }
     });
 
-    // Get detailed teacher analytics data
+    /**
+     * @swagger
+     * /api/teacher/analytics/detailed:
+     *   get:
+     *     summary: Get detailed teacher analytics
+     *     tags: [Analytics]
+     *     description: Retrieve detailed analytics including course performance and student progress over time
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: Detailed analytics retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 coursePerformance:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       course:
+     *                         type: string
+     *                       performance:
+     *                         type: number
+     *                 studentProgress:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       period:
+     *                         type: string
+     *                       progress:
+     *                         type: number
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/detailed', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const teacherId = req.user.id;

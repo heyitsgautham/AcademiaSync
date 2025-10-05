@@ -1,9 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
+const { addCourseLinks, addTeacherDashboardLinks } = require('../utils/hateoas');
 
 module.exports = (pool) => {
-    // Get all courses for the authenticated teacher
+    /**
+     * @swagger
+     * /api/teacher/courses:
+     *   get:
+     *     summary: Get all courses for the authenticated teacher
+     *     tags: [Courses]
+     *     description: Retrieve all courses created by the authenticated teacher with enrollment counts
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: List of courses
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 $ref: '#/components/schemas/Course'
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const teacherId = req.user.id;
@@ -19,7 +45,14 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            res.json(result.rows);
+            const coursesWithLinks = result.rows.map(course =>
+                addCourseLinks(course, req.user.role, true)
+            );
+
+            res.json({
+                courses: coursesWithLinks,
+                _links: addTeacherDashboardLinks()
+            });
         } catch (error) {
             console.error('Error fetching courses:', error);
             res.status(500).json({
@@ -29,7 +62,39 @@ module.exports = (pool) => {
         }
     });
 
-    // Get a single course by ID
+    /**
+     * @swagger
+     * /api/teacher/courses/{id}:
+     *   get:
+     *     summary: Get a single course by ID
+     *     tags: [Courses]
+     *     description: Retrieve detailed information about a specific course (teacher can only access their own courses)
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: integer
+     *         description: Course ID
+     *     responses:
+     *       200:
+     *         description: Course details
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Course'
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       404:
+     *         description: Course not found or access denied
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/:id', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { id } = req.params;
@@ -61,7 +126,54 @@ module.exports = (pool) => {
         }
     });
 
-    // Create a new course
+    /**
+     * @swagger
+     * /api/teacher/courses:
+     *   post:
+     *     summary: Create a new course
+     *     tags: [Courses]
+     *     description: Create a new course for the authenticated teacher
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - title
+     *               - description
+     *             properties:
+     *               title:
+     *                 type: string
+     *                 description: Course title
+     *                 example: Advanced React Patterns
+     *               description:
+     *                 type: string
+     *                 description: Course description
+     *                 example: Learn advanced React patterns and best practices
+     *               weeks:
+     *                 type: integer
+     *                 description: Course duration in weeks
+     *                 example: 8
+     *     responses:
+     *       201:
+     *         description: Course created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               $ref: '#/components/schemas/Course'
+     *       400:
+     *         description: Bad request - Missing required fields
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       500:
+     *         description: Internal server error
+     */
     router.post('/', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { title, description, weeks } = req.body;

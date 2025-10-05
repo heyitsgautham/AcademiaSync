@@ -43,8 +43,8 @@ export async function PUT(request: Request) {
         const body = await request.json()
 
         // Validate required fields
-        if (!body.first_name || !body.last_name) {
-            return NextResponse.json({ error: "First name and last name are required" }, { status: 400 })
+        if (!body.first_name) {
+            return NextResponse.json({ error: "First name is required" }, { status: 400 })
         }
 
         // Validate age if provided

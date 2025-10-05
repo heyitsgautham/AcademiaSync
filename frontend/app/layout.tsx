@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   description: "Created with AcademiaSync",
   generator: "AcademiaSync",
   referrer: "no-referrer",
+  icons: {
+    icon: "/AcademiaSyncIcon.png",
+    shortcut: "/AcademiaSyncIcon.png",
+    apple: "/AcademiaSyncIcon.png",
+  },
 }
 
 export default function RootLayout({

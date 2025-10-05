@@ -35,7 +35,7 @@ export function StudentRecentActivity({ activity, isLoading }: StudentRecentActi
   }
 
   const handleActivityClick = (assignmentId: number) => {
-    router.push(`/student/assignments?assignmentId=${assignmentId}`)
+    router.push(`/student/assignments/${assignmentId}`)
   }
 
   if (isLoading) {

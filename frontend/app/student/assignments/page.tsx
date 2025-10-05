@@ -83,6 +83,26 @@ export default function StudentAssignmentsPage() {
     }
   }, [searchParams])
 
+  // Get course and status from URL query params ONLY on initial load
+  useEffect(() => {
+    const courseParam = searchParams.get("course")
+    const statusParam = searchParams.get("status")
+
+    if (courseParam) {
+      setCourseFilterId(courseParam)
+    }
+
+    if (statusParam) {
+      // Map status to match the tabs
+      const statusMap: { [key: string]: string } = {
+        'pending': 'Pending',
+        'submitted': 'Submitted',
+        'graded': 'Graded'
+      }
+      setStatusFilter(statusMap[statusParam.toLowerCase()] || "all")
+    }
+  }, [searchParams])
+
   const { data, isLoading } = useQuery<AssignmentsData>({
     queryKey: ["student-assignments"],
     queryFn: async () => {

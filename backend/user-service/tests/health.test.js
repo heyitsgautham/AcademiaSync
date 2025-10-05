@@ -1,5 +1,6 @@
 const request = require('supertest');
 const { app, pool } = require('../src/index');
+const { cleanupRateLimiter } = require('../src/middleware/rate-limiter');
 
 describe('User Service Health Check', () => {
   afterAll(async () => {
@@ -7,6 +8,9 @@ describe('User Service Health Check', () => {
     if (pool) {
       await pool.end();
     }
+    
+    // Cleanup rate limiter interval
+    cleanupRateLimiter();
   });
 
   it('should return service health status on /health endpoint', async () => {

@@ -15,7 +15,9 @@ export const dynamic = 'force-dynamic'
 interface Course {
   id: string
   title: string
+  description?: string
   instructor: string
+  instructorPicture?: string
   progress: number
 }
 

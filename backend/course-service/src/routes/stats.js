@@ -3,7 +3,44 @@ const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 
 module.exports = (pool) => {
-    // Get teacher dashboard stats
+    /**
+     * @swagger
+     * /api/teacher/stats:
+     *   get:
+     *     summary: Get teacher dashboard statistics
+     *     tags: [Teacher]
+     *     description: Retrieve statistics for the authenticated teacher including courses, students, grades, and pending assignments
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: Teacher statistics retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 totalCourses:
+     *                   type: integer
+     *                   example: 5
+     *                 totalStudents:
+     *                   type: integer
+     *                   example: 120
+     *                 averageGrade:
+     *                   type: number
+     *                   format: float
+     *                   example: 85.5
+     *                 pendingAssignmentsToGrade:
+     *                   type: integer
+     *                   example: 15
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Teacher role required
+     *       500:
+     *         description: Internal server error
+     */
     router.get('/', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const teacherId = req.user.id;

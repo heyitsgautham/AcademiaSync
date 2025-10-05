@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
         role IN ('Student', 'Teacher', 'Admin')
     ),
     first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100),
     age INTEGER,
     specialization VARCHAR(255), -- For teachers
     profile_picture VARCHAR(500),
@@ -97,65 +97,3 @@ CREATE INDEX IF NOT EXISTS idx_submissions_student ON submissions (student_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens (token);
-
--- Insert seed data for testing
--- Admin user
-INSERT INTO
-    users (
-        email,
-        password_hash,
-        role,
-        first_name,
-        last_name
-    )
-VALUES (
-        'admin@academiasync.com',
-        '$2b$10$dummy.hash.for.seed.data.only',
-        'Admin',
-        'System',
-        'Admin'
-    )
-ON CONFLICT (email) DO NOTHING;
-
-
--- Sample teacher
-INSERT INTO
-    users (
-        email,
-        password_hash,
-        role,
-        first_name,
-        last_name,
-        specialization
-    )
-VALUES (
-        'teacher@academiasync.com',
-        '$2b$10$dummy.hash.for.seed.data.only',
-        'Teacher',
-        'John',
-        'Doe',
-        'Computer Science'
-    )
-ON CONFLICT (email) DO NOTHING;
-
-
--- Sample student
-INSERT INTO
-    users (
-        email,
-        password_hash,
-        role,
-        first_name,
-        last_name,
-        age
-    )
-VALUES (
-        'student@academiasync.com',
-        '$2b$10$dummy.hash.for.seed.data.only',
-        'Student',
-        'Jane',
-        'Smith',
-        20
-    )
-ON CONFLICT (email) DO NOTHING;
-

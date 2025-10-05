@@ -13,8 +13,51 @@ const getPool = () => {
 };
 
 /**
- * GET /api/users/profile
- * Get authenticated user's profile
+ * @swagger
+ * /api/users/profile:
+ *   get:
+ *     summary: Get authenticated user's profile
+ *     tags: [Users]
+ *     description: Retrieve the profile information of the currently authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 email:
+ *                   type: string
+ *                   example: user@example.com
+ *                 role:
+ *                   type: string
+ *                   enum: [Student, Teacher, Admin]
+ *                   example: Student
+ *                 first_name:
+ *                   type: string
+ *                   example: John
+ *                 last_name:
+ *                   type: string
+ *                   example: Doe
+ *                 age:
+ *                   type: integer
+ *                   example: 25
+ *                 specialization:
+ *                   type: string
+ *                   example: Computer Science
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.get('/profile', authenticate, async (req, res) => {
     try {
@@ -37,8 +80,60 @@ router.get('/profile', authenticate, async (req, res) => {
 });
 
 /**
- * PUT /api/users/profile
- * Update authenticated user's profile
+ * @swagger
+ * /api/users/profile:
+ *   put:
+ *     summary: Update authenticated user's profile
+ *     tags: [Users]
+ *     description: Update the profile information of the currently authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - first_name
+ *               - last_name
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 example: John
+ *               last_name:
+ *                 type: string
+ *                 example: Doe
+ *               age:
+ *                 type: integer
+ *                 minimum: 18
+ *                 maximum: 100
+ *                 example: 25
+ *               specialization:
+ *                 type: string
+ *                 example: Computer Science
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Profile updated successfully
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request - Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
  */
 router.put('/profile', authenticate, async (req, res) => {
     try {
@@ -46,8 +141,8 @@ router.put('/profile', authenticate, async (req, res) => {
         const { first_name, last_name, age, specialization } = req.body;
 
         // Validation
-        if (!first_name || !last_name) {
-            return res.status(400).json({ message: 'First name and last name are required' });
+        if (!first_name) {
+            return res.status(400).json({ message: 'First name is required' });
         }
 
         if (age !== null && age !== undefined && (age < 18 || age > 100)) {

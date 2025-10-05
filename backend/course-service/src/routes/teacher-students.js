@@ -1,28 +1,52 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
+const { parsePagination, parseSorting, buildPaginationMeta, buildStudentsFilter } = require('../utils/query-helpers');
 
 module.exports = (pool) => {
-    // Get students grouped by course for the authenticated teacher
+    // Get students grouped by course for the authenticated teacher (with pagination, filtering, sorting)
     router.get('/students-by-course', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const teacherId = req.user.id;
 
-            // Get all courses for this teacher with enrolled students
-            const coursesResult = await pool.query(
-                `SELECT c.id as course_id, c.title as course_name
-                 FROM courses c
-                 WHERE c.teacher_id = $1
-                 ORDER BY c.title`,
-                [teacherId]
-            );
+            // Parse query parameters
+            const { page, limit, offset } = parsePagination(req.query);
+            const { orderByClause } = parseSorting(req.query, ['course_name', 'performance', 'name']);
+            const { whereClause, values } = buildStudentsFilter(req.query);
+
+            // Get total count for pagination (count of courses with students)
+            const countQuery = `
+                SELECT COUNT(DISTINCT c.id) as total
+                FROM courses c
+                INNER JOIN enrollments e ON c.id = e.course_id
+                INNER JOIN users u ON e.student_id = u.id
+                WHERE c.teacher_id = $1 AND u.role = 'Student' ${whereClause}
+            `;
+            const countResult = await pool.query(countQuery, [teacherId, ...values]);
+            const totalItems = parseInt(countResult.rows[0].total);
+
+            // Get paginated courses with student counts
+            const coursesQuery = `
+                SELECT
+                    c.id as course_id,
+                    c.title as course_name,
+                    COUNT(DISTINCT u.id) as student_count
+                FROM courses c
+                INNER JOIN enrollments e ON c.id = e.course_id
+                INNER JOIN users u ON e.student_id = u.id
+                WHERE c.teacher_id = $1 AND u.role = 'Student' ${whereClause}
+                GROUP BY c.id, c.title
+                ORDER BY ${orderByClause}
+                LIMIT $${values.length + 2} OFFSET $${values.length + 3}
+            `;
+            const coursesResult = await pool.query(coursesQuery, [teacherId, ...values, limit, offset]);
 
             // For each course, get students with their performance
             const studentsByCourse = await Promise.all(
                 coursesResult.rows.map(async (course) => {
-                    // Get students enrolled in this course
-                    const studentsResult = await pool.query(
-                        `SELECT DISTINCT
+                    // Get students enrolled in this course with performance
+                    const studentsQuery = `
+                        SELECT DISTINCT
                             u.id,
                             u.first_name,
                             u.last_name,
@@ -35,9 +59,9 @@ module.exports = (pool) => {
                          LEFT JOIN assignments a ON s.assignment_id = a.id AND a.course_id = e.course_id
                          WHERE e.course_id = $1 AND u.role = 'Student'
                          GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture
-                         ORDER BY u.last_name, u.first_name`,
-                        [course.course_id]
-                    );
+                         ORDER BY u.last_name, u.first_name
+                    `;
+                    const studentsResult = await pool.query(studentsQuery, [course.course_id]);
 
                     // Format students data
                     const students = studentsResult.rows.map(student => ({
@@ -51,15 +75,19 @@ module.exports = (pool) => {
                     return {
                         courseId: course.course_id.toString(),
                         courseName: course.course_name,
-                        students: students
+                        students: students,
+                        studentCount: parseInt(course.student_count)
                     };
                 })
             );
 
-            // Filter out courses with no students
-            const filteredData = studentsByCourse.filter(course => course.students.length > 0);
+            // Build pagination metadata
+            const pagination = buildPaginationMeta(totalItems, page, limit);
 
-            res.json(filteredData);
+            res.json({
+                data: studentsByCourse,
+                pagination
+            });
         } catch (error) {
             console.error('Error fetching students by course:', error);
             res.status(500).json({

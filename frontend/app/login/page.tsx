@@ -33,20 +33,20 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
     setRetryAfter(null)
-    
+
     try {
       const result = await signIn("google", {
         callbackUrl: "/auth/callback",
         redirect: true,
       })
-      
+
       // If signIn doesn't redirect, there might be an error
       if (result?.error) {
         setError("Login failed. Please try again.")
       }
     } catch (error: any) {
       console.error("Login error:", error)
-      
+
       // Check if it's a rate limit error
       if (error?.status === 429 || error?.response?.status === 429) {
         const errorData = error?.response?.data || error?.data

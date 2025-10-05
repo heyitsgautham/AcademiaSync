@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { addAssignmentLinks, addCourseLinks } = require('../utils/hateoas');
+const { parsePagination, parseSorting, buildPaginationMeta, buildSubmissionsFilter } = require('../utils/query-helpers');
 
 module.exports = (pool) => {
     /**
@@ -306,11 +307,16 @@ module.exports = (pool) => {
         }
     });
 
-    // Get all submissions for an assignment with student details
+        // Get all submissions for an assignment with student details (with pagination, filtering, sorting)
     router.get('/assignments/:assignmentId/submissions', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { assignmentId } = req.params;
             const teacherId = req.user.id;
+
+            // Parse query parameters
+            const { page, limit, offset } = parsePagination(req.query);
+            const { orderByClause } = parseSorting(req.query, ['student_name', 'grade', 'submitted_at', 'status']);
+            const { whereClause, values } = buildSubmissionsFilter(req.query);
 
             // Verify the assignment belongs to the teacher's course
             const assignmentCheck = await pool.query(
@@ -330,61 +336,43 @@ module.exports = (pool) => {
 
             const assignment = assignmentCheck.rows[0];
 
-            // Get all students enrolled in the course
-            const enrolledStudents = await pool.query(
-                `SELECT u.id, u.first_name, u.last_name, u.email
-                 FROM users u
-                 JOIN enrollments e ON u.id = e.student_id
-                 WHERE e.course_id = $1 AND u.role = 'Student'
-                 ORDER BY u.last_name, u.first_name`,
-                [assignment.course_id]
-            );
+            // Get total count for pagination
+            const countQuery = `
+                SELECT COUNT(*) as total
+                FROM users u
+                JOIN enrollments e ON u.id = e.student_id
+                LEFT JOIN submissions s ON u.id = s.student_id AND s.assignment_id = $1
+                WHERE e.course_id = $2 AND u.role = 'Student' ${whereClause}
+            `;
+            const countResult = await pool.query(countQuery, [assignmentId, assignment.course_id, ...values]);
+            const totalItems = parseInt(countResult.rows[0].total);
 
-            // Get all submissions for this assignment
-            const submissions = await pool.query(
-                `SELECT s.id as submission_id, s.student_id, s.submission_text, 
-                        s.submitted_at, s.grade, s.feedback
-                 FROM submissions s
-                 WHERE s.assignment_id = $1`,
-                [assignmentId]
-            );
+            // Get paginated submissions with filters and sorting
+            const submissionsQuery = `
+                SELECT
+                    u.id as student_id,
+                    CONCAT(u.first_name, ' ', u.last_name) as student_name,
+                    u.email as student_email,
+                    s.id as submission_id,
+                    s.submission_text,
+                    s.submitted_at,
+                    s.grade,
+                    s.feedback,
+                    CASE
+                        WHEN s.id IS NOT NULL THEN 'Submitted'
+                        ELSE 'No submission'
+                    END as status
+                FROM users u
+                JOIN enrollments e ON u.id = e.student_id
+                LEFT JOIN submissions s ON u.id = s.student_id AND s.assignment_id = $1
+                WHERE e.course_id = $2 AND u.role = 'Student' ${whereClause}
+                ORDER BY ${orderByClause}
+                LIMIT $${values.length + 3} OFFSET $${values.length + 4}
+            `;
+            const submissionsResult = await pool.query(submissionsQuery, [assignmentId, assignment.course_id, ...values, limit, offset]);
 
-            // Create a map of submissions by student_id
-            const submissionMap = new Map();
-            submissions.rows.forEach(sub => {
-                submissionMap.set(sub.student_id, sub);
-            });
-
-            // Combine student data with submission data
-            const studentsWithSubmissions = enrolledStudents.rows.map(student => {
-                const submission = submissionMap.get(student.id);
-
-                if (submission) {
-                    return {
-                        student_id: student.id,
-                        student_name: `${student.first_name} ${student.last_name}`,
-                        student_email: student.email,
-                        submission_id: submission.submission_id,
-                        submission_text: submission.submission_text,
-                        submitted_at: submission.submitted_at,
-                        grade: submission.grade,
-                        feedback: submission.feedback,
-                        status: 'Submitted'
-                    };
-                } else {
-                    return {
-                        student_id: student.id,
-                        student_name: `${student.first_name} ${student.last_name}`,
-                        student_email: student.email,
-                        submission_id: null,
-                        submission_text: null,
-                        submitted_at: null,
-                        grade: null,
-                        feedback: null,
-                        status: 'No submission'
-                    };
-                }
-            });
+            // Build pagination metadata
+            const pagination = buildPaginationMeta(totalItems, page, limit);
 
             res.json({
                 assignment: {
@@ -394,7 +382,8 @@ module.exports = (pool) => {
                     due_date: assignment.due_date,
                     course_id: assignment.course_id
                 },
-                submissions: studentsWithSubmissions
+                submissions: submissionsResult.rows,
+                pagination
             });
         } catch (error) {
             console.error('Error fetching assignment submissions:', error);

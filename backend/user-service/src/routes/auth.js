@@ -1,7 +1,7 @@
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, getRefreshTokenExpiry } = require('../utils/jwt');
-const { loginLimiter, trackSuccessfulLogin, checkSuccessfulLoginLimit } = require('../middleware/rate-limiter');
+const { loginLimiter, trackSuccessfulLogin, checkSuccessfulLoginLimit, clearAllRateLimits, clearRateLimitForEmail, getRateLimitStatus } = require('../middleware/rate-limiter');
 
 const router = express.Router();
 
@@ -111,12 +111,12 @@ router.post('/google', loginLimiter, async (req, res) => {
         const payload = ticket.getPayload();
         const { sub: googleId, email, given_name, family_name, picture } = payload;
 
-        // Check if user has exceeded successful login limit (5 logins in 10 minutes)
+        // Check if user has exceeded successful login limit (5 logins in 10 minutes) - STRICT
         if (checkSuccessfulLoginLimit(email)) {
             return res.status(429).json({
                 error: 'Too Many Requests',
                 message: '🐼 Whoa there, eager beaver! You\'ve logged in and out too many times. Take a breather and try again in 10 minutes! ☕',
-                retryAfter: 600
+                retryAfter: 600 // 10 minutes in seconds
             });
         }
 
@@ -368,6 +368,94 @@ router.post('/logout', async (req, res) => {
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to logout'
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/rate-limit/clear:
+ *   post:
+ *     summary: Clear rate limits (Development only)
+ *     tags: [Authentication]
+ *     description: Clear all rate limits or for a specific email. Use for development/debugging.
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Optional - clear rate limit for specific email. If omitted, clears all.
+ *     responses:
+ *       200:
+ *         description: Rate limits cleared successfully
+ */
+router.post('/rate-limit/clear', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (email) {
+            const cleared = clearRateLimitForEmail(email);
+            return res.status(200).json({
+                message: cleared
+                    ? `Rate limit cleared for ${email}`
+                    : `No rate limit found for ${email}`,
+                cleared
+            });
+        } else {
+            clearAllRateLimits();
+            return res.status(200).json({
+                message: 'All rate limits cleared successfully'
+            });
+        }
+    } catch (error) {
+        console.error('Clear rate limit error:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to clear rate limits'
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/rate-limit/status:
+ *   get:
+ *     summary: Check rate limit status
+ *     tags: [Authentication]
+ *     description: Get current rate limit status for an email
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email address to check
+ *     responses:
+ *       200:
+ *         description: Rate limit status retrieved
+ */
+router.get('/rate-limit/status', async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Email parameter is required'
+            });
+        }
+
+        const status = getRateLimitStatus(email);
+        return res.status(200).json(status);
+    } catch (error) {
+        console.error('Rate limit status error:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to get rate limit status'
         });
     }
 });

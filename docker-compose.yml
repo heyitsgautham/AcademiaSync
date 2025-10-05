@@ -40,6 +40,7 @@ services:
       JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       NODE_ENV: production
+      ANALYTICS_API_KEY: ${ANALYTICS_API_KEY}
     ports:
       - "${USER_SERVICE_PORT}:5000"
 

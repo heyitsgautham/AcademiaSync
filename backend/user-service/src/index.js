@@ -98,6 +98,13 @@ const teacherRoutes = require('./routes/teacher');
 const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/users');
 
+// Import middleware
+const checkApiKey = require('./middleware/api-key');
+
+// Apply API key middleware to analytics routes specifically
+app.use('/admin/analytics', checkApiKey);
+
+// Mount routes
 app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);

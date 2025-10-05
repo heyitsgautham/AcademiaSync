@@ -101,10 +101,18 @@ router.get('/stats', authenticate, authorize('Admin'), async (req, res) => {
  *   get:
  *     summary: Get analytics data
  *     tags: [Admin]
- *     description: Get detailed analytics including students per teacher and student age distribution
+ *     description: Get detailed analytics including students per teacher and student age distribution. Requires API key for additional security.
  *     security:
  *       - bearerAuth: []
  *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: apiKey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API key for accessing analytics data
+ *         example: academiasync-analytics-key-2025-secure
  *     responses:
  *       200:
  *         description: Analytics data retrieved successfully
@@ -132,9 +140,9 @@ router.get('/stats', authenticate, authorize('Admin'), async (req, res) => {
  *                       count:
  *                         type: integer
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized - API key required or invalid
  *       403:
- *         description: Forbidden - Admin role required
+ *         description: Forbidden - Admin role required or invalid API key
  *       500:
  *         description: Internal server error
  */

@@ -6,22 +6,55 @@ import { GraduationCap } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [retryAfter, setRetryAfter] = useState<number | null>(null)
+
+  // Check for error from NextAuth redirect
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    if (errorParam) {
+      if (errorParam === "AccessDenied") {
+        setError("🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
+        setRetryAfter(600)
+      } else {
+        setError("Authentication failed. Please try again.")
+      }
+    }
+  }, [searchParams])
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
+    setError(null)
+    setRetryAfter(null)
+    
     try {
       const result = await signIn("google", {
         callbackUrl: "/auth/callback",
         redirect: true,
       })
-    } catch (error) {
+      
+      // If signIn doesn't redirect, there might be an error
+      if (result?.error) {
+        setError("Login failed. Please try again.")
+      }
+    } catch (error: any) {
       console.error("Login error:", error)
+      
+      // Check if it's a rate limit error
+      if (error?.status === 429 || error?.response?.status === 429) {
+        const errorData = error?.response?.data || error?.data
+        setError(errorData?.message || "🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
+        setRetryAfter(errorData?.retryAfter || 600)
+      } else {
+        setError("An error occurred during login. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -35,6 +68,29 @@ export default function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
+        {/* Rate Limit Error Display - Above AcademiaSync Logo */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="mb-8 text-center"
+          >
+            <div className="text-6xl mb-4">🐼</div>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-bold text-destructive mb-2">Too Many Logins!</h2>
+              <p className="text-destructive text-lg leading-relaxed">
+                {error}
+              </p>
+              {retryAfter && (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Please wait {Math.ceil(retryAfter / 60)} minutes before trying again.
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         <Link href="/" className="flex items-center justify-center gap-2 mb-8">
           <GraduationCap className="h-10 w-10 text-primary" />
           <span className="text-2xl font-bold text-foreground">AcademiaSync</span>
@@ -51,7 +107,7 @@ export default function LoginPage() {
               variant="outline"
               className="w-full h-12 text-base bg-card hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-gray-900 dark:hover:border-white transition-colors cursor-pointer"
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || !!retryAfter}
             >
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path

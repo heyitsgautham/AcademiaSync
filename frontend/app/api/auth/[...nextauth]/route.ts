@@ -77,6 +77,13 @@ export const authOptions: AuthOptions = {
                         (account as any).userRole = data.role;
                         (account as any).backendAccessToken = backendAccessToken;
                         return true;
+                    } else if (response.status === 429) {
+                        // Rate limit exceeded
+                        const errorData = await response.json();
+                        console.error("Rate limit exceeded:", errorData.message);
+                        // Store error in account for display (NextAuth limitations prevent showing custom error)
+                        (account as any).error = errorData.message;
+                        return false;
                     } else {
                         console.error("Backend authentication failed:", await response.text());
                     }
@@ -142,6 +149,7 @@ export const authOptions: AuthOptions = {
     },
     pages: {
         signIn: "/login",
+        error: "/login", // Redirect errors back to login page
     },
     session: {
         strategy: "jwt" as const,

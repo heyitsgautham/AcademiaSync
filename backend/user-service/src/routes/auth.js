@@ -1,6 +1,7 @@
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, getRefreshTokenExpiry } = require('../utils/jwt');
+const { loginLimiter, trackSuccessfulLogin, checkSuccessfulLoginLimit } = require('../middleware/rate-limiter');
 
 const router = express.Router();
 
@@ -65,8 +66,24 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Too Many Requests - Rate limit exceeded (5 attempts per 10 minutes)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Too Many Requests
+ *                 message:
+ *                   type: string
+ *                   example: 🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕
+ *                 retryAfter:
+ *                   type: number
+ *                   example: 600
  */
-router.post('/google', async (req, res) => {
+router.post('/google', loginLimiter, async (req, res) => {
     try {
         const { idToken } = req.body;
 
@@ -93,6 +110,15 @@ router.post('/google', async (req, res) => {
 
         const payload = ticket.getPayload();
         const { sub: googleId, email, given_name, family_name, picture } = payload;
+
+        // Check if user has exceeded successful login limit (5 logins in 10 minutes)
+        if (checkSuccessfulLoginLimit(email)) {
+            return res.status(429).json({
+                error: 'Too Many Requests',
+                message: '🐼 Whoa there, eager beaver! You\'ve logged in and out too many times. Take a breather and try again in 10 minutes! ☕',
+                retryAfter: 600
+            });
+        }
 
         // Check if user exists
         const dbPool = getPool();
@@ -152,6 +178,9 @@ router.post('/google', async (req, res) => {
             sameSite: isProduction ? 'strict' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
+
+        // Track this successful login attempt for rate limiting
+        trackSuccessfulLogin(email);
 
         return res.status(200).json({
             message: 'Login successful',

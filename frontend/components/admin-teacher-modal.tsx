@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
+import * as yup from "yup"
+import { yupResolver } from "@hookform/resolvers/yup"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,12 +38,25 @@ export function AdminTeacherModal({ open, onOpenChange, teacher, onSuccess, mode
     const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
+    const teacherSchema = yup.object({
+        firstName: yup.string().required("First name is required").min(2, "First name must be at least 2 characters"),
+        lastName: yup.string().required("Last name is required").min(2, "Last name must be at least 2 characters"),
+        email: yup.string().required("Email is required").email("Please enter a valid email address"),
+        specialization: yup.string().required("Specialization is required").min(2, "Specialization must be at least 2 characters"),
+        password: yup.string().when([], {
+            is: () => mode === "create",
+            then: (schema) => schema.required("Password is required for new teachers").min(6, "Password must be at least 6 characters"),
+            otherwise: (schema) => schema.optional(),
+        }),
+    })
+
     const {
         register,
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm<TeacherFormData>({
+    } = useForm<yup.InferType<typeof teacherSchema>>({
+        resolver: yupResolver(teacherSchema),
         defaultValues: {
             firstName: "",
             lastName: "",
@@ -70,7 +85,7 @@ export function AdminTeacherModal({ open, onOpenChange, teacher, onSuccess, mode
         }
     }, [teacher, mode, reset])
 
-    const onSubmit = async (data: TeacherFormData) => {
+    const onSubmit = async (data: yup.InferType<typeof teacherSchema>) => {
         setIsSubmitting(true)
 
         try {

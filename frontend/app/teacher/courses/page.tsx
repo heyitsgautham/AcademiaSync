@@ -22,12 +22,13 @@ export default function CoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const { data: courses, isLoading } = useQuery({
+  const { data: coursesResponse, isLoading } = useQuery({
     queryKey: ["courses"],
     queryFn: courseApi.getCourses,
   })
 
-  // Safe access with fallback
+  // Safe access with fallback - handle HATEOAS response structure
+  const courses = (coursesResponse as any)?.courses || coursesResponse || []
   const coursesArray = Array.isArray(courses) ? courses : []
 
   const filteredCourses = coursesArray.filter((course: any) =>

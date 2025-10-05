@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 require('dotenv').config();
 
@@ -77,9 +79,17 @@ app.get('/', (req, res) => {
   res.json({
     service: 'User Service',
     version: '1.0.0',
-    description: 'User management service for AcademiaSync'
+    description: 'User management service for AcademiaSync',
+    documentation: '/api-docs'
   });
 });
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'AcademiaSync User Service API',
+}));
 
 // Import and use routes
 const authRoutes = require('./routes/auth');
@@ -88,6 +98,13 @@ const teacherRoutes = require('./routes/teacher');
 const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/users');
 
+// Import middleware
+const checkApiKey = require('./middleware/api-key');
+
+// Apply API key middleware to analytics routes specifically
+app.use('/admin/analytics', checkApiKey);
+
+// Mount routes
 app.use('/auth', authRoutes);
 app.use('/student', studentRoutes);
 app.use('/teacher', teacherRoutes);

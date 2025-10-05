@@ -102,6 +102,7 @@ export function TeacherSettingsSections() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["teacher-profile"] })
+      queryClient.invalidateQueries({ queryKey: ["teacher-stats"] })
       // Update original data to reflect saved state
       const savedData = {
         first_name: data.first_name || "",
@@ -113,8 +114,12 @@ export function TeacherSettingsSections() {
       setHasChanges(false)
       toast({
         title: "Success",
-        description: "Profile updated successfully",
+        description: "Profile updated successfully. Refreshing...",
       })
+      // Reload the page to update session with new name
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     },
     onError: (error: Error) => {
       toast({
@@ -127,10 +132,10 @@ export function TeacherSettingsSections() {
 
   const handleProfileSave = () => {
     // Validation
-    if (!profileData.first_name.trim() || !profileData.last_name.trim()) {
+    if (!profileData.first_name.trim()) {
       toast({
         title: "Validation Error",
-        description: "First name and last name are required",
+        description: "First name is required",
         variant: "destructive",
       })
       return
@@ -184,12 +189,12 @@ export function TeacherSettingsSections() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name *</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={profileData.last_name}
                 onChange={(e) => setProfileData({ ...profileData, last_name: e.target.value })}
-                placeholder="Enter last name"
+                placeholder="Enter last name (optional)"
               />
             </div>
             <div className="space-y-2">

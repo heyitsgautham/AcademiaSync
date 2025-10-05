@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Menu, X, Search } from "lucide-react"
+import { Menu, X, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
 import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
 import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
@@ -24,23 +24,58 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [studentModalOpen, setStudentModalOpen] = useState(false)
   const [selectedCourseId, setSelectedCourseId] = useState<string>("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortBy, setSortBy] = useState<"name" | "grade">("name")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Get courseId from URL query params if present
+  // Get courseId and pagination params from URL query params if present
   useEffect(() => {
     const courseIdParam = searchParams.get('courseId')
+    const pageParam = searchParams.get("page")
+    const limitParam = searchParams.get("limit")
+    const sortByParam = searchParams.get("sortBy")
+    const sortOrderParam = searchParams.get("sortOrder")
+
     if (courseIdParam) {
       setSelectedCourseId(courseIdParam)
+    }
+
+    if (pageParam) {
+      const page = parseInt(pageParam)
+      if (!isNaN(page) && page > 0) {
+        setCurrentPage(page)
+      }
+    }
+
+    if (limitParam) {
+      const limit = parseInt(limitParam)
+      if (!isNaN(limit) && [5, 10, 25, 50].includes(limit)) {
+        setItemsPerPage(limit)
+      }
+    }
+
+    if (sortByParam && (sortByParam === "name" || sortByParam === "grade")) {
+      setSortBy(sortByParam)
+    }
+
+    if (sortOrderParam && (sortOrderParam === "asc" || sortOrderParam === "desc")) {
+      setSortOrder(sortOrderParam)
     }
   }, [searchParams])
 
   // Fetch all courses
-  const { data: courses, isLoading: coursesLoading } = useQuery({
+  const { data: coursesResponse, isLoading: coursesLoading } = useQuery({
     queryKey: ["courses"],
     queryFn: courseApi.getCourses,
   })
+
+  // Safe access with fallback - handle HATEOAS response structure
+  const courses = (coursesResponse as any)?.courses || coursesResponse || []
+  const coursesArray = Array.isArray(courses) ? courses : []
 
   const { data: studentsByCourse, isLoading } = useQuery({
     queryKey: ["students-by-course"],
@@ -55,21 +90,129 @@ export default function StudentsPage() {
     setStudentModalOpen(true)
   }
 
+  // Get selected course name
+  const selectedCourseName = selectedCourseId && coursesArray
+    ? coursesArray.find((course: any) => course.id.toString() === selectedCourseId)?.title
+    : null
+
+  // Helper function to update URL params
+  const updateUrlParams = (updates: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        params.delete(key)
+      } else {
+        params.set(key, value.toString())
+      }
+    })
+
+    // Always include page, limit, sortBy, sortOrder
+    if (!params.has('page')) {
+      params.set('page', currentPage.toString())
+    }
+    if (!params.has('limit')) {
+      params.set('limit', itemsPerPage.toString())
+    }
+    if (!params.has('sortBy')) {
+      params.set('sortBy', sortBy)
+    }
+    if (!params.has('sortOrder')) {
+      params.set('sortOrder', sortOrder)
+    }
+
+    // Remove params if they're at default values and no course filter
+    const page = params.get('page')
+    const limit = params.get('limit')
+    const sortByParam = params.get('sortBy')
+    const sortOrderParam = params.get('sortOrder')
+    const hasCourseFilter = params.has('courseId')
+
+    if (page === '1' && limit === '10' && sortByParam === 'name' && sortOrderParam === 'asc' && !hasCourseFilter) {
+      params.delete('page')
+      params.delete('limit')
+      params.delete('sortBy')
+      params.delete('sortOrder')
+    }
+
+    const queryString = params.toString()
+    const url = queryString ? `/teacher/students?${queryString}` : '/teacher/students'
+    router.push(url, { scroll: false })
+  }
+
   const handleCourseFilterChange = (value: string) => {
     setSelectedCourseId(value)
-    // Update URL without page reload
-    const params = new URLSearchParams(searchParams.toString())
-    if (value) {
-      params.set('courseId', value)
-    } else {
-      params.delete('courseId')
-    }
-    router.push(`/teacher/students?${params.toString()}`, { scroll: false })
+    setCurrentPage(1)
+    updateUrlParams({
+      courseId: value || null,
+      page: 1,
+      limit: itemsPerPage,
+      sortBy,
+      sortOrder
+    })
   }
 
   const handleClearFilter = () => {
     setSelectedCourseId("")
+    setCurrentPage(1)
     router.push('/teacher/students', { scroll: false })
+  }
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newLimit = Number(value)
+    setItemsPerPage(newLimit)
+    setCurrentPage(1)
+    updateUrlParams({
+      courseId: selectedCourseId || null,
+      page: 1,
+      limit: newLimit,
+      sortBy,
+      sortOrder
+    })
+  }
+
+  const handlePreviousPage = () => {
+    const newPage = Math.max(currentPage - 1, 1)
+    setCurrentPage(newPage)
+    updateUrlParams({
+      courseId: selectedCourseId || null,
+      page: newPage,
+      limit: itemsPerPage,
+      sortBy,
+      sortOrder
+    })
+  }
+
+  const handleNextPage = (totalPages: number) => {
+    const newPage = Math.min(currentPage + 1, totalPages)
+    setCurrentPage(newPage)
+    updateUrlParams({
+      courseId: selectedCourseId || null,
+      page: newPage,
+      limit: itemsPerPage,
+      sortBy,
+      sortOrder
+    })
+  }
+
+  const handleSortChange = (newSortBy: "name" | "grade") => {
+    let newSortOrder: "asc" | "desc" = "asc"
+
+    // Toggle sort order if clicking the same column
+    if (sortBy === newSortBy) {
+      newSortOrder = sortOrder === "asc" ? "desc" : "asc"
+    }
+
+    setSortBy(newSortBy)
+    setSortOrder(newSortOrder)
+    setCurrentPage(1)
+    updateUrlParams({
+      courseId: selectedCourseId || null,
+      page: 1,
+      limit: itemsPerPage,
+      sortBy: newSortBy,
+      sortOrder: newSortOrder
+    })
   }
 
   return (
@@ -119,14 +262,14 @@ export default function StudentsPage() {
                   className="pl-10"
                 />
               </div>
-              {courses && courses.length > 0 && (
+              {coursesArray && coursesArray.length > 0 && (
                 <div className="flex gap-2">
                   <Select value={selectedCourseId} onValueChange={handleCourseFilterChange}>
                     <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courses.map((course: any) => (
+                      {coursesArray.map((course: any) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
@@ -153,7 +296,16 @@ export default function StudentsPage() {
                 studentsByCourse={studentsByCourse}
                 searchQuery={searchQuery}
                 courseFilter={selectedCourseId}
+                selectedCourseName={selectedCourseName}
                 onStudentClick={handleStudentClick}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                onPreviousPage={handlePreviousPage}
+                onNextPage={handleNextPage}
               />
             )}
           </div>

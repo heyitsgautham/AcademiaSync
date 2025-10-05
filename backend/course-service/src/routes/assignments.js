@@ -307,7 +307,7 @@ module.exports = (pool) => {
         }
     });
 
-        // Get all submissions for an assignment with student details (with pagination, filtering, sorting)
+    // Get all submissions for an assignment with student details (with pagination, filtering, sorting)
     router.get('/assignments/:assignmentId/submissions', authenticate, authorize('teacher'), async (req, res) => {
         try {
             const { assignmentId } = req.params;

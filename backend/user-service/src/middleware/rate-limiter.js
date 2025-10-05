@@ -43,7 +43,7 @@ const checkSuccessfulLoginLimit = (email) => {
 };
 
 // Cleanup old entries periodically (every 15 minutes)
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
     const now = Date.now();
     const windowMs = 10 * 60 * 1000;
 
@@ -57,6 +57,13 @@ setInterval(() => {
         }
     }
 }, 15 * 60 * 1000);
+
+// Function to cleanup the interval (useful for testing)
+const cleanupRateLimiter = () => {
+    if (cleanupInterval) {
+        clearInterval(cleanupInterval);
+    }
+};
 
 // Rate limiter for login attempts (IP-based as backup)
 // 5 attempts per 10 minutes per IP address
@@ -101,5 +108,6 @@ module.exports = {
     loginLimiter,
     apiLimiter,
     trackSuccessfulLogin,
-    checkSuccessfulLoginLimit
+    checkSuccessfulLoginLimit,
+    cleanupRateLimiter
 };

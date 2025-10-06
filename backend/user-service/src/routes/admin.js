@@ -590,4 +590,66 @@ router.put('/profile', authenticate, authorize('Admin'), async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /admin/dashboard-analytics:
+ *   get:
+ *     summary: Get admin dashboard analytics
+ *     tags: [Admin]
+ *     description: Retrieve analytics for admin dashboard including user role distribution and enrollment trends
+ *     security:
+ *       - bearerAuth: []
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard analytics retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/dashboard-analytics', authenticate, authorize('Admin'), async (req, res) => {
+    try {
+        const db = getPool();
+
+        // Get user role distribution
+        const roleDistribution = await db.query(`
+            SELECT 
+                role as name,
+                COUNT(*)::integer as value
+            FROM users
+            WHERE role IN ('Student', 'Teacher', 'Admin')
+            GROUP BY role
+            ORDER BY 
+                CASE role
+                    WHEN 'Student' THEN 1
+                    WHEN 'Teacher' THEN 2
+                    WHEN 'Admin' THEN 3
+                END
+        `);
+
+        // Get enrollment trend for last 7 days
+        const enrollmentTrend = await db.query(`
+            SELECT 
+                TO_CHAR(enrolled_at, 'Mon DD') as period,
+                COUNT(*)::integer as enrollments
+            FROM enrollments
+            WHERE enrolled_at >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY TO_CHAR(enrolled_at, 'Mon DD'), DATE(enrolled_at)
+            ORDER BY DATE(enrolled_at)
+        `);
+
+        res.json({
+            userRoleDistribution: roleDistribution.rows,
+            enrollmentTrend: enrollmentTrend.rows,
+            _links: addAdminLinks()
+        });
+    } catch (error) {
+        console.error('Error fetching admin dashboard analytics:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard analytics' });
+    }
+});
+
 module.exports = router;

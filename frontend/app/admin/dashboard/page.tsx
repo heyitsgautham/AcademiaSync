@@ -8,7 +8,8 @@ import { AdminDashboardSidebar } from "@/components/admin-dashboard-sidebar"
 import { AdminDashboardTopbar } from "@/components/admin-dashboard-topbar"
 import { AdminDashboardLogo } from "@/components/admin-dashboard-logo"
 import { AdminStatCards } from "@/components/admin-stat-cards"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AdminRecentActivity } from "@/components/admin-recent-activity"
+import { AdminAnalyticsSection } from "@/components/admin-analytics-section"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -20,6 +21,22 @@ export default function AdminDashboard() {
         queryKey: ["admin-stats"],
         queryFn: async () => {
             const res = await fetch("/api/admin/stats")
+            return res.json()
+        },
+    })
+
+    const { data: recentActivities, isLoading: activitiesLoading } = useQuery({
+        queryKey: ["admin-recent-activity"],
+        queryFn: async () => {
+            const res = await fetch("/api/admin/recent-activity")
+            return res.json()
+        },
+    })
+
+    const { data: analytics, isLoading: analyticsLoading } = useQuery({
+        queryKey: ["admin-dashboard-analytics"],
+        queryFn: async () => {
+            const res = await fetch("/api/admin/dashboard-analytics")
             return res.json()
         },
     })
@@ -69,51 +86,10 @@ export default function AdminDashboard() {
                             {/* Stat cards */}
                             <AdminStatCards stats={stats} isLoading={statsLoading} />
 
-                            {/* Quick Links */}
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/teachers"}>
-                                    <CardHeader>
-                                        <CardTitle className="text-base font-semibold text-foreground">Teacher Management</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">
-                                            Manage teachers, create new accounts, update specializations, and view teacher statistics.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/students"}>
-                                    <CardHeader>
-                                        <CardTitle className="text-base font-semibold text-foreground">Student Management</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">
-                                            View all students, manage enrollments, and promote users to teacher or admin roles.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/analytics"}>
-                                    <CardHeader>
-                                        <CardTitle className="text-base font-semibold text-foreground">Analytics</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">
-                                            View detailed analytics including students per teacher, course distributions, and performance metrics.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/admin/settings"}>
-                                    <CardHeader>
-                                        <CardTitle className="text-base font-semibold text-foreground">Settings</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">
-                                            Update your admin profile information and manage your account settings.
-                                        </p>
-                                    </CardContent>
-                                </Card>
+                            {/* Recent Activity and Analytics */}
+                            <div className="grid gap-6 lg:grid-cols-2">
+                                <AdminRecentActivity activities={recentActivities} isLoading={activitiesLoading} />
+                                <AdminAnalyticsSection analytics={analytics} isLoading={analyticsLoading} />
                             </div>
                         </div>
                     </main>

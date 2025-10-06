@@ -171,7 +171,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("title")}
                                     >
                                         Course Title
@@ -182,7 +182,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("teacherName")}
                                     >
                                         Teacher
@@ -192,7 +192,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead className="text-center">
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center mx-auto hover:bg-transparent p-0"
+                                        className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("enrolledCount")}
                                     >
                                         Students
@@ -202,7 +202,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("createdAt")}
                                     >
                                         Created

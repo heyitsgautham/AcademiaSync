@@ -41,7 +41,7 @@ export function HeroSection() {
           className="mt-16 sm:mt-24"
         >
           <div className="relative rounded-xl bg-card shadow-2xl ring-1 ring-border overflow-hidden">
-            <img src="/modern-classroom-with-students-and-teachers-using-.jpg" alt="AcademiaSync Dashboard" className="w-full h-auto" />
+            <img src="/modern-classroom-with-students-and-teachers-using-.png" alt="AcademiaSync Dashboard" className="w-full h-auto" />
           </div>
         </motion.div>
       </div>

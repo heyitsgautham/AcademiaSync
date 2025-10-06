@@ -2,32 +2,32 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 
 module.exports = (pool) => {
-  const router = express.Router();
+    const router = express.Router();
 
-  /**
-   * @swagger
-   * /admin/recent-activity:
-   *   get:
-   *     summary: Get recent admin activity
-   *     tags: [Admin]
-   *     description: Retrieve recent course CRUD operations and student enrollments
-   *     security:
-   *       - bearerAuth: []
-   *       - cookieAuth: []
-   *     responses:
-   *       200:
-   *         description: Recent activity retrieved successfully
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Admin role required
-   *       500:
-   *         description: Internal server error
-   */
-  router.get('/recent-activity', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      // Get recent course CRUD operations
-      const courseActivity = await pool.query(`
+    /**
+     * @swagger
+     * /admin/recent-activity:
+     *   get:
+     *     summary: Get recent admin activity
+     *     tags: [Admin]
+     *     description: Retrieve recent course CRUD operations and student enrollments
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: Recent activity retrieved successfully
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Admin role required
+     *       500:
+     *         description: Internal server error
+     */
+    router.get('/recent-activity', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            // Get recent course CRUD operations
+            const courseActivity = await pool.query(`
         SELECT 
           'course_' || activity_type as type,
           teacher_name as "actorName",
@@ -62,8 +62,8 @@ module.exports = (pool) => {
         LIMIT 10
       `);
 
-      // Get recent enrollments
-      const enrollmentActivity = await pool.query(`
+            // Get recent enrollments
+            const enrollmentActivity = await pool.query(`
         SELECT 
           'student_enrolled' as type,
           CONCAT(s.first_name, ' ', COALESCE(s.last_name, '')) as "actorName",
@@ -79,28 +79,28 @@ module.exports = (pool) => {
         LIMIT 10
       `);
 
-      // Combine and sort all activities
-      const allActivities = [
-        ...courseActivity.rows,
-        ...enrollmentActivity.rows
-      ].sort((a, b) => new Date(b.sort_date) - new Date(a.sort_date))
-        .slice(0, 10)
-        .map((activity, index) => ({
-          id: `activity-${index}`,
-          type: activity.type,
-          actorName: activity.actorName,
-          actorAvatar: activity.actorAvatar,
-          courseName: activity.courseName,
-          studentName: activity.studentName,
-          timestamp: activity.timestamp
-        }));
+            // Combine and sort all activities
+            const allActivities = [
+                ...courseActivity.rows,
+                ...enrollmentActivity.rows
+            ].sort((a, b) => new Date(b.sort_date) - new Date(a.sort_date))
+                .slice(0, 10)
+                .map((activity, index) => ({
+                    id: `activity-${index}`,
+                    type: activity.type,
+                    actorName: activity.actorName,
+                    actorAvatar: activity.actorAvatar,
+                    courseName: activity.courseName,
+                    studentName: activity.studentName,
+                    timestamp: activity.timestamp
+                }));
 
-      res.json(allActivities);
-    } catch (error) {
-      console.error('Error fetching admin recent activity:', error);
-      res.status(500).json({ error: 'Failed to fetch recent activity' });
-    }
-  });
+            res.json(allActivities);
+        } catch (error) {
+            console.error('Error fetching admin recent activity:', error);
+            res.status(500).json({ error: 'Failed to fetch recent activity' });
+        }
+    });
 
-  return router;
+    return router;
 };

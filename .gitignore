@@ -11,6 +11,7 @@ yarn.lock
 .env.development
 .env.production
 .env.test
+.deployment-config.env
 
 # Logs
 logs/

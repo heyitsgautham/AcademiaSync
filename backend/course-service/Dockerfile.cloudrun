@@ -1,0 +1,24 @@
+# Use official Node.js LTS image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --production
+
+# Copy application code
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose port (Cloud Run expects 8080)
+EXPOSE 8080
+ENV PORT=8080
+
+# Start the application
+CMD ["npm", "start"]

@@ -7,39 +7,24 @@ import { AdminThemeWrapper } from "@/components/admin-theme-wrapper"
 import { AdminDashboardSidebar } from "@/components/admin-dashboard-sidebar"
 import { AdminDashboardTopbar } from "@/components/admin-dashboard-topbar"
 import { AdminDashboardLogo } from "@/components/admin-dashboard-logo"
-import { AdminStatCards } from "@/components/admin-stat-cards"
-import { AdminRecentActivity } from "@/components/admin-recent-activity"
-import { AdminAnalyticsSection } from "@/components/admin-analytics-section"
+import { AdminCoursesTable } from "@/components/admin-courses-table"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
 
-export default function AdminDashboard() {
+export default function AdminCoursesPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
-    const { data: stats, isLoading: statsLoading } = useQuery({
-        queryKey: ["admin-stats"],
+    const { data: courses, isLoading } = useQuery({
+        queryKey: ["admin-courses"],
         queryFn: async () => {
-            const res = await fetch("/api/admin/stats")
+            const res = await fetch("/api/admin/courses")
             return res.json()
         },
     })
 
-    const { data: recentActivities, isLoading: activitiesLoading } = useQuery({
-        queryKey: ["admin-recent-activity"],
-        queryFn: async () => {
-            const res = await fetch("/api/admin/recent-activity")
-            return res.json()
-        },
-    })
-
-    const { data: analytics, isLoading: analyticsLoading } = useQuery({
-        queryKey: ["admin-dashboard-analytics"],
-        queryFn: async () => {
-            const res = await fetch("/api/admin/dashboard-analytics")
-            return res.json()
-        },
-    })
+    // Safe access with fallback
+    const coursesArray = Array.isArray(courses) ? courses : []
 
     return (
         <AdminThemeWrapper>
@@ -69,7 +54,7 @@ export default function AdminDashboard() {
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex-1 lg:flex-none">
-                            <h2 className="text-lg font-semibold text-foreground lg:hidden">Dashboard</h2>
+                            <h2 className="text-lg font-semibold text-foreground lg:hidden">Courses</h2>
                         </div>
                         <AdminDashboardTopbar />
                     </header>
@@ -79,18 +64,12 @@ export default function AdminDashboard() {
                         <div className="mx-auto max-w-7xl space-y-6">
                             {/* Header */}
                             <div>
-                                <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Admin Dashboard</h1>
-                                <p className="text-sm text-muted-foreground mt-1">System overview and management</p>
+                                <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Courses</h1>
+                                <p className="text-sm text-muted-foreground mt-1">View and manage all courses in the system</p>
                             </div>
 
-                            {/* Stat cards */}
-                            <AdminStatCards stats={stats} isLoading={statsLoading} />
-
-                            {/* Recent Activity and Analytics */}
-                            <div className="grid gap-6 lg:grid-cols-2">
-                                <AdminRecentActivity activities={recentActivities} isLoading={activitiesLoading} />
-                                <AdminAnalyticsSection analytics={analytics} isLoading={analyticsLoading} />
-                            </div>
+                            {/* Courses Table */}
+                            <AdminCoursesTable courses={coursesArray} isLoading={isLoading} />
                         </div>
                     </main>
                 </div>

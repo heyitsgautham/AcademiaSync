@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, GraduationCap, BarChart3, Settings, Shield } from "lucide-react"
+import { LayoutDashboard, Users, GraduationCap, BookOpen, BarChart3, Settings } from "lucide-react"
 
 const navItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Teachers", href: "/admin/teachers", icon: GraduationCap },
     { name: "Students", href: "/admin/students", icon: Users },
+    { name: "Courses", href: "/admin/courses", icon: BookOpen },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
     { name: "Settings", href: "/admin/settings", icon: Settings },
 ]

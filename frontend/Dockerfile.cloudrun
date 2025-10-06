@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Install dependencies
+RUN pnpm install
+
+# Copy application files
+COPY . .
+
+# Build for production
+RUN pnpm build
+
+# Expose port (Cloud Run uses PORT env variable, defaults to 8080)
+EXPOSE 8080
+ENV PORT=8080
+
+# Start the application in production mode
+CMD ["pnpm", "start"]

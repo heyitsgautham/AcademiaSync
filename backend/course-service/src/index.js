@@ -96,6 +96,7 @@ const studentRouter = require('./routes/student')(pool);
 const statsRouter = require('./routes/stats')(pool);
 const teacherStudentsRouter = require('./routes/teacher-students')(pool);
 const analyticsRouter = require('./routes/analytics')(pool);
+const adminRouter = require('./routes/admin')(pool);
 
 app.use('/api/teacher/courses', coursesRouter);
 app.use('/api/teacher', assignmentsRouter);
@@ -103,6 +104,7 @@ app.use('/api/student', studentRouter);
 app.use('/api/teacher/stats', statsRouter);
 app.use('/api/teacher', teacherStudentsRouter);
 app.use('/api/teacher/analytics', analyticsRouter);
+app.use('/admin', adminRouter);
 
 
 // Error handling middleware

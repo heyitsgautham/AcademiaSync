@@ -372,4 +372,92 @@ router.post('/logout', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /auth/rate-limit/clear:
+ *   post:
+ *     summary: Clear rate limits (Development only)
+ *     tags: [Authentication]
+ *     description: Clear all rate limits or for a specific email. Use for development/debugging.
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Optional - clear rate limit for specific email. If omitted, clears all.
+ *     responses:
+ *       200:
+ *         description: Rate limits cleared successfully
+ */
+router.post('/rate-limit/clear', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (email) {
+            const cleared = clearRateLimitForEmail(email);
+            return res.status(200).json({
+                message: cleared
+                    ? `Rate limit cleared for ${email}`
+                    : `No rate limit found for ${email}`,
+                cleared
+            });
+        } else {
+            clearAllRateLimits();
+            return res.status(200).json({
+                message: 'All rate limits cleared successfully'
+            });
+        }
+    } catch (error) {
+        console.error('Clear rate limit error:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to clear rate limits'
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /auth/rate-limit/status:
+ *   get:
+ *     summary: Check rate limit status
+ *     tags: [Authentication]
+ *     description: Get current rate limit status for an email
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email address to check
+ *     responses:
+ *       200:
+ *         description: Rate limit status retrieved
+ */
+router.get('/rate-limit/status', async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Email parameter is required'
+            });
+        }
+
+        const status = getRateLimitStatus(email);
+        return res.status(200).json(status);
+    } catch (error) {
+        console.error('Rate limit status error:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to get rate limit status'
+        });
+    }
+});
+
 module.exports = router;

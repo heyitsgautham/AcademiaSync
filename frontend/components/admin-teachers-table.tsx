@@ -493,9 +493,9 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                             {selectedRoleChange === "Admin" ? "Promote to Admin?" : "Demote to Student?"}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will change the user's role to {selectedRoleChange}. 
-                            {selectedRoleChange === "Admin" 
-                                ? " They will gain full administrative privileges." 
+                            This will change the user's role to {selectedRoleChange}.
+                            {selectedRoleChange === "Admin"
+                                ? " They will gain full administrative privileges."
                                 : " They will lose teaching privileges and become a student."}
                         </AlertDialogDescription>
                     </AlertDialogHeader>

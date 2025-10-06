@@ -81,14 +81,21 @@ export const authOptions: AuthOptions = {
                         (account as any).userRole = data.role;
                         (account as any).backendAccessToken = backendAccessToken;
                         return true;
-                    } else if (response.status === 429) {
-                        // Rate limit exceeded
-                        const errorData = await response.json();
-                        console.error("Rate limit exceeded:", errorData.message);
-                        // Store error in account for display (NextAuth limitations prevent showing custom error)
-                        (account as any).error = errorData.message;
-                        return false;
-                    } else {
+                    }
+                    // ============================================================================
+                    // RATE LIMITING CHECK DISABLED - COMMENTED OUT
+                    // ============================================================================
+                    // The backend no longer returns 429 errors, so this check is disabled
+                    // ============================================================================
+                    // else if (response.status === 429) {
+                    //     // Rate limit exceeded
+                    //     const errorData = await response.json();
+                    //     console.error("Rate limit exceeded:", errorData.message);
+                    //     // Store error in account for display (NextAuth limitations prevent showing custom error)
+                    //     (account as any).error = errorData.message;
+                    //     return false;
+                    // } 
+                    else {
                         console.error("Backend authentication failed:", await response.text());
                     }
                 } catch (error) {

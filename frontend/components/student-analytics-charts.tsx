@@ -270,12 +270,21 @@ export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps
                   data={gradeDistribution}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
+                  labelLine={true}
                   label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
                     const RADIAN = Math.PI / 180;
-                    const radius = innerRadius + (outerRadius - innerRadius) * 1.5;
+
+                    // For very small segments (< 5%), use longer radius to prevent overlap
+                    const radiusMultiplier = percent < 0.05 ? 2.4 : 1.5;
+                    const radius = innerRadius + (outerRadius - innerRadius) * radiusMultiplier;
+
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                    // Hide labels for extremely small segments (< 1%)
+                    if (percent < 0.01) {
+                      return null;
+                    }
 
                     return (
                       <text

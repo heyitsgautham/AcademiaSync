@@ -81,7 +81,9 @@ export default function StudentsPage() {
     queryKey: ["students-by-course"],
     queryFn: async () => {
       const res = await fetch("/api/teacher/students-by-course")
-      return res.json()
+      const json = await res.json()
+      // Backend returns { data: [...], pagination: {...} }
+      return json.data || json
     },
   })
 

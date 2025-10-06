@@ -111,14 +111,20 @@ router.post('/google', loginLimiter, async (req, res) => {
         const payload = ticket.getPayload();
         const { sub: googleId, email, given_name, family_name, picture } = payload;
 
-        // Check if user has exceeded successful login limit (5 logins in 10 minutes) - STRICT
-        if (checkSuccessfulLoginLimit(email)) {
-            return res.status(429).json({
-                error: 'Too Many Requests',
-                message: '🐼 Whoa there, eager beaver! You\'ve logged in and out too many times. Take a breather and try again in 10 minutes! ☕',
-                retryAfter: 600 // 10 minutes in seconds
-            });
-        }
+        // ============================================================================
+        // RATE LIMITING CHECK DISABLED - COMMENTED OUT
+        // ============================================================================
+        // This check has been disabled to allow unlimited login attempts
+        // ============================================================================
+
+        // // Check if user has exceeded successful login limit (5 logins in 10 minutes) - STRICT
+        // if (checkSuccessfulLoginLimit(email)) {
+        //     return res.status(429).json({
+        //         error: 'Too Many Requests',
+        //         message: '🐼 Whoa there, eager beaver! You\'ve logged in and out too many times. Take a breather and try again in 10 minutes! ☕',
+        //         retryAfter: 600 // 10 minutes in seconds
+        //     });
+        // }
 
         // Check if user exists
         const dbPool = getPool();
@@ -179,8 +185,14 @@ router.post('/google', loginLimiter, async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-        // Track this successful login attempt for rate limiting
-        trackSuccessfulLogin(email);
+        // ============================================================================
+        // RATE LIMITING TRACKING DISABLED - COMMENTED OUT
+        // ============================================================================
+        // This tracking has been disabled as rate limiting is no longer active
+        // ============================================================================
+
+        // // Track this successful login attempt for rate limiting
+        // trackSuccessfulLogin(email);
 
         return res.status(200).json({
             message: 'Login successful',

@@ -1,7 +1,7 @@
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, getRefreshTokenExpiry } = require('../utils/jwt');
-const { loginLimiter, trackSuccessfulLogin, checkSuccessfulLoginLimit } = require('../middleware/rate-limiter');
+const { loginLimiter, trackSuccessfulLogin, checkSuccessfulLoginLimit, clearAllRateLimits, clearRateLimitForEmail, getRateLimitStatus } = require('../middleware/rate-limiter');
 
 const router = express.Router();
 
@@ -111,12 +111,12 @@ router.post('/google', loginLimiter, async (req, res) => {
         const payload = ticket.getPayload();
         const { sub: googleId, email, given_name, family_name, picture } = payload;
 
-        // Check if user has exceeded successful login limit (5 logins in 10 minutes)
+        // Check if user has exceeded successful login limit (5 logins in 10 minutes) - STRICT
         if (checkSuccessfulLoginLimit(email)) {
             return res.status(429).json({
                 error: 'Too Many Requests',
                 message: '🐼 Whoa there, eager beaver! You\'ve logged in and out too many times. Take a breather and try again in 10 minutes! ☕',
-                retryAfter: 600
+                retryAfter: 600 // 10 minutes in seconds
             });
         }
 

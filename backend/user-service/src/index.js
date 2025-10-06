@@ -35,8 +35,16 @@ const accessLogStream = fs.createWriteStream(
 );
 
 // Middleware
+// Support multiple frontend origins for different environments
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://frontend:3000',
+  process.env.FRONTEND_URL,
+  process.env.NEXTAUTH_URL
+].filter(Boolean); // Remove undefined/null values
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://frontend:3000'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());

@@ -14,25 +14,33 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [retryAfter, setRetryAfter] = useState<number | null>(null)
+  // Rate limiting removed - retryAfter state commented out
+  // const [retryAfter, setRetryAfter] = useState<number | null>(null)
 
   // Check for error from NextAuth redirect
   useEffect(() => {
     const errorParam = searchParams.get("error")
     if (errorParam) {
-      if (errorParam === "AccessDenied") {
-        setError("🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
-        setRetryAfter(600)
-      } else {
-        setError("Authentication failed. Please try again.")
-      }
+      // ============================================================================
+      // RATE LIMITING ERROR HANDLING DISABLED - COMMENTED OUT
+      // ============================================================================
+      // Rate limiting has been disabled, so we no longer check for AccessDenied
+      // ============================================================================
+      // if (errorParam === "AccessDenied") {
+      //   setError("🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
+      //   setRetryAfter(600)
+      // } else {
+      //   setError("Authentication failed. Please try again.")
+      // }
+      setError("Authentication failed. Please try again.")
     }
   }, [searchParams])
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     setError(null)
-    setRetryAfter(null)
+    // Rate limiting removed - retryAfter state management commented out
+    // setRetryAfter(null)
 
     try {
       const result = await signIn("google", {
@@ -47,14 +55,20 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Login error:", error)
 
-      // Check if it's a rate limit error
-      if (error?.status === 429 || error?.response?.status === 429) {
-        const errorData = error?.response?.data || error?.data
-        setError(errorData?.message || "🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
-        setRetryAfter(errorData?.retryAfter || 600)
-      } else {
-        setError("An error occurred during login. Please try again.")
-      }
+      // ============================================================================
+      // RATE LIMITING ERROR HANDLING DISABLED - COMMENTED OUT
+      // ============================================================================
+      // Rate limiting has been disabled, so we no longer check for 429 errors
+      // ============================================================================
+      // // Check if it's a rate limit error
+      // if (error?.status === 429 || error?.response?.status === 429) {
+      //   const errorData = error?.response?.data || error?.data
+      //   setError(errorData?.message || "🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
+      //   setRetryAfter(errorData?.retryAfter || 600)
+      // } else {
+      //   setError("An error occurred during login. Please try again.")
+      // }
+      setError("An error occurred during login. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -76,17 +90,18 @@ export default function LoginPage() {
             transition={{ duration: 0.4 }}
             className="mb-8 text-center"
           >
-            <div className="text-6xl mb-4">🐼</div>
+            <div className="text-6xl mb-4">⚠️</div>
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-destructive mb-2">Too Many Logins!</h2>
+              <h2 className="text-xl font-bold text-destructive mb-2">Authentication Error</h2>
               <p className="text-destructive text-lg leading-relaxed">
                 {error}
               </p>
-              {retryAfter && (
+              {/* Rate limiting removed - retry message commented out */}
+              {/* {retryAfter && (
                 <p className="mt-4 text-sm text-muted-foreground">
                   Please wait {Math.ceil(retryAfter / 60)} minutes before trying again.
                 </p>
-              )}
+              )} */}
             </div>
           </motion.div>
         )}
@@ -107,7 +122,7 @@ export default function LoginPage() {
               variant="outline"
               className="w-full h-12 text-base bg-card hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-black hover:border-gray-900 dark:hover:border-white transition-colors cursor-pointer"
               size="lg"
-              disabled={isLoading || !!retryAfter}
+              disabled={isLoading}
             >
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path

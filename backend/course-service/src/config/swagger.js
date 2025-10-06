@@ -18,8 +18,8 @@ const options = {
         },
         servers: [
             {
-                url: 'http://localhost:5001',
-                description: 'Development server',
+                url: process.env.API_BASE_URL || 'http://localhost:5001',
+                description: 'API Server',
             },
             {
                 url: 'http://course-service:5001',

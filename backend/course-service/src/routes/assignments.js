@@ -73,12 +73,13 @@ module.exports = (pool) => {
                 addAssignmentLinks(assignment, req.user.role, true)
             );
 
+            const baseUrl = process.env.API_BASE_URL || 'http://localhost:5001';
             res.json({
                 assignments: assignmentsWithLinks,
                 _links: [
                     {
                         rel: 'course',
-                        href: `http://localhost:5001/teacher/courses/${courseId}`,
+                        href: `${baseUrl}/teacher/courses/${courseId}`,
                         method: 'GET',
                         description: 'Get parent course'
                     }

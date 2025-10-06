@@ -59,9 +59,10 @@ export function TeacherAssignmentModal({ open, onOpenChange, assignment, courseI
     mutationFn: (data: { title: string; description: string; due_date?: string }) =>
       courseApi.createAssignment(courseId, data),
     onSuccess: () => {
-      // Invalidate both the specific course assignments and all assignments
+      // Invalidate all assignment-related queries
       queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["assignments-with-status"] })
       toast({
         title: "Success",
         description: "Assignment created successfully",
@@ -81,9 +82,10 @@ export function TeacherAssignmentModal({ open, onOpenChange, assignment, courseI
     mutationFn: (data: { title: string; description: string; due_date?: string }) =>
       courseApi.updateAssignment(assignment.id, data),
     onSuccess: () => {
-      // Invalidate both the specific course assignments and all assignments
+      // Invalidate all assignment-related queries
       queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["assignments-with-status"] })
       toast({
         title: "Success",
         description: "Assignment updated successfully",

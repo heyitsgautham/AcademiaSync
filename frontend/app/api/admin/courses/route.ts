@@ -10,10 +10,10 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        // Use course-service to fetch all courses
+        // Use course-service admin endpoint to fetch all courses
         const COURSE_SERVICE_URL = process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
 
-        const response = await fetch(`${COURSE_SERVICE_URL}/api/courses`, {
+        const response = await fetch(`${COURSE_SERVICE_URL}/admin/courses`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

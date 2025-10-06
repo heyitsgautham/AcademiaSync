@@ -1,99 +1,144 @@
 const rateLimit = require('express-rate-limit');
 
-// In-memory store for tracking successful logins per user email
-// Format: { email: [timestamp1, timestamp2, ...] }
-const successfulLoginAttempts = new Map();
+// ============================================================================
+// RATE LIMITING FEATURE DISABLED - COMMENTED OUT
+// ============================================================================
+// The following rate limiting features have been disabled to allow unlimited
+// login attempts without time-based restrictions.
+// ============================================================================
 
-// Custom middleware to track successful logins per user
+// // In-memory store for tracking successful logins per user email
+// // Format: { email: [timestamp1, timestamp2, ...] }
+// const successfulLoginAttempts = new Map();
+
+// // Custom middleware to track successful logins per user
+// const trackSuccessfulLogin = (email) => {
+//     const now = Date.now();
+//     const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
+
+//     // Get existing attempts for this email
+//     let attempts = successfulLoginAttempts.get(email) || [];
+
+//     // Filter out attempts older than the window
+//     attempts = attempts.filter(timestamp => now - timestamp < windowMs);
+
+//     // Add current attempt
+//     attempts.push(now);
+
+//     // Store updated attempts
+//     successfulLoginAttempts.set(email, attempts);
+
+//     return attempts.length;
+// };
+
+// // Check if user has exceeded successful login limit
+// const checkSuccessfulLoginLimit = (email) => {
+//     const now = Date.now();
+//     const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
+//     const maxAttempts = 5; // STRICT: 5 logins per 10 minutes
+
+//     // Get existing attempts for this email
+//     let attempts = successfulLoginAttempts.get(email) || [];
+
+//     // Filter out attempts older than the window
+//     attempts = attempts.filter(timestamp => now - timestamp < windowMs);
+
+//     // Update the map with filtered attempts
+//     successfulLoginAttempts.set(email, attempts);
+
+//     return attempts.length >= maxAttempts;
+// };
+
+// // Cleanup old entries periodically (every 15 minutes)
+// const cleanupInterval = setInterval(() => {
+//     const now = Date.now();
+//     const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
+
+//     for (const [email, attempts] of successfulLoginAttempts.entries()) {
+//         const validAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
+
+//         if (validAttempts.length === 0) {
+//             successfulLoginAttempts.delete(email);
+//         } else {
+//             successfulLoginAttempts.set(email, validAttempts);
+//         }
+//     }
+// }, 15 * 60 * 1000);
+
+// // Function to cleanup the interval (useful for testing)
+// const cleanupRateLimiter = () => {
+//     if (cleanupInterval) {
+//         clearInterval(cleanupInterval);
+//     }
+// };
+
+// // Function to clear all rate limit entries (useful for development/debugging)
+// const clearAllRateLimits = () => {
+//     successfulLoginAttempts.clear();
+//     console.log('✅ All rate limit entries cleared');
+// };
+
+// // Function to clear rate limit for specific email
+// const clearRateLimitForEmail = (email) => {
+//     if (successfulLoginAttempts.has(email)) {
+//         successfulLoginAttempts.delete(email);
+//         console.log(`✅ Rate limit cleared for email: ${email}`);
+//         return true;
+//     }
+//     return false;
+// };
+
+// // Function to get current rate limit status for an email
+// const getRateLimitStatus = (email) => {
+//     const now = Date.now();
+//     const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
+//     const attempts = successfulLoginAttempts.get(email) || [];
+//     const validAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
+
+//     return {
+//         email,
+//         attempts: validAttempts.length,
+//         maxAttempts: 5, // STRICT
+//         remaining: Math.max(0, 5 - validAttempts.length),
+//         windowMs: windowMs
+//     };
+// };
+
+// No-op replacements for disabled rate limiting functions
 const trackSuccessfulLogin = (email) => {
-    const now = Date.now();
-    const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
-
-    // Get existing attempts for this email
-    let attempts = successfulLoginAttempts.get(email) || [];
-
-    // Filter out attempts older than the window
-    attempts = attempts.filter(timestamp => now - timestamp < windowMs);
-
-    // Add current attempt
-    attempts.push(now);
-
-    // Store updated attempts
-    successfulLoginAttempts.set(email, attempts);
-
-    return attempts.length;
+    // Rate limiting disabled - no tracking
+    return 0;
 };
 
-// Check if user has exceeded successful login limit
 const checkSuccessfulLoginLimit = (email) => {
-    const now = Date.now();
-    const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
-    const maxAttempts = 5; // STRICT: 5 logins per 10 minutes
-
-    // Get existing attempts for this email
-    let attempts = successfulLoginAttempts.get(email) || [];
-
-    // Filter out attempts older than the window
-    attempts = attempts.filter(timestamp => now - timestamp < windowMs);
-
-    // Update the map with filtered attempts
-    successfulLoginAttempts.set(email, attempts);
-
-    return attempts.length >= maxAttempts;
-};
-
-// Cleanup old entries periodically (every 15 minutes)
-const cleanupInterval = setInterval(() => {
-    const now = Date.now();
-    const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
-
-    for (const [email, attempts] of successfulLoginAttempts.entries()) {
-        const validAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
-
-        if (validAttempts.length === 0) {
-            successfulLoginAttempts.delete(email);
-        } else {
-            successfulLoginAttempts.set(email, validAttempts);
-        }
-    }
-}, 15 * 60 * 1000);
-
-// Function to cleanup the interval (useful for testing)
-const cleanupRateLimiter = () => {
-    if (cleanupInterval) {
-        clearInterval(cleanupInterval);
-    }
-};
-
-// Function to clear all rate limit entries (useful for development/debugging)
-const clearAllRateLimits = () => {
-    successfulLoginAttempts.clear();
-    console.log('✅ All rate limit entries cleared');
-};
-
-// Function to clear rate limit for specific email
-const clearRateLimitForEmail = (email) => {
-    if (successfulLoginAttempts.has(email)) {
-        successfulLoginAttempts.delete(email);
-        console.log(`✅ Rate limit cleared for email: ${email}`);
-        return true;
-    }
+    // Rate limiting disabled - always return false (no limit exceeded)
     return false;
 };
 
-// Function to get current rate limit status for an email
-const getRateLimitStatus = (email) => {
-    const now = Date.now();
-    const windowMs = 10 * 60 * 1000; // 10 minutes - STRICT
-    const attempts = successfulLoginAttempts.get(email) || [];
-    const validAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
+const cleanupRateLimiter = () => {
+    // Rate limiting disabled - no cleanup needed
+};
 
+const clearAllRateLimits = () => {
+    // Rate limiting disabled - nothing to clear
+    console.log('✅ Rate limiting is disabled - no entries to clear');
+};
+
+const clearRateLimitForEmail = (email) => {
+    // Rate limiting disabled - nothing to clear
+    return false;
+};
+
+const getRateLimitStatus = (email) => {
+    // Rate limiting disabled - return mock status
     return {
         email,
-        attempts: validAttempts.length,
-        maxAttempts: 5, // STRICT
-        remaining: Math.max(0, 5 - validAttempts.length),
-        windowMs: windowMs
+        attempts: 0,
+        maxAttempts: 0,
+        remaining: 0,
+        windowMs: 0,
+        disabled: true,
+        message: 'Rate limiting is currently disabled'
     };
 };
 

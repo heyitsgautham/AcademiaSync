@@ -14,6 +14,12 @@ RUN pnpm install
 # Copy application files
 COPY . .
 
+# Accept build arguments for Next.js environment variables
+ARG NEXT_PUBLIC_BACKEND_URL
+ARG NEXT_PUBLIC_COURSE_SERVICE_URL
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_COURSE_SERVICE_URL=$NEXT_PUBLIC_COURSE_SERVICE_URL
+
 # Build for production
 RUN pnpm build
 

@@ -1,6 +1,7 @@
 import { GraduationCap, Users, BookOpen, TrendingUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
 
 interface Stats {
     totalTeachers: number
@@ -15,6 +16,8 @@ interface StatCardsProps {
 }
 
 export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
+    const router = useRouter()
+
     const cards = [
         {
             title: "Total Teachers",
@@ -22,6 +25,7 @@ export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
             icon: GraduationCap,
             color: "text-chart-1",
             bgColor: "bg-chart-1/10",
+            href: "/admin/teachers",
         },
         {
             title: "Total Students",
@@ -29,6 +33,7 @@ export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
             icon: Users,
             color: "text-chart-4",
             bgColor: "bg-chart-4/10",
+            href: "/admin/students",
         },
         {
             title: "Total Courses",
@@ -36,6 +41,7 @@ export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
             icon: BookOpen,
             color: "text-chart-2",
             bgColor: "bg-chart-2/10",
+            href: "/admin/courses",
         },
         {
             title: "Average Grade",
@@ -43,6 +49,7 @@ export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
             icon: TrendingUp,
             color: "text-chart-3",
             bgColor: "bg-chart-3/10",
+            href: "/admin/analytics",
         },
     ]
 
@@ -68,7 +75,8 @@ export function AdminStatCards({ stats, isLoading }: StatCardsProps) {
                 return (
                     <Card
                         key={card.title}
-                        className="transition-all hover:shadow-lg"
+                        className="transition-all hover:shadow-lg cursor-pointer"
+                        onClick={() => router.push(card.href)}
                     >
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">

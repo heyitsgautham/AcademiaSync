@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,6 +61,7 @@ type SortOrder = "asc" | "desc"
 
 export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDelete }: AdminStudentsTableProps) {
     const { toast } = useToast()
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [promoteUserId, setPromoteUserId] = useState<number | null>(null)
     const [promoteRole, setPromoteRole] = useState<"Teacher" | "Admin" | null>(null)
@@ -364,7 +366,17 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                                     </TableRow>
                                 ) : (
                                     paginatedStudents.map((student) => (
-                                        <TableRow key={student.id}>
+                                        <TableRow
+                                            key={student.id}
+                                            className="cursor-pointer hover:bg-muted/50"
+                                            onClick={(e) => {
+                                                // Don't navigate if clicking on buttons
+                                                if ((e.target as HTMLElement).closest('button')) {
+                                                    return
+                                                }
+                                                router.push(`/admin/students/${student.id}`)
+                                            }}
+                                        >
                                             <TableCell>
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={student.profilePicture || undefined} alt={`${student.firstName} ${student.lastName}`} />

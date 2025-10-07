@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +59,7 @@ type SortOrder = "asc" | "desc"
 
 export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: AdminTeachersTableProps) {
     const { toast } = useToast()
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [deleteTeacherId, setDeleteTeacherId] = useState<number | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -329,7 +331,17 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                                     </TableRow>
                                 ) : (
                                     paginatedTeachers.map((teacher) => (
-                                        <TableRow key={teacher.id}>
+                                        <TableRow
+                                            key={teacher.id}
+                                            className="cursor-pointer hover:bg-muted/50"
+                                            onClick={(e) => {
+                                                // Don't navigate if clicking on buttons
+                                                if ((e.target as HTMLElement).closest('button')) {
+                                                    return
+                                                }
+                                                router.push(`/admin/teachers/${teacher.id}`)
+                                            }}
+                                        >
                                             <TableCell>
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={teacher.profilePicture || undefined} alt={`${teacher.firstName} ${teacher.lastName}`} />

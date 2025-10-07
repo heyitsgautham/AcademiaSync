@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +35,7 @@ type SortField = "title" | "teacherName" | "enrolledCount" | "createdAt"
 type SortOrder = "asc" | "desc"
 
 export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps) {
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -220,7 +222,11 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 </TableRow>
                             ) : (
                                 paginatedCourses.map((course) => (
-                                    <TableRow key={course.id}>
+                                    <TableRow
+                                        key={course.id}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => router.push(`/admin/courses/${course.id}`)}
+                                    >
                                         <TableCell className="font-medium">{course.title}</TableCell>
                                         <TableCell className="max-w-xs truncate">
                                             {course.description || "-"}

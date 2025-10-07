@@ -1,55 +1,83 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+
+const COURSE_SERVICE_URL = process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const studentId = searchParams.get("id")
+  try {
+    const session = await getServerSession(authOptions)
 
-  // Mock detailed student data with assignments
-  const studentDetails = {
-    id: studentId,
-    assignments: [
+    if (!session || !(session as any).backendAccessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const studentId = searchParams.get("id")
+    const courseId = searchParams.get("courseId")
+
+    if (!studentId) {
+      return NextResponse.json({ error: "Student ID is required" }, { status: 400 })
+    }
+
+    if (!courseId) {
+      return NextResponse.json({ error: "Course ID is required" }, { status: 400 })
+    }
+
+    const authHeader = `Bearer ${(session as any).backendAccessToken}`
+
+    // Fetch student's submissions from the teacher's courses
+    // We'll use the recent-submissions endpoint filtered by student
+    const submissionsResponse = await fetch(
+      `${COURSE_SERVICE_URL}/api/teacher/recent-submissions?limit=100`,
       {
-        id: "a1",
-        title: "React Components Exercise",
-        course: "Introduction to React",
-        status: "completed",
-        grade: 95,
-        submittedDate: "2024-01-15",
-      },
-      {
-        id: "a2",
-        title: "State Management Project",
-        course: "Introduction to React",
-        status: "completed",
-        grade: 88,
-        submittedDate: "2024-01-22",
-      },
-      {
-        id: "a3",
-        title: "Hooks Deep Dive",
-        course: "Introduction to React",
-        status: "pending",
-        grade: null,
-        submittedDate: null,
-      },
-      {
-        id: "a4",
-        title: "Final Project",
-        course: "Introduction to React",
-        status: "late",
-        grade: 72,
-        submittedDate: "2024-02-05",
-      },
-      {
-        id: "a5",
-        title: "Quiz 1",
-        course: "Introduction to React",
-        status: "incomplete",
-        grade: null,
-        submittedDate: null,
-      },
-    ],
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": authHeader,
+        },
+      }
+    )
+
+    if (!submissionsResponse.ok) {
+      console.error("Failed to fetch submissions:", submissionsResponse.statusText)
+      return NextResponse.json({
+        id: studentId,
+        assignments: [],
+      })
+    }
+
+    const submissionsData = await submissionsResponse.json()
+    const allSubmissions = Array.isArray(submissionsData)
+      ? submissionsData
+      : submissionsData.submissions || []
+
+    // Filter submissions for this specific student AND course
+    const studentSubmissions = allSubmissions.filter(
+      (submission: any) =>
+        submission.studentId?.toString() === studentId &&
+        submission.courseId?.toString() === courseId
+    )
+
+    // Format assignments to match what the modal component expects
+    const formattedAssignments = studentSubmissions.map((submission: any) => ({
+      id: submission.id || submission.assignmentId,
+      title: submission.assignment || submission.assignmentTitle || submission.title || "Assignment",
+      course: submission.course || submission.courseName || "Unknown Course",
+      status: submission.status || "pending",
+      grade: submission.grade || null,
+      submittedDate: submission.submittedAt || null,
+    }))
+
+    return NextResponse.json({
+      id: studentId,
+      assignments: formattedAssignments,
+    })
+  } catch (error) {
+    console.error("Error fetching student details:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch student details" },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json(studentDetails)
 }

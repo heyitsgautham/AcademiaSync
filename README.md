@@ -238,62 +238,9 @@ AcademiaSync/
 
 ### Entity Relationship Diagram
 
-```
-┌─────────────┐
-│    users    │
-├─────────────┤
-│ id (PK)     │────┐
-│ email       │    │
-│ first_name  │    │
-│ last_name   │    │
-│ role        │    │
-│ profile_pic │    │
-│ created_at  │    │
-└─────────────┘    │
-                   │
-                   │ teacher_id (FK)
-                   │
-                   ▼
-            ┌─────────────┐
-            │   courses   │
-            ├─────────────┤
-            │ id (PK)     │────┐
-            │ teacher_id  │◄───┘
-            │ title       │
-            │ description │
-            │ created_at  │
-            └─────────────┘
-                   │
-         ┌─────────┴─────────┐
-         │                   │
-         │ course_id (FK)    │ course_id (FK)
-         ▼                   ▼
-   ┌─────────────┐    ┌─────────────┐
-   │ enrollments │    │ assignments │
-   ├─────────────┤    ├─────────────┤
-   │ id (PK)     │    │ id (PK)     │────┐
-   │ student_id  │    │ course_id   │    │
-   │ course_id   │    │ title       │    │
-   │ enrolled_at │    │ description │    │
-   └─────────────┘    │ due_date    │    │
-         ▲            │ max_points  │    │
-         │            │ created_at  │    │
-         │            └─────────────┘    │
-         │                               │
-         │ student_id (FK)               │ assignment_id (FK)
-         │                               │
-         │            ┌─────────────┐    │
-         └────────────│ submissions │◄───┘
-                      ├─────────────┤
-                      │ id (PK)     │
-                      │assignment_id│
-                      │ student_id  │
-                      │ content     │
-                      │ grade       │
-                      │ feedback    │
-                      │ submitted_at│
-                      └─────────────┘
-```
+
+<img width="2089" height="1786" alt="image" src="https://github.com/user-attachments/assets/b5797c42-dcf5-4fea-bafe-d05e33bef1c0" />
+
 
 ---
 

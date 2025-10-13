@@ -1,0 +1,307 @@
+name: Docker Build, Scan & Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+      - feature/production
+    paths:
+      - 'app-deployment/**'
+      - '.github/workflows/docker-build-push.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app-deployment/**'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION || 'us-east-1' }}.amazonaws.com
+  PROJECT_NAME: academiasync
+  ENVIRONMENT: prod
+
+jobs:
+  # Detect which services changed
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+      course-service: ${{ steps.filter.outputs.course-service }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'app-deployment/frontend/**'
+              - '.github/workflows/docker-build-push.yml'
+            user-service:
+              - 'app-deployment/backend/user-service/**'
+              - '.github/workflows/docker-build-push.yml'
+            course-service:
+              - 'app-deployment/backend/course-service/**'
+              - '.github/workflows/docker-build-push.yml'
+
+  # Build, scan, and push Frontend
+  build-frontend:
+    name: Build Frontend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # For uploading SARIF results
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        id: build-image
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_URI="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend:${IMAGE_TAG}"
+          IMAGE_URI_LATEST="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-frontend:latest"
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag ${IMAGE_URI} \
+            --tag ${IMAGE_URI_LATEST} \
+            --file frontend/Dockerfile \
+            --load \
+            frontend/
+          
+          echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'frontend-container-scan'
+
+      - name: Run Trivy scan (table format for PR comments)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image to ECR
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        run: |
+          docker push ${{ steps.build-image.outputs.image }}
+          docker push ${{ steps.build-image.outputs.image-latest }}
+          echo "✅ Pushed frontend image to ECR"
+
+      - name: Image digest
+        run: |
+          echo "Frontend image pushed:"
+          echo "${{ steps.build-image.outputs.image }}"
+
+  # Build, scan, and push User Service
+  build-user-service:
+    name: Build User Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user-service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        id: build-image
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_URI="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-user-service:${IMAGE_TAG}"
+          IMAGE_URI_LATEST="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-user-service:latest"
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag ${IMAGE_URI} \
+            --tag ${IMAGE_URI_LATEST} \
+            --file backend/user-service/Dockerfile \
+            --load \
+            backend/user-service/
+          
+          echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-user-service-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-user-service-results.sarif'
+          category: 'user-service-container-scan'
+
+      - name: Run Trivy scan (table format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image to ECR
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        run: |
+          docker push ${{ steps.build-image.outputs.image }}
+          docker push ${{ steps.build-image.outputs.image-latest }}
+          echo "✅ Pushed user-service image to ECR"
+
+      - name: Image digest
+        run: |
+          echo "User service image pushed:"
+          echo "${{ steps.build-image.outputs.image }}"
+
+  # Build, scan, and push Course Service
+  build-course-service:
+    name: Build Course Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.course-service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        id: build-image
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_URI="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-course-service:${IMAGE_TAG}"
+          IMAGE_URI_LATEST="${{ env.ECR_REGISTRY }}/${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-course-service:latest"
+          
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag ${IMAGE_URI} \
+            --tag ${IMAGE_URI_LATEST} \
+            --file backend/course-service/Dockerfile \
+            --load \
+            backend/course-service/
+          
+          echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-course-service-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-course-service-results.sarif'
+          category: 'course-service-container-scan'
+
+      - name: Run Trivy scan (table format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build-image.outputs.image }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push image to ECR
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        run: |
+          docker push ${{ steps.build-image.outputs.image }}
+          docker push ${{ steps.build-image.outputs.image-latest }}
+          echo "✅ Pushed course-service image to ECR"
+
+      - name: Image digest
+        run: |
+          echo "Course service image pushed:"
+          echo "${{ steps.build-image.outputs.image }}"
+
+  # Summary job
+  summary:
+    name: Build Summary
+    needs: [detect-changes, build-frontend, build-user-service, build-course-service]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build summary
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.build-frontend.result || 'skipped' }} | ${{ needs.detect-changes.outputs.frontend }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| User Service | ${{ needs.build-user-service.result || 'skipped' }} | ${{ needs.detect-changes.outputs.user-service }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Course Service | ${{ needs.build-course-service.result || 'skipped' }} | ${{ needs.detect-changes.outputs.course-service }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY

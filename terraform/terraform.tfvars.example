@@ -1,0 +1,43 @@
+# AWS Configuration
+aws_region  = "us-east-1"
+project_name = "academiasync"
+environment  = "prod"
+
+# VPC Configuration
+vpc_cidr            = "10.0.0.0/16"
+availability_zones  = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+
+# ECR Repositories
+ecr_repositories = ["frontend", "user-service", "course-service"]
+
+# SNS Alert Email
+alert_email = "your-email@example.com" # REPLACE WITH YOUR EMAIL
+
+# ECS Container Images (update after pushing to ECR)
+# Format: <account-id>.dkr.ecr.<region>.amazonaws.com/<repo-name>:latest
+frontend_image       = "nginx:alpine"
+user_service_image   = "nginx:alpine"
+course_service_image = "nginx:alpine"
+
+# ECS Task Sizing (Free Tier compatible - total 512 CPU, 1024 MB)
+frontend_cpu           = 256
+frontend_memory        = 512
+user_service_cpu       = 256
+user_service_memory    = 512
+course_service_cpu     = 256
+course_service_memory  = 512
+
+# Application Environment Variables
+# IMPORTANT: DO NOT commit actual values - use CI/CD secrets or AWS Secrets Manager
+nextauth_secret      = "REPLACE_WITH_SECRET"
+nextauth_url         = "http://your-frontend-url.amazonaws.com"
+google_client_id     = "REPLACE_WITH_GOOGLE_CLIENT_ID"
+google_client_secret = "REPLACE_WITH_GOOGLE_CLIENT_SECRET"
+jwt_secret           = "REPLACE_WITH_JWT_SECRET"
+jwt_refresh_secret   = "REPLACE_WITH_JWT_REFRESH_SECRET"
+database_url         = "postgresql://user:password@host:5432/database"
+
+# CloudWatch Alarm Thresholds
+cpu_alarm_threshold    = 80
+memory_alarm_threshold = 80

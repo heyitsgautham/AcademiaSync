@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +35,7 @@ type SortField = "title" | "teacherName" | "enrolledCount" | "createdAt"
 type SortOrder = "asc" | "desc"
 
 export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps) {
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -171,7 +173,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("title")}
                                     >
                                         Course Title
@@ -182,7 +184,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("teacherName")}
                                     >
                                         Teacher
@@ -192,7 +194,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead className="text-center">
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center mx-auto hover:bg-transparent p-0"
+                                        className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("enrolledCount")}
                                     >
                                         Students
@@ -202,7 +204,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 <TableHead>
                                     <Button
                                         variant="ghost"
-                                        className="flex items-center hover:bg-transparent p-0"
+                                        className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => handleSort("createdAt")}
                                     >
                                         Created
@@ -220,7 +222,11 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
                                 </TableRow>
                             ) : (
                                 paginatedCourses.map((course) => (
-                                    <TableRow key={course.id}>
+                                    <TableRow
+                                        key={course.id}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => router.push(`/admin/courses/${course.id}`)}
+                                    >
                                         <TableCell className="font-medium">{course.title}</TableCell>
                                         <TableCell className="max-w-xs truncate">
                                             {course.description || "-"}

@@ -53,6 +53,7 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
     mutationFn: (id: number | string) => courseApi.deleteAssignment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
+      queryClient.invalidateQueries({ queryKey: ["student-assignments"] })
       toast({
         title: "Success",
         description: "Assignment deleted successfully",

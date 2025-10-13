@@ -16,12 +16,12 @@ interface StudentDetailModalProps {
 
 export function TeacherStudentDetailModal({ open, onOpenChange, student }: StudentDetailModalProps) {
   const { data: studentDetails, isLoading } = useQuery({
-    queryKey: ["student-details", student?.id],
+    queryKey: ["student-details", student?.id, student?.courseId],
     queryFn: async () => {
-      const res = await fetch(`/api/teacher/student-details?id=${student.id}`)
+      const res = await fetch(`/api/teacher/student-details?id=${student.id}&courseId=${student.courseId}`)
       return res.json()
     },
-    enabled: !!student?.id && open,
+    enabled: !!student?.id && !!student?.courseId && open,
   })
 
   const getStatusIcon = (status: string) => {

@@ -272,6 +272,7 @@ router.get('/teachers', authenticate, authorize('Admin'), async (req, res) => {
                 u.first_name as "firstName",
                 u.last_name as "lastName",
                 u.email,
+                u.profile_picture,
                 u.specialization,
                 COUNT(DISTINCT c.id) as course_count,
                 COUNT(DISTINCT e.student_id) as student_count
@@ -279,7 +280,7 @@ router.get('/teachers', authenticate, authorize('Admin'), async (req, res) => {
             LEFT JOIN courses c ON u.id = c.teacher_id
             LEFT JOIN enrollments e ON c.id = e.course_id
             WHERE u.role = 'Teacher'
-            GROUP BY u.id, u.first_name, u.last_name, u.email, u.specialization
+            GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture, u.specialization
             ORDER BY u.last_name, u.first_name
         `);
 
@@ -289,6 +290,7 @@ router.get('/teachers', authenticate, authorize('Admin'), async (req, res) => {
                 firstName: row.firstName,
                 lastName: row.lastName,
                 email: row.email,
+                profilePicture: row.profile_picture,
                 specialization: row.specialization || '',
                 courseCount: parseInt(row.course_count),
                 studentCount: parseInt(row.student_count)
@@ -438,12 +440,15 @@ router.get('/students', authenticate, authorize('Admin'), async (req, res) => {
                 u.first_name as "firstName",
                 u.last_name as "lastName",
                 u.email,
+                u.profile_picture,
                 u.age,
-                COUNT(e.id) as enrolled_courses
+                COUNT(DISTINCT e.id) as enrolled_courses,
+                AVG(s.grade) as avg_score
             FROM users u
             LEFT JOIN enrollments e ON u.id = e.student_id
+            LEFT JOIN submissions s ON u.id = s.student_id AND s.grade IS NOT NULL
             WHERE u.role = 'Student'
-            GROUP BY u.id, u.first_name, u.last_name, u.email, u.age
+            GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture, u.age
             ORDER BY u.last_name, u.first_name
         `);
 
@@ -452,8 +457,10 @@ router.get('/students', authenticate, authorize('Admin'), async (req, res) => {
             firstName: row.firstName,
             lastName: row.lastName,
             email: row.email,
+            profilePicture: row.profile_picture,
             age: row.age,
-            enrolledCourses: parseInt(row.enrolled_courses)
+            enrolledCourses: parseInt(row.enrolled_courses),
+            avgScore: row.avg_score ? parseFloat(row.avg_score).toFixed(2) : null
         }));
 
         res.json(students);

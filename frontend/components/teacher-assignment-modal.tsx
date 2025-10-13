@@ -63,6 +63,7 @@ export function TeacherAssignmentModal({ open, onOpenChange, assignment, courseI
       queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
       queryClient.invalidateQueries({ queryKey: ["assignments-with-status"] })
+      queryClient.invalidateQueries({ queryKey: ["student-assignments"] })
       toast({
         title: "Success",
         description: "Assignment created successfully",
@@ -86,6 +87,7 @@ export function TeacherAssignmentModal({ open, onOpenChange, assignment, courseI
       queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
       queryClient.invalidateQueries({ queryKey: ["assignments-with-status"] })
+      queryClient.invalidateQueries({ queryKey: ["student-assignments"] })
       toast({
         title: "Success",
         description: "Assignment updated successfully",

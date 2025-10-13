@@ -76,12 +76,12 @@ export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSection
             <CardHeader>
                 <CardTitle>Analytics</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-6">
                 {/* Pie Chart - User Role Distribution */}
                 <div>
                     <h3 className="text-base font-semibold text-foreground mb-4">User Role Distribution</h3>
                     {userRoleDistribution.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
+                        <ResponsiveContainer width="100%" height={220}>
                             <PieChart>
                                 <Pie
                                     data={userRoleDistribution}
@@ -108,7 +108,7 @@ export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSection
                                             </text>
                                         );
                                     }}
-                                    outerRadius={65}
+                                    outerRadius={55}
                                     dataKey="value"
                                 >
                                     {userRoleDistribution.map((entry, index) => (
@@ -132,7 +132,7 @@ export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSection
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                        <div className="flex items-center justify-center h-[220px] text-muted-foreground">
                             No role data available
                         </div>
                     )}
@@ -142,7 +142,7 @@ export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSection
                 <div>
                     <h3 className="text-base font-semibold text-foreground mb-4">Recent Enrollment Trend</h3>
                     {enrollmentTrend.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={260}>
+                        <ResponsiveContainer width="100%" height={240}>
                             <BarChart data={enrollmentTrend} margin={{ bottom: 40, left: 10, right: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                 <XAxis
@@ -176,7 +176,7 @@ export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSection
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex items-center justify-center h-[260px] text-muted-foreground">
+                        <div className="flex items-center justify-center h-[240px] text-muted-foreground">
                             No enrollment data available
                         </div>
                     )}

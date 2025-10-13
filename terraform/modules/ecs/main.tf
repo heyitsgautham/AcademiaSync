@@ -460,7 +460,7 @@ resource "aws_ecs_service" "frontend" {
   depends_on = [aws_lb_listener.frontend]
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count]
+    ignore_changes = [desired_count]
   }
 
   tags = {
@@ -495,7 +495,7 @@ resource "aws_ecs_service" "user_service" {
   depends_on = [aws_lb_listener.frontend]
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, load_balancer]
+    ignore_changes = [desired_count, load_balancer]
   }
 
   tags = {
@@ -530,7 +530,7 @@ resource "aws_ecs_service" "course_service" {
   depends_on = [aws_lb_listener.frontend]
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, load_balancer]
+    ignore_changes = [desired_count, load_balancer]
   }
 
   tags = {

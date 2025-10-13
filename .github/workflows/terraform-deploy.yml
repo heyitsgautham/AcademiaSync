@@ -117,7 +117,6 @@ jobs:
           course_service_memory  = 512
           
           nextauth_secret      = "${{ secrets.NEXTAUTH_SECRET }}"
-          nextauth_url         = "${{ secrets.NEXTAUTH_URL }}"
           google_client_id     = "${{ secrets.GOOGLE_CLIENT_ID }}"
           google_client_secret = "${{ secrets.GOOGLE_CLIENT_SECRET }}"
           jwt_secret           = "${{ secrets.JWT_SECRET }}"
@@ -234,7 +233,6 @@ jobs:
           course_service_memory  = 512
           
           nextauth_secret      = "${{ secrets.NEXTAUTH_SECRET }}"
-          nextauth_url         = "${{ secrets.NEXTAUTH_URL }}"
           google_client_id     = "${{ secrets.GOOGLE_CLIENT_ID }}"
           google_client_secret = "${{ secrets.GOOGLE_CLIENT_SECRET }}"
           jwt_secret           = "${{ secrets.JWT_SECRET }}"

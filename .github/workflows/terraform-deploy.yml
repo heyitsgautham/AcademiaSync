@@ -297,10 +297,25 @@ jobs:
           # Import IAM Policy Attachments
           safe_import 'module.ecs.aws_iam_role_policy_attachment.ecs_task_execution' "academiasync-prod-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
           
-          # Import Security Groups  
-          # NOTE: Skipping SG import - let Terraform create new SGs in Default VPC
-          # Old SGs from previous VPC will be manually cleaned up
-          echo "⚠ Skipping Security Group imports - will create fresh in Default VPC"
+          # Import Security Groups
+          echo "🔍 Looking for Security Groups..."
+          SG_ECS_TASKS=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-ecs-tasks-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          SG_ALB=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-alb-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          
+          echo "ECS Tasks SG: $SG_ECS_TASKS"
+          echo "ALB SG: $SG_ALB"
+          
+          if [ -n "$SG_ECS_TASKS" ] && [ "$SG_ECS_TASKS" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.ecs_tasks' "$SG_ECS_TASKS"
+          else
+            echo "⚠ ECS Tasks security group not found, skipping import"
+          fi
+          
+          if [ -n "$SG_ALB" ] && [ "$SG_ALB" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.alb' "$SG_ALB"
+          else
+            echo "⚠ ALB security group not found, skipping import"
+          fi
           
           # Import Target Groups (get ARNs dynamically)
           echo "🔍 Looking for Target Groups..."
@@ -340,6 +355,22 @@ jobs:
           
           if [ -n "$NS_ID" ] && [ "$NS_ID" != "None" ]; then
             safe_import 'module.ecs.aws_service_discovery_private_dns_namespace.main' "${NS_ID}:${VPC_ID}"
+            
+            # Import Service Discovery Services
+            echo "🔍 Looking for Service Discovery Services..."
+            SVC_USER=$(aws servicediscovery list-services --filters Name=NAMESPACE_ID,Values=$NS_ID --query "Services[?Name=='user-service'].Id" --output text 2>/dev/null || echo "")
+            SVC_COURSE=$(aws servicediscovery list-services --filters Name=NAMESPACE_ID,Values=$NS_ID --query "Services[?Name=='course-service'].Id" --output text 2>/dev/null || echo "")
+            
+            echo "User Service ID: $SVC_USER"
+            echo "Course Service ID: $SVC_COURSE"
+            
+            if [ -n "$SVC_USER" ] && [ "$SVC_USER" != "None" ]; then
+              safe_import 'module.ecs.aws_service_discovery_service.user_service' "$SVC_USER"
+            fi
+            
+            if [ -n "$SVC_COURSE" ] && [ "$SVC_COURSE" != "None" ]; then
+              safe_import 'module.ecs.aws_service_discovery_service.course_service' "$SVC_COURSE"
+            fi
           else
             echo "⚠ Service Discovery Namespace not found, skipping import"
           fi

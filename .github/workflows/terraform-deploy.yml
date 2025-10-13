@@ -249,40 +249,79 @@ jobs:
         run: terraform init
 
       - name: Import Existing Resources
+        continue-on-error: true
         run: |
           # Import existing AWS resources to avoid "already exists" errors
-          echo "🚀 Importing existing AWS resources..."
+          echo "🚀 Checking and importing existing AWS resources..."
           
-          # Import ECR Repositories
-          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"frontend\"] academiasync-prod-frontend || echo "ECR frontend already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"user-service\"] academiasync-prod-user-service || echo "ECR user-service already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"course-service\"] academiasync-prod-course-service || echo "ECR course-service already imported or doesn't exist"
+          # Function to safely import with better error handling
+          safe_import() {
+            local resource=$1
+            local id=$2
+            echo "Importing $resource..."
+            terraform import "$resource" "$id" 2>&1 | grep -q "Resource already managed\|Cannot import non-existent\|Successfully imported" && echo "✓ $resource handled" || echo "⚠ $resource may need attention"
+          }
+          
+          # Import ECR Repositories (with images)
+          safe_import 'module.ecr.aws_ecr_repository.repos["frontend"]' "academiasync-prod-frontend"
+          safe_import 'module.ecr.aws_ecr_repository.repos["user-service"]' "academiasync-prod-user-service"
+          safe_import 'module.ecr.aws_ecr_repository.repos["course-service"]' "academiasync-prod-course-service"
           
           # Import CloudWatch Log Groups
-          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.frontend /ecs/academiasync-prod/frontend || echo "Log Group frontend already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.user_service /ecs/academiasync-prod/user-service || echo "Log Group user-service already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.course_service /ecs/academiasync-prod/course-service || echo "Log Group course-service already imported or doesn't exist"
+          safe_import 'module.ecs.aws_cloudwatch_log_group.frontend' "/ecs/academiasync-prod/frontend"
+          safe_import 'module.ecs.aws_cloudwatch_log_group.user_service' "/ecs/academiasync-prod/user-service"
+          safe_import 'module.ecs.aws_cloudwatch_log_group.course_service' "/ecs/academiasync-prod/course-service"
           
           # Import IAM Roles
-          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role.ecs_task_execution academiasync-prod-ecs-task-execution || echo "IAM Role ecs-task-execution already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role.ecs_task academiasync-prod-ecs-task || echo "IAM Role ecs-task already imported or doesn't exist"
+          safe_import 'module.ecs.aws_iam_role.ecs_task_execution' "academiasync-prod-ecs-task-execution"
+          safe_import 'module.ecs.aws_iam_role.ecs_task' "academiasync-prod-ecs-task"
           
           # Import IAM Policy Attachments
-          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role_policy_attachment.ecs_task_execution "academiasync-prod-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" || echo "Policy attachment already imported or role doesn't exist"
+          safe_import 'module.ecs.aws_iam_role_policy_attachment.ecs_task_execution' "academiasync-prod-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
           
-          # Import Load Balancer
-          terraform import -state=./terraform.tfstate module.ecs.aws_lb.main academiasync-prod-alb || echo "Load Balancer already imported or doesn't exist"
+          # Import Security Groups
+          SG_ECS_TASKS=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-ecs-tasks-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          SG_ALB=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-alb-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
           
-          # Import Target Groups
-          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.frontend academiasync-prod-frontend-tg || echo "Target Group frontend-tg already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.user_service academiasync-prod-user-svc-tg || echo "Target Group user-svc-tg already imported or doesn't exist"
-          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.course_service academiasync-prod-course-svc-tg || echo "Target Group course-svc-tg already imported or doesn't exist"
+          if [ "$SG_ECS_TASKS" != "" ] && [ "$SG_ECS_TASKS" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.ecs_tasks' "$SG_ECS_TASKS"
+          fi
+          
+          if [ "$SG_ALB" != "" ] && [ "$SG_ALB" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.alb' "$SG_ALB"
+          fi
+          
+          # Import Target Groups (get ARNs dynamically)
+          TG_FRONTEND=$(aws elbv2 describe-target-groups --names academiasync-prod-frontend-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          TG_USER=$(aws elbv2 describe-target-groups --names academiasync-prod-user-svc-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          TG_COURSE=$(aws elbv2 describe-target-groups --names academiasync-prod-course-svc-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          
+          if [ "$TG_FRONTEND" != "" ] && [ "$TG_FRONTEND" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.frontend' "$TG_FRONTEND"
+          fi
+          
+          if [ "$TG_USER" != "" ] && [ "$TG_USER" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.user_service' "$TG_USER"
+          fi
+          
+          if [ "$TG_COURSE" != "" ] && [ "$TG_COURSE" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.course_service' "$TG_COURSE"
+          fi
+          
+          # Import Load Balancer (get ARN dynamically)
+          ALB_ARN=$(aws elbv2 describe-load-balancers --names academiasync-prod-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || echo "")
+          if [ "$ALB_ARN" != "" ] && [ "$ALB_ARN" != "None" ]; then
+            safe_import 'module.ecs.aws_lb.main' "$ALB_ARN"
+          fi
           
           # Import ECS Cluster
-          terraform import -state=./terraform.tfstate module.ecs.aws_ecs_cluster.main academiasync-prod-cluster || echo "ECS Cluster already imported or doesn't exist"
+          safe_import 'module.ecs.aws_ecs_cluster.main' "academiasync-prod-cluster"
           
-          # Import VPC and Networking (if they exist)
-          terraform import -state=./terraform.tfstate module.vpc.aws_vpc.main vpc-0fac2cd4ee189b881 || echo "VPC already imported or doesn't exist"
+          # Import Service Discovery Namespace
+          NS_ID=$(aws servicediscovery list-namespaces --filters Name=NAME,Values=academiasync-prod.local --query 'Namespaces[0].Id' --output text 2>/dev/null || echo "")
+          if [ "$NS_ID" != "" ] && [ "$NS_ID" != "None" ]; then
+            safe_import 'module.ecs.aws_service_discovery_private_dns_namespace.main' "$NS_ID"
+          fi
           
           echo "✅ Import process completed!"
 

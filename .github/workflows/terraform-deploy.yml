@@ -268,7 +268,7 @@ jobs:
             if echo "$output" | grep -q "Resource already managed by Terraform"; then
               echo "✓ $resource already in state"
               return 0
-            elif echo "$output" | grep -q "Successfully imported"; then
+            elif echo "$output" | grep -q "Import successful"; then
               echo "✓ $resource imported successfully"
               return 0
             elif echo "$output" | grep -q "Cannot import non-existent"; then

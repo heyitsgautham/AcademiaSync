@@ -384,6 +384,10 @@ jobs:
           echo ""
           echo "🔍 Checking for Security Groups in state:"
           terraform state list | grep -i security || echo "❌ No security groups found in state!"
+          echo ""
+          echo "🔍 Showing imported Security Group details:"
+          terraform state show module.vpc.aws_security_group.ecs_tasks || true
+          terraform state show module.vpc.aws_security_group.alb || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve

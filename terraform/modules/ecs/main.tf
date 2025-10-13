@@ -370,7 +370,7 @@ resource "aws_ecs_task_definition" "user_service" {
     environment = [
       { name = "PORT", value = "5000" },
       { name = "NODE_ENV", value = "production" },
-      { name = "FRONTEND_URL", value = var.nextauth_url },
+      { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" },
       { name = "DATABASE_URL", value = var.database_url },
       { name = "JWT_SECRET", value = var.jwt_secret },
       { name = "JWT_REFRESH_SECRET", value = var.jwt_refresh_secret },
@@ -415,7 +415,7 @@ resource "aws_ecs_task_definition" "course_service" {
     environment = [
       { name = "PORT", value = "5001" },
       { name = "NODE_ENV", value = "production" },
-      { name = "FRONTEND_URL", value = var.nextauth_url },
+      { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" },
       { name = "DATABASE_URL", value = var.database_url },
       { name = "JWT_SECRET", value = var.jwt_secret },
       { name = "JWT_REFRESH_SECRET", value = var.jwt_refresh_secret }

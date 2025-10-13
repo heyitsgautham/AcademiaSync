@@ -55,6 +55,17 @@ terraform validate
 terraform plan
 ```
 
+### Import Existing Resources (if needed)
+```bash
+# If you get "ResourceAlreadyExistsException" errors:
+./import-existing-resources.sh    # Automated import script
+# OR manual import:
+terraform import 'module.ecr.aws_ecr_repository.repos["frontend"]' academiasync-prod-frontend
+terraform import 'module.ecs.aws_cloudwatch_log_group.frontend' /ecs/academiasync-prod/frontend
+terraform import 'module.ecs.aws_iam_role.ecs_task_execution' academiasync-prod-ecs-task-execution
+# ... (see README.md for complete list)
+```
+
 ### Deploy Infrastructure
 ```bash
 ./deploy.sh                 # Automated deployment script

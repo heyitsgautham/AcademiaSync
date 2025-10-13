@@ -72,7 +72,55 @@ terraform/
 
 3. **⚠️ IMPORTANT**: Never commit `terraform.tfvars` - it's in `.gitignore`
 
-## 📦 Deployment Steps
+## � Handling Existing AWS Resources
+
+If you have previously deployed resources that conflict with Terraform, you may encounter errors like:
+- `RepositoryAlreadyExistsException` (ECR repositories)
+- `ResourceAlreadyExistsException` (CloudWatch Log Groups)
+- `EntityAlreadyExists` (IAM Roles)
+
+### Solution: Import Existing Resources
+
+1. **Run the import script** (handles most common resources):
+   ```bash
+   cd terraform
+   ./import-existing-resources.sh
+   ```
+
+2. **Manual import** (if script fails):
+   ```bash
+   # Import ECR repositories
+   terraform import 'module.ecr.aws_ecr_repository.repos["frontend"]' academiasync-prod-frontend
+   terraform import 'module.ecr.aws_ecr_repository.repos["user-service"]' academiasync-prod-user-service
+   terraform import 'module.ecr.aws_ecr_repository.repos["course-service"]' academiasync-prod-course-service
+
+   # Import CloudWatch log groups
+   terraform import 'module.ecs.aws_cloudwatch_log_group.frontend' /ecs/academiasync-prod/frontend
+   terraform import 'module.ecs.aws_cloudwatch_log_group.user_service' /ecs/academiasync-prod/user-service
+   terraform import 'module.ecs.aws_cloudwatch_log_group.course_service' /ecs/academiasync-prod/course-service
+
+   # Import IAM roles
+   terraform import 'module.ecs.aws_iam_role.ecs_task_execution' academiasync-prod-ecs-task-execution
+   terraform import 'module.ecs.aws_iam_role.ecs_task' academiasync-prod-ecs-task
+   ```
+
+3. **Verify import success**:
+   ```bash
+   terraform plan
+   ```
+   Should show no changes for imported resources.
+
+### Terraform Lifecycle Protection
+
+The configuration now includes `lifecycle` blocks to prevent accidental destruction of imported resources:
+```hcl
+lifecycle {
+  prevent_destroy = true
+  ignore_changes  = [name]
+}
+```
+
+## �📦 Deployment Steps
 
 ### Step 1: Initialize Terraform
 ```bash

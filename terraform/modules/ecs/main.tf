@@ -73,6 +73,11 @@ resource "aws_cloudwatch_log_group" "frontend" {
   name              = "/ecs/${var.project_name}-${var.environment}/frontend"
   retention_in_days = 7 # Free tier: 7 days retention
 
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-frontend-logs"
     Service = "frontend"
@@ -83,6 +88,11 @@ resource "aws_cloudwatch_log_group" "user_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/user-service"
   retention_in_days = 7
 
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-user-service-logs"
     Service = "user-service"
@@ -92,6 +102,11 @@ resource "aws_cloudwatch_log_group" "user_service" {
 resource "aws_cloudwatch_log_group" "course_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/course-service"
   retention_in_days = 7
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-course-service-logs"
@@ -113,6 +128,11 @@ resource "aws_iam_role" "ecs_task_execution" {
       }
     }]
   })
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task-execution"
@@ -139,6 +159,11 @@ resource "aws_iam_role" "ecs_task" {
       }
     }]
   })
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [name]
+  }
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task"

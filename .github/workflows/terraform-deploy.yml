@@ -377,6 +377,14 @@ jobs:
           
           echo "✅ Import process completed!"
 
+      - name: Verify Imported Resources
+        run: |
+          echo "📋 Resources currently in Terraform state:"
+          terraform state list | sort
+          echo ""
+          echo "🔍 Checking for Security Groups in state:"
+          terraform state list | grep -i security || echo "❌ No security groups found in state!"
+
       - name: Terraform Apply
         run: terraform apply -auto-approve
 

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/production
+      - feature/aws-terraform
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-deploy.yml'
@@ -184,7 +185,7 @@ jobs:
     name: Terraform Apply
     needs: terraform-plan
     if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')) ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production' || github.ref == 'refs/heads/feature/aws-terraform')) ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
     runs-on: ubuntu-latest
     defaults:

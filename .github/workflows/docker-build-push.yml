@@ -6,15 +6,13 @@ on:
       - main
       - feature/production
     paths:
-      - 'frontend/**'
-      - 'backend/**'
+      - 'app-deployment/**'
       - '.github/workflows/docker-build-push.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'frontend/**'
-      - 'backend/**'
+      - 'app-deployment/**'
   workflow_dispatch:  # Allow manual trigger
 
 env:
@@ -42,13 +40,13 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'frontend/**'
+              - 'app-deployment/frontend/**'
               - '.github/workflows/docker-build-push.yml'
             user-service:
-              - 'backend/user-service/**'
+              - 'app-deployment/backend/user-service/**'
               - '.github/workflows/docker-build-push.yml'
             course-service:
-              - 'backend/course-service/**'
+              - 'app-deployment/backend/course-service/**'
               - '.github/workflows/docker-build-push.yml'
 
   # Build, scan, and push Frontend

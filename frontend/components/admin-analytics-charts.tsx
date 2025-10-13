@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +40,7 @@ interface AdminAnalyticsChartsProps {
 }
 
 export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsChartsProps) {
+    const router = useRouter()
     const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
 
     useEffect(() => {
@@ -276,7 +278,8 @@ export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsCha
                             {topTeachersData.map((teacher, index) => (
                                 <div
                                     key={teacher.id}
-                                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                                    onClick={() => router.push(`/admin/teachers/${teacher.id}`)}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500/10 text-green-500 font-bold text-sm">
@@ -320,7 +323,8 @@ export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsCha
                             {topStudentsData.map((student, index) => (
                                 <div
                                     key={student.id}
-                                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"
+                                    onClick={() => router.push(`/admin/students/${student.id}`)}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 font-bold text-sm">

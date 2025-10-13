@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Search, UserCog, Shield, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, Edit, Trash2, RefreshCw } from "lucide-react"
+import { Search, UserCog, Shield, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, Edit, Trash2, RefreshCw, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -40,7 +42,9 @@ interface Student {
     firstName: string
     lastName: string
     email: string
+    profilePicture?: string
     age?: number
+    avgScore?: number
     enrolledCourses?: number
 }
 
@@ -52,11 +56,12 @@ interface AdminStudentsTableProps {
     onDelete: (studentId: number) => void
 }
 
-type SortField = "name" | "email" | "age" | "enrolledCourses"
+type SortField = "name" | "email" | "avgScore" | "enrolledCourses"
 type SortOrder = "asc" | "desc"
 
 export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDelete }: AdminStudentsTableProps) {
     const { toast } = useToast()
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [promoteUserId, setPromoteUserId] = useState<number | null>(null)
     const [promoteRole, setPromoteRole] = useState<"Teacher" | "Admin" | null>(null)
@@ -109,9 +114,9 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
             if (sortField === "name") {
                 aValue = `${a.firstName} ${a.lastName}`.toLowerCase()
                 bValue = `${b.firstName} ${b.lastName}`.toLowerCase()
-            } else if (sortField === "age") {
-                aValue = a.age ?? 0
-                bValue = b.age ?? 0
+            } else if (sortField === "avgScore") {
+                aValue = a.avgScore ?? 0
+                bValue = b.avgScore ?? 0
             } else if (sortField === "enrolledCourses") {
                 aValue = a.enrolledCourses ?? 0
                 bValue = b.enrolledCourses ?? 0
@@ -307,10 +312,11 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]"></TableHead>
                                     <TableHead>
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center hover:bg-transparent p-0"
+                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("name")}
                                         >
                                             Name
@@ -320,7 +326,7 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                                     <TableHead>
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center hover:bg-transparent p-0"
+                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("email")}
                                         >
                                             Email
@@ -330,17 +336,17 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                                     <TableHead className="text-center">
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center mx-auto hover:bg-transparent p-0"
-                                            onClick={() => handleSort("age")}
+                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
+                                            onClick={() => handleSort("avgScore")}
                                         >
-                                            Age
-                                            {getSortIcon("age")}
+                                            Avg Score
+                                            {getSortIcon("avgScore")}
                                         </Button>
                                     </TableHead>
                                     <TableHead className="text-center">
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center mx-auto hover:bg-transparent p-0"
+                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("enrolledCourses")}
                                         >
                                             Courses
@@ -354,19 +360,41 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                             <TableBody>
                                 {paginatedStudents.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                             No students found
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     paginatedStudents.map((student) => (
-                                        <TableRow key={student.id}>
+                                        <TableRow
+                                            key={student.id}
+                                            className="cursor-pointer hover:bg-muted/50"
+                                            onClick={(e) => {
+                                                // Don't navigate if clicking on buttons
+                                                if ((e.target as HTMLElement).closest('button')) {
+                                                    return
+                                                }
+                                                router.push(`/admin/students/${student.id}`)
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={student.profilePicture || undefined} alt={`${student.firstName} ${student.lastName}`} />
+                                                    <AvatarFallback>
+                                                        <User className="h-4 w-4" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            </TableCell>
                                             <TableCell className="font-medium">
                                                 {student.firstName} {student.lastName}
                                             </TableCell>
                                             <TableCell>{student.email}</TableCell>
                                             <TableCell className="text-center">
-                                                {student.age ? <Badge variant="outline">{student.age} years</Badge> : "-"}
+                                                {student.avgScore ? (
+                                                    <Badge variant="outline">{parseFloat(student.avgScore.toString()).toFixed(1)}%</Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-center">{student.enrolledCourses ?? 0}</TableCell>
                                             <TableCell className="text-center">

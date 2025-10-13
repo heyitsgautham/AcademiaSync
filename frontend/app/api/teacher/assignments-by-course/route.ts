@@ -1,77 +1,94 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+
+const COURSE_SERVICE_URL = process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
 
 export async function GET() {
-  // Mock data for assignments organized by course
-  const assignmentsByCourse = [
-    {
-      courseId: "1",
-      courseName: "Introduction to React",
-      assignments: [
-        {
-          id: "a1",
-          title: "React Components Exercise",
-          description: "Build a set of reusable React components",
-          dueDate: "2024-02-15",
-          status: "active",
-          submissions: 38,
-          totalStudents: 45,
-          totalPoints: 100,
-        },
-        {
-          id: "a2",
-          title: "State Management Project",
-          description: "Create an app using useState and useEffect hooks",
-          dueDate: "2024-02-22",
-          status: "active",
-          submissions: 42,
-          totalStudents: 45,
-          totalPoints: 150,
-        },
-      ],
-    },
-    {
-      courseId: "2",
-      courseName: "Advanced JavaScript",
-      assignments: [
-        {
-          id: "a3",
-          title: "Async Programming Challenge",
-          description: "Implement async/await patterns and error handling",
-          dueDate: "2024-02-18",
-          status: "active",
-          submissions: 25,
-          totalStudents: 32,
-          totalPoints: 100,
-        },
-        {
-          id: "a4",
-          title: "ES6+ Features Quiz",
-          description: "Test your knowledge of modern JavaScript features",
-          dueDate: "2024-02-10",
-          status: "closed",
-          submissions: 32,
-          totalStudents: 32,
-          totalPoints: 50,
-        },
-      ],
-    },
-    {
-      courseId: "3",
-      courseName: "Web Design Fundamentals",
-      assignments: [
-        {
-          id: "a5",
-          title: "Responsive Layout Design",
-          description: "Create a fully responsive webpage layout",
-          dueDate: "2024-02-20",
-          status: "active",
-          submissions: 20,
-          totalStudents: 28,
-          totalPoints: 120,
-        },
-      ],
-    },
-  ]
+  try {
+    const session = await getServerSession()
 
-  return NextResponse.json(assignmentsByCourse)
+    if (!session || !(session as any).backendAccessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const authHeader = `Bearer ${(session as any).backendAccessToken}`
+
+    // First, fetch all courses for the teacher
+    const coursesResponse = await fetch(`${COURSE_SERVICE_URL}/api/teacher/courses`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+    })
+
+    if (!coursesResponse.ok) {
+      throw new Error(`Failed to fetch courses: ${coursesResponse.statusText}`)
+    }
+
+    const coursesData = await coursesResponse.json()
+    const courses = Array.isArray(coursesData) ? coursesData : coursesData.courses || []
+
+    // Then fetch assignments for each course
+    const assignmentsByCourse = await Promise.all(
+      courses.map(async (course: any) => {
+        try {
+          const assignmentsResponse = await fetch(
+            `${COURSE_SERVICE_URL}/api/teacher/courses/${course.id}/assignments`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": authHeader,
+              },
+            }
+          )
+
+          if (!assignmentsResponse.ok) {
+            console.error(`Failed to fetch assignments for course ${course.id}`)
+            return {
+              courseId: course.id,
+              courseName: course.title,
+              assignments: [],
+            }
+          }
+
+          const assignmentsData = await assignmentsResponse.json()
+          const assignments = Array.isArray(assignmentsData)
+            ? assignmentsData
+            : assignmentsData.assignments || []
+
+          return {
+            courseId: course.id,
+            courseName: course.title,
+            assignments: assignments.map((assignment: any) => ({
+              id: assignment.id,
+              title: assignment.title,
+              description: assignment.description,
+              dueDate: assignment.due_date,
+              status: assignment.status || "active",
+              submissions: assignment.submission_count || 0,
+              totalStudents: course.students_enrolled || 0,
+              totalPoints: assignment.total_points || 100,
+            })),
+          }
+        } catch (error) {
+          console.error(`Error fetching assignments for course ${course.id}:`, error)
+          return {
+            courseId: course.id,
+            courseName: course.title,
+            assignments: [],
+          }
+        }
+      })
+    )
+
+    return NextResponse.json(assignmentsByCourse)
+  } catch (error) {
+    console.error("Error fetching assignments by course:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch assignments by course" },
+      { status: 500 }
+    )
+  }
 }

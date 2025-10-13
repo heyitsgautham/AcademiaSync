@@ -98,9 +98,8 @@ jobs:
           project_name = "academiasync"
           environment  = "prod"
           
-          vpc_cidr            = "10.0.0.0/16"
-          availability_zones  = ["us-east-1a", "us-east-1b"]
-          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          # Using AWS Default VPC - no custom VPC configuration needed
+          
           
           ecr_repositories = ["frontend", "user-service", "course-service"]
           
@@ -216,9 +215,8 @@ jobs:
           project_name = "academiasync"
           environment  = "prod"
           
-          vpc_cidr            = "10.0.0.0/16"
-          availability_zones  = ["us-east-1a", "us-east-1b"]
-          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          # Using AWS Default VPC - no custom VPC configuration needed
+          
           
           ecr_repositories = ["frontend", "user-service", "course-service"]
           
@@ -249,6 +247,175 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+
+      - name: Import Existing Resources
+        continue-on-error: true
+        run: |
+          set -x  # Enable debug mode to see variable values
+          # Import existing AWS resources to avoid "already exists" errors
+          echo "🚀 Checking and importing existing AWS resources..."
+          
+          # Function to safely import with proper error handling
+          safe_import() {
+            local resource=$1
+            local id=$2
+            echo "Importing $resource with ID: $id"
+            
+            # Try to import, capture output
+            output=$(terraform import "$resource" "$id" 2>&1)
+            exit_code=$?
+            
+            if echo "$output" | grep -q "Resource already managed by Terraform"; then
+              echo "✓ $resource already in state"
+              return 0
+            elif echo "$output" | grep -q "Import successful"; then
+              echo "✓ $resource imported successfully"
+              return 0
+            elif echo "$output" | grep -q "Cannot import non-existent"; then
+              echo "⚠ $resource does not exist in AWS, skipping"
+              return 0
+            else
+              echo "❌ $resource import failed: $output"
+              return 1
+            fi
+          }
+          
+          # Import ECR Repositories (with images)
+          safe_import 'module.ecr.aws_ecr_repository.repos["frontend"]' "academiasync-prod-frontend"
+          safe_import 'module.ecr.aws_ecr_repository.repos["user-service"]' "academiasync-prod-user-service"
+          safe_import 'module.ecr.aws_ecr_repository.repos["course-service"]' "academiasync-prod-course-service"
+          
+          # Import CloudWatch Log Groups
+          safe_import 'module.ecs.aws_cloudwatch_log_group.frontend' "/ecs/academiasync-prod/frontend"
+          safe_import 'module.ecs.aws_cloudwatch_log_group.user_service' "/ecs/academiasync-prod/user-service"
+          safe_import 'module.ecs.aws_cloudwatch_log_group.course_service' "/ecs/academiasync-prod/course-service"
+          
+          # Import IAM Roles
+          safe_import 'module.ecs.aws_iam_role.ecs_task_execution' "academiasync-prod-ecs-task-execution"
+          safe_import 'module.ecs.aws_iam_role.ecs_task' "academiasync-prod-ecs-task"
+          
+          # Import IAM Policy Attachments
+          safe_import 'module.ecs.aws_iam_role_policy_attachment.ecs_task_execution' "academiasync-prod-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+          
+          # Import Security Groups
+          echo "🔍 Looking for Security Groups..."
+          SG_ECS_TASKS=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-ecs-tasks-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          SG_ALB=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=academiasync-prod-alb-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          
+          echo "ECS Tasks SG: $SG_ECS_TASKS"
+          echo "ALB SG: $SG_ALB"
+          
+          if [ -n "$SG_ECS_TASKS" ] && [ "$SG_ECS_TASKS" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.ecs_tasks' "$SG_ECS_TASKS"
+          else
+            echo "⚠ ECS Tasks security group not found, skipping import"
+          fi
+          
+          if [ -n "$SG_ALB" ] && [ "$SG_ALB" != "None" ]; then
+            safe_import 'module.vpc.aws_security_group.alb' "$SG_ALB"
+          else
+            echo "⚠ ALB security group not found, skipping import"
+          fi
+          
+          # Import Target Groups (get ARNs dynamically)
+          echo "🔍 Looking for Target Groups..."
+          TG_FRONTEND=$(aws elbv2 describe-target-groups --names academiasync-prod-frontend-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          TG_USER=$(aws elbv2 describe-target-groups --names academiasync-prod-user-svc-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          TG_COURSE=$(aws elbv2 describe-target-groups --names academiasync-prod-course-svc-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+          
+          if [ -n "$TG_FRONTEND" ] && [ "$TG_FRONTEND" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.frontend' "$TG_FRONTEND"
+          fi
+          
+          if [ -n "$TG_USER" ] && [ "$TG_USER" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.user_service' "$TG_USER"
+          fi
+          
+          if [ -n "$TG_COURSE" ] && [ "$TG_COURSE" != "None" ]; then
+            safe_import 'module.ecs.aws_lb_target_group.course_service' "$TG_COURSE"
+          fi
+          
+          # Import Load Balancer (get ARN dynamically)
+          echo "🔍 Looking for Load Balancer..."
+          ALB_ARN=$(aws elbv2 describe-load-balancers --names academiasync-prod-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || echo "")
+          if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "None" ]; then
+            safe_import 'module.ecs.aws_lb.main' "$ALB_ARN"
+          fi
+          
+          # Import ECS Cluster
+          safe_import 'module.ecs.aws_ecs_cluster.main' "academiasync-prod-cluster"
+          
+          # Import Service Discovery Namespace
+          echo "🔍 Looking for Service Discovery Namespace..."
+          NS_ID=$(aws servicediscovery list-namespaces --filters Name=NAME,Values=academiasync-prod.local --query 'Namespaces[0].Id' --output text 2>/dev/null || echo "")
+          VPC_ID=$(terraform output -raw vpc_id 2>/dev/null || echo "vpc-0a2ad78d07019ee5e")
+          
+          echo "Namespace ID: $NS_ID"
+          echo "VPC ID: $VPC_ID"
+          
+          if [ -n "$NS_ID" ] && [ "$NS_ID" != "None" ]; then
+            safe_import 'module.ecs.aws_service_discovery_private_dns_namespace.main' "${NS_ID}:${VPC_ID}"
+            
+            # Import Service Discovery Services
+            echo "🔍 Looking for Service Discovery Services..."
+            SVC_USER=$(aws servicediscovery list-services --filters Name=NAMESPACE_ID,Values=$NS_ID --query "Services[?Name=='user-service'].Id" --output text 2>/dev/null || echo "")
+            SVC_COURSE=$(aws servicediscovery list-services --filters Name=NAMESPACE_ID,Values=$NS_ID --query "Services[?Name=='course-service'].Id" --output text 2>/dev/null || echo "")
+            
+            echo "User Service ID: $SVC_USER"
+            echo "Course Service ID: $SVC_COURSE"
+            
+            if [ -n "$SVC_USER" ] && [ "$SVC_USER" != "None" ]; then
+              safe_import 'module.ecs.aws_service_discovery_service.user_service' "$SVC_USER"
+            fi
+            
+            if [ -n "$SVC_COURSE" ] && [ "$SVC_COURSE" != "None" ]; then
+              safe_import 'module.ecs.aws_service_discovery_service.course_service' "$SVC_COURSE"
+            fi
+          else
+            echo "⚠ Service Discovery Namespace not found, skipping import"
+          fi
+          
+          # Import ECS Services
+          echo "📦 Importing ECS Services..."
+          CLUSTER_NAME=$(aws ecs list-clusters --query 'clusterArns[?contains(@, `academiasync-prod-cluster`)] | [0]' --output text | sed 's/.*\///')
+          
+          if [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "None" ]; then
+            echo "Found ECS Cluster: $CLUSTER_NAME"
+            
+            # Import frontend service
+            FRONTEND_SVC=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns[?contains(@, `frontend`)] | [0]' --output text)
+            if [ -n "$FRONTEND_SVC" ] && [ "$FRONTEND_SVC" != "None" ]; then
+              safe_import 'module.ecs.aws_ecs_service.frontend' "$CLUSTER_NAME/$(basename $FRONTEND_SVC)"
+            fi
+            
+            # Import user-service
+            USER_SVC=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns[?contains(@, `user-service`)] | [0]' --output text)
+            if [ -n "$USER_SVC" ] && [ "$USER_SVC" != "None" ]; then
+              safe_import 'module.ecs.aws_ecs_service.user_service' "$CLUSTER_NAME/$(basename $USER_SVC)"
+            fi
+            
+            # Import course-service
+            COURSE_SVC=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns[?contains(@, `course-service`)] | [0]' --output text)
+            if [ -n "$COURSE_SVC" ] && [ "$COURSE_SVC" != "None" ]; then
+              safe_import 'module.ecs.aws_ecs_service.course_service' "$CLUSTER_NAME/$(basename $COURSE_SVC)"
+            fi
+          else
+            echo "⚠ ECS Cluster not found, skipping service imports"
+          fi
+          
+          echo "✅ Import process completed!"
+
+      - name: Verify Imported Resources
+        run: |
+          echo "📋 Resources currently in Terraform state:"
+          terraform state list | sort
+          echo ""
+          echo "🔍 Checking for Security Groups in state:"
+          terraform state list | grep -i security || echo "❌ No security groups found in state!"
+          echo ""
+          echo "🔍 Showing imported Security Group details:"
+          terraform state show module.vpc.aws_security_group.ecs_tasks || true
+          terraform state show module.vpc.aws_security_group.alb || true
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
@@ -310,9 +477,8 @@ jobs:
           project_name = "academiasync"
           environment  = "prod"
           
-          vpc_cidr            = "10.0.0.0/16"
-          availability_zones  = ["us-east-1a", "us-east-1b"]
-          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          # Using AWS Default VPC - no custom VPC configuration needed
+          
           
           ecr_repositories = ["frontend", "user-service", "course-service"]
           

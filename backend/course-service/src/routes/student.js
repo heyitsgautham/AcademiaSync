@@ -326,8 +326,7 @@ module.exports = (pool) => {
         try {
             const studentId = req.user.id;
 
-            // Parse query parameters
-            const { page, limit, offset } = parsePagination(req.query);
+            // Parse query parameters - removed pagination since frontend handles it
             const { orderByClause } = parseSorting(req.query, ['due_date', 'title', 'course', 'status']);
             const { whereClause, values } = buildStudentAssignmentsFilter(req.query);
 
@@ -339,19 +338,7 @@ module.exports = (pool) => {
       `;
             const studentResult = await pool.query(studentQuery, [studentId]);
 
-            // Get total count for pagination
-            const countQuery = `
-        SELECT COUNT(*) as total
-        FROM assignments a
-        INNER JOIN courses c ON a.course_id = c.id
-        INNER JOIN enrollments e ON c.id = e.course_id AND e.student_id = $1
-        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = $1
-        WHERE 1=1 ${whereClause}
-      `;
-            const countResult = await pool.query(countQuery, [studentId, ...values]);
-            const totalItems = parseInt(countResult.rows[0].total);
-
-            // Get paginated assignments with filters and sorting
+            // Get all assignments without pagination (frontend handles pagination)
             const assignmentsQuery = `
         SELECT
           a.id,
@@ -375,9 +362,8 @@ module.exports = (pool) => {
         LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = $1
         WHERE 1=1 ${whereClause}
         ORDER BY ${orderByClause}
-        LIMIT $${values.length + 2} OFFSET $${values.length + 3}
       `;
-            const assignmentsResult = await pool.query(assignmentsQuery, [studentId, ...values, limit, offset]);
+            const assignmentsResult = await pool.query(assignmentsQuery, [studentId, ...values]);
 
             // Get enrolled courses list (for filtering dropdown)
             const coursesQuery = `
@@ -389,14 +375,10 @@ module.exports = (pool) => {
       `;
             const coursesResult = await pool.query(coursesQuery, [studentId]);
 
-            // Build pagination metadata
-            const pagination = buildPaginationMeta(totalItems, page, limit);
-
             res.json({
                 student: studentResult.rows[0],
                 assignments: assignmentsResult.rows,
-                courses: coursesResult.rows,
-                pagination
+                courses: coursesResult.rows
             });
         } catch (error) {
             console.error('Error fetching assignments:', error);

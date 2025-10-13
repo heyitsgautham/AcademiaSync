@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "repos" {
   }
 
   lifecycle {
-    ignore_changes  = [name]
+    ignore_changes = [name]
   }
 
   tags = {

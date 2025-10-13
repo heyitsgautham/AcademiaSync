@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - feature/production
-      - feature/aws-terraform
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-deploy.yml'
@@ -185,7 +184,7 @@ jobs:
     name: Terraform Apply
     needs: terraform-plan
     if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production' || github.ref == 'refs/heads/feature/aws-terraform')) ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')) ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
     runs-on: ubuntu-latest
     defaults:
@@ -250,6 +249,44 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+
+      - name: Import Existing Resources
+        run: |
+          # Import existing AWS resources to avoid "already exists" errors
+          echo "🚀 Importing existing AWS resources..."
+          
+          # Import ECR Repositories
+          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"frontend\"] academiasync-prod-frontend || echo "ECR frontend already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"user-service\"] academiasync-prod-user-service || echo "ECR user-service already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecr.aws_ecr_repository.repos[\"course-service\"] academiasync-prod-course-service || echo "ECR course-service already imported or doesn't exist"
+          
+          # Import CloudWatch Log Groups
+          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.frontend /ecs/academiasync-prod/frontend || echo "Log Group frontend already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.user_service /ecs/academiasync-prod/user-service || echo "Log Group user-service already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecs.aws_cloudwatch_log_group.course_service /ecs/academiasync-prod/course-service || echo "Log Group course-service already imported or doesn't exist"
+          
+          # Import IAM Roles
+          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role.ecs_task_execution academiasync-prod-ecs-task-execution || echo "IAM Role ecs-task-execution already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role.ecs_task academiasync-prod-ecs-task || echo "IAM Role ecs-task already imported or doesn't exist"
+          
+          # Import IAM Policy Attachments
+          terraform import -state=./terraform.tfstate module.ecs.aws_iam_role_policy_attachment.ecs_task_execution "academiasync-prod-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" || echo "Policy attachment already imported or role doesn't exist"
+          
+          # Import Load Balancer
+          terraform import -state=./terraform.tfstate module.ecs.aws_lb.main academiasync-prod-alb || echo "Load Balancer already imported or doesn't exist"
+          
+          # Import Target Groups
+          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.frontend academiasync-prod-frontend-tg || echo "Target Group frontend-tg already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.user_service academiasync-prod-user-svc-tg || echo "Target Group user-svc-tg already imported or doesn't exist"
+          terraform import -state=./terraform.tfstate module.ecs.aws_lb_target_group.course_service academiasync-prod-course-svc-tg || echo "Target Group course-svc-tg already imported or doesn't exist"
+          
+          # Import ECS Cluster
+          terraform import -state=./terraform.tfstate module.ecs.aws_ecs_cluster.main academiasync-prod-cluster || echo "ECS Cluster already imported or doesn't exist"
+          
+          # Import VPC and Networking (if they exist)
+          terraform import -state=./terraform.tfstate module.vpc.aws_vpc.main vpc-0fac2cd4ee189b881 || echo "VPC already imported or doesn't exist"
+          
+          echo "✅ Import process completed!"
 
       - name: Terraform Apply
         run: terraform apply -auto-approve

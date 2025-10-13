@@ -7,7 +7,7 @@
 set -e
 
 echo "🚀 Starting AcademiaSync Terraform Import Process"
-echo "=================================================="
+echo "=============================================="
 
 # Check if terraform.tfvars exists
 if [ ! -f "terraform.tfvars" ]; then
@@ -60,6 +60,16 @@ echo ""
 # Import IAM Policy Attachments (if roles exist)
 echo "📎 Importing IAM Policy Attachments..."
 terraform import "module.ecs.aws_iam_role_policy_attachment.ecs_task_execution" "${PROJECT_NAME}-${ENVIRONMENT}-ecs-task-execution/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy" 2>/dev/null && echo "✅ Imported IAM Policy Attachment: ecs-task-execution" || echo "ℹ️  Policy attachment already imported or role doesn't exist"
+
+# Import Load Balancer
+echo "⚖️  Importing Load Balancer..."
+terraform import "module.ecs.aws_lb.main" "${PROJECT_NAME}-${ENVIRONMENT}-alb" 2>/dev/null && echo "✅ Imported Load Balancer: alb" || echo "ℹ️  Load Balancer already imported or doesn't exist"
+
+# Import Target Groups
+echo "🎯 Importing Target Groups..."
+terraform import "module.ecs.aws_lb_target_group.frontend" "${PROJECT_NAME}-${ENVIRONMENT}-frontend-tg" 2>/dev/null && echo "✅ Imported Target Group: frontend-tg" || echo "ℹ️  Target Group frontend-tg already imported or doesn't exist"
+terraform import "module.ecs.aws_lb_target_group.user_service" "${PROJECT_NAME}-${ENVIRONMENT}-user-svc-tg" 2>/dev/null && echo "✅ Imported Target Group: user-svc-tg" || echo "ℹ️  Target Group user-svc-tg already imported or doesn't exist"
+terraform import "module.ecs.aws_lb_target_group.course_service" "${PROJECT_NAME}-${ENVIRONMENT}-course-svc-tg" 2>/dev/null && echo "✅ Imported Target Group: course-svc-tg" || echo "ℹ️  Target Group course-svc-tg already imported or doesn't exist"
 
 echo ""
 echo "🎯 Import process completed!"

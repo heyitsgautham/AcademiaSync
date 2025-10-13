@@ -1,0 +1,356 @@
+name: Terraform Infrastructure Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - feature/production
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-deploy.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.5.7
+  WORKING_DIR: ./terraform
+
+jobs:
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Format Check Results
+        if: steps.fmt.outcome == 'failure'
+        run: |
+          echo "❌ Terraform files need formatting. Run 'terraform fmt -recursive' locally."
+          exit 1
+
+  terraform-plan:
+    name: Terraform Plan
+    needs: terraform-validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars << EOF
+          aws_region  = "${{ env.AWS_REGION }}"
+          project_name = "academiasync"
+          environment  = "prod"
+          
+          vpc_cidr            = "10.0.0.0/16"
+          availability_zones  = ["us-east-1a", "us-east-1b"]
+          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          
+          ecr_repositories = ["frontend", "user-service", "course-service"]
+          
+          alert_email = "${{ secrets.ALERT_EMAIL }}"
+          
+          frontend_image       = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-frontend:latest"
+          user_service_image   = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-user-service:latest"
+          course_service_image = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-course-service:latest"
+          
+          frontend_cpu           = 256
+          frontend_memory        = 512
+          user_service_cpu       = 256
+          user_service_memory    = 512
+          course_service_cpu     = 256
+          course_service_memory  = 512
+          
+          nextauth_secret      = "${{ secrets.NEXTAUTH_SECRET }}"
+          nextauth_url         = "${{ secrets.NEXTAUTH_URL }}"
+          google_client_id     = "${{ secrets.GOOGLE_CLIENT_ID }}"
+          google_client_secret = "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          jwt_secret           = "${{ secrets.JWT_SECRET }}"
+          jwt_refresh_secret   = "${{ secrets.JWT_REFRESH_SECRET }}"
+          database_url         = "${{ secrets.DATABASE_URL }}"
+          
+          cpu_alarm_threshold    = 80
+          memory_alarm_threshold = 80
+          EOF
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+          retention-days: 5
+
+  terraform-apply:
+    name: Terraform Apply
+    needs: terraform-plan
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    environment:
+      name: production
+      url: https://console.aws.amazon.com/ecs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars << EOF
+          aws_region  = "${{ env.AWS_REGION }}"
+          project_name = "academiasync"
+          environment  = "prod"
+          
+          vpc_cidr            = "10.0.0.0/16"
+          availability_zones  = ["us-east-1a", "us-east-1b"]
+          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          
+          ecr_repositories = ["frontend", "user-service", "course-service"]
+          
+          alert_email = "${{ secrets.ALERT_EMAIL }}"
+          
+          frontend_image       = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-frontend:latest"
+          user_service_image   = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-user-service:latest"
+          course_service_image = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/academiasync-prod-course-service:latest"
+          
+          frontend_cpu           = 256
+          frontend_memory        = 512
+          user_service_cpu       = 256
+          user_service_memory    = 512
+          course_service_cpu     = 256
+          course_service_memory  = 512
+          
+          nextauth_secret      = "${{ secrets.NEXTAUTH_SECRET }}"
+          nextauth_url         = "${{ secrets.NEXTAUTH_URL }}"
+          google_client_id     = "${{ secrets.GOOGLE_CLIENT_ID }}"
+          google_client_secret = "${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          jwt_secret           = "${{ secrets.JWT_SECRET }}"
+          jwt_refresh_secret   = "${{ secrets.JWT_REFRESH_SECRET }}"
+          database_url         = "${{ secrets.DATABASE_URL }}"
+          
+          cpu_alarm_threshold    = 80
+          memory_alarm_threshold = 80
+          EOF
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Terraform Output
+        id: output
+        run: |
+          echo "## 🚀 Terraform Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          terraform output >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          
+          # Save outputs for other jobs
+          echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=$(terraform output -raw ecs_cluster_name)" >> $GITHUB_OUTPUT
+
+      - name: Deployment summary
+        run: |
+          echo "## ✅ Infrastructure Deployed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend URL:** ${{ steps.output.outputs.frontend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**ECS Cluster:** ${{ steps.output.outputs.ecs_cluster }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Confirm SNS subscription in your email" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check ECS services are running in AWS Console" >> $GITHUB_STEP_SUMMARY
+          echo "3. Monitor CloudWatch logs for any issues" >> $GITHUB_STEP_SUMMARY
+
+  terraform-destroy:
+    name: Terraform Destroy
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    environment:
+      name: production-destroy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create terraform.tfvars
+        run: |
+          cat > terraform.tfvars << EOF
+          aws_region  = "${{ env.AWS_REGION }}"
+          project_name = "academiasync"
+          environment  = "prod"
+          
+          vpc_cidr            = "10.0.0.0/16"
+          availability_zones  = ["us-east-1a", "us-east-1b"]
+          public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+          
+          ecr_repositories = ["frontend", "user-service", "course-service"]
+          
+          alert_email = "${{ secrets.ALERT_EMAIL }}"
+          
+          frontend_image       = "nginx:alpine"
+          user_service_image   = "nginx:alpine"
+          course_service_image = "nginx:alpine"
+          
+          frontend_cpu           = 256
+          frontend_memory        = 512
+          user_service_cpu       = 256
+          user_service_memory    = 512
+          course_service_cpu     = 256
+          course_service_memory  = 512
+          
+          nextauth_secret      = "placeholder"
+          nextauth_url         = "http://localhost:3000"
+          google_client_id     = "placeholder"
+          google_client_secret = "placeholder"
+          jwt_secret           = "placeholder"
+          jwt_refresh_secret   = "placeholder"
+          database_url         = "postgresql://localhost/db"
+          
+          cpu_alarm_threshold    = 80
+          memory_alarm_threshold = 80
+          EOF
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+
+      - name: Destruction summary
+        run: |
+          echo "## 🗑️ Infrastructure Destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All AWS resources have been destroyed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Please verify in AWS Console that all resources are deleted**" >> $GITHUB_STEP_SUMMARY

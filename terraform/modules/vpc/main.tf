@@ -43,6 +43,10 @@ resource "aws_security_group" "ecs_tasks" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   }
+
+  lifecycle {
+    ignore_changes = [name, vpc_id]
+  }
 }
 
 # Security Group for Load Balancer
@@ -80,6 +84,10 @@ resource "aws_security_group" "alb" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-alb-sg"
+  }
+
+  lifecycle {
+    ignore_changes = [name, vpc_id]
   }
 }
 

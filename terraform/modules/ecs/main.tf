@@ -16,6 +16,10 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-namespace"
   }
+
+  lifecycle {
+    ignore_changes = [name, vpc]
+  }
 }
 
 # Service Discovery for User Service

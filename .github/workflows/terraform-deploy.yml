@@ -251,6 +251,7 @@ jobs:
       - name: Import Existing Resources
         continue-on-error: true
         run: |
+          set -x  # Enable debug mode to see variable values
           # Import existing AWS resources to avoid "already exists" errors
           echo "🚀 Checking and importing existing AWS resources..."
           

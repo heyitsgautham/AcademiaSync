@@ -74,7 +74,6 @@ resource "aws_cloudwatch_log_group" "frontend" {
   retention_in_days = 7 # Free tier: 7 days retention
 
   lifecycle {
-    prevent_destroy = true
     ignore_changes  = [name]
   }
 
@@ -89,7 +88,6 @@ resource "aws_cloudwatch_log_group" "user_service" {
   retention_in_days = 7
 
   lifecycle {
-    prevent_destroy = true
     ignore_changes  = [name]
   }
 
@@ -104,7 +102,6 @@ resource "aws_cloudwatch_log_group" "course_service" {
   retention_in_days = 7
 
   lifecycle {
-    prevent_destroy = true
     ignore_changes  = [name]
   }
 
@@ -130,7 +127,6 @@ resource "aws_iam_role" "ecs_task_execution" {
   })
 
   lifecycle {
-    prevent_destroy = true
     ignore_changes  = [name]
   }
 
@@ -161,7 +157,6 @@ resource "aws_iam_role" "ecs_task" {
   })
 
   lifecycle {
-    prevent_destroy = true
     ignore_changes  = [name]
   }
 

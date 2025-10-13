@@ -348,11 +348,13 @@ jobs:
           # Import Service Discovery Namespace
           echo "🔍 Looking for Service Discovery Namespace..."
           NS_ID=$(aws servicediscovery list-namespaces --filters Name=NAME,Values=academiasync-prod.local --query 'Namespaces[0].Id' --output text 2>/dev/null || echo "")
+          VPC_ID=$(terraform output -raw vpc_id 2>/dev/null || echo "vpc-0a2ad78d07019ee5e")
           
           echo "Namespace ID: $NS_ID"
+          echo "VPC ID: $VPC_ID"
           
           if [ -n "$NS_ID" ] && [ "$NS_ID" != "None" ]; then
-            safe_import 'module.ecs.aws_service_discovery_private_dns_namespace.main' "$NS_ID"
+            safe_import 'module.ecs.aws_service_discovery_private_dns_namespace.main' "${NS_ID}:${VPC_ID}"
           else
             echo "⚠ Service Discovery Namespace not found, skipping import"
           fi

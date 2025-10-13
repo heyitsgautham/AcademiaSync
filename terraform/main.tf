@@ -75,7 +75,6 @@ module "ecs" {
 
   # Environment variables
   nextauth_secret      = var.nextauth_secret
-  nextauth_url         = var.nextauth_url
   google_client_id     = var.google_client_id
   google_client_secret = var.google_client_secret
   jwt_secret           = var.jwt_secret

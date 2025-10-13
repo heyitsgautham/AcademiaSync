@@ -82,11 +82,6 @@ variable "nextauth_secret" {
   sensitive   = true
 }
 
-variable "nextauth_url" {
-  description = "NextAuth URL"
-  type        = string
-}
-
 variable "google_client_id" {
   description = "Google OAuth client ID"
   type        = string

@@ -323,7 +323,7 @@ resource "aws_ecs_task_definition" "frontend" {
     }]
 
     environment = [
-      { name = "NEXTAUTH_URL", value = var.nextauth_url },
+      { name = "NEXTAUTH_URL", value = "http://${aws_lb.main.dns_name}" },
       { name = "NEXT_PUBLIC_BACKEND_URL", value = "http://${aws_lb.main.dns_name}" },
       { name = "INTERNAL_BACKEND_URL", value = "http://user-service.${aws_service_discovery_private_dns_namespace.main.name}:5000" },
       { name = "NEXT_PUBLIC_COURSE_SERVICE_URL", value = "http://${aws_lb.main.dns_name}" },

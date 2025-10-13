@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,8 +10,12 @@ interface Activity {
     type: "course_created" | "course_updated" | "course_deleted" | "student_enrolled"
     actorName: string
     actorAvatar?: string
+    actorId?: number
     courseName?: string
+    courseId?: number
     studentName?: string
+    studentId?: number
+    teacherId?: number
     timestamp: string
 }
 
@@ -20,6 +25,8 @@ interface RecentActivityProps {
 }
 
 export function AdminRecentActivity({ activities, isLoading }: RecentActivityProps) {
+    const router = useRouter()
+
     const getActivityIcon = (type: string) => {
         switch (type) {
             case "course_created":
@@ -80,6 +87,28 @@ export function AdminRecentActivity({ activities, isLoading }: RecentActivityPro
         }
     }
 
+    const handleActivityClick = (activity: Activity) => {
+        // Navigate based on activity type
+        switch (activity.type) {
+            case "course_created":
+            case "course_updated":
+                if (activity.courseId) {
+                    router.push(`/admin/courses/${activity.courseId}`)
+                }
+                break
+            case "student_enrolled":
+                if (activity.studentId) {
+                    router.push(`/admin/students/${activity.studentId}`)
+                }
+                break
+            case "course_deleted":
+                // Can't navigate to deleted course, do nothing
+                break
+            default:
+                break
+        }
+    }
+
     if (isLoading) {
         return (
             <Card>
@@ -106,56 +135,65 @@ export function AdminRecentActivity({ activities, isLoading }: RecentActivityPro
     // Safe array access - ensure activities is an array
     const activitiesArray = Array.isArray(activities) ? activities : []
 
+    // Limit to 5 most recent activities to match teacher dashboard layout
+    const recentActivities = activitiesArray.slice(0, 5)
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-                {activitiesArray.length === 0 ? (
+                {recentActivities.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                         <p>No recent activity yet</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {activitiesArray.map((activity) => (
-                            <div
-                                key={activity.id}
-                                className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-                            >
-                                <Avatar className="h-10 w-10 flex-shrink-0">
-                                    {activity.actorAvatar && (
-                                        <AvatarImage
-                                            src={activity.actorAvatar}
-                                            alt={activity.actorName}
-                                            referrerPolicy="no-referrer"
-                                        />
-                                    )}
-                                    <AvatarFallback className="bg-primary/10 text-primary">
-                                        {activity.actorName
-                                            .split(" ")
-                                            .map((n) => n[0])
-                                            .join("")
-                                            .toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-shrink-0 mt-2">
-                                    {getActivityIcon(activity.type)}
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <p className="text-sm font-medium text-foreground">{activity.actorName}</p>
-                                        <Badge className={getActivityBadgeColor(activity.type)}>
-                                            {getActivityLabel(activity.type)}
-                                        </Badge>
+                        {recentActivities.map((activity) => {
+                            const isClickable = (activity.type !== "course_deleted" && activity.courseId) || activity.studentId
+
+                            return (
+                                <div
+                                    key={activity.id}
+                                    className={`flex items-start gap-4 rounded-lg border border-border p-4 transition-colors ${isClickable ? "cursor-pointer hover:bg-muted/50" : "hover:bg-muted/30"
+                                        }`}
+                                    onClick={() => isClickable && handleActivityClick(activity)}
+                                >
+                                    <Avatar className="h-10 w-10 flex-shrink-0">
+                                        {activity.actorAvatar && (
+                                            <AvatarImage
+                                                src={activity.actorAvatar}
+                                                alt={activity.actorName}
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        )}
+                                        <AvatarFallback className="bg-primary/10 text-primary">
+                                            {activity.actorName
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")
+                                                .toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-shrink-0 mt-2">
+                                        {getActivityIcon(activity.type)}
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        {getActivityDescription(activity)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                                    <div className="flex-1 space-y-1">
+                                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                                            <p className="text-sm font-medium text-foreground">{activity.actorName}</p>
+                                            <Badge className={getActivityBadgeColor(activity.type)}>
+                                                {getActivityLabel(activity.type)}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                            {getActivityDescription(activity)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
             </CardContent>

@@ -12,6 +12,10 @@ resource "aws_ecr_repository" "repos" {
     encryption_type = "AES256"
   }
 
+  lifecycle {
+    ignore_changes = [name]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-${each.value}"
     Service = each.value

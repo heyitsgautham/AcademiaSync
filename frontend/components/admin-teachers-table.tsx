@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Search, GraduationCap, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw } from "lucide-react"
+import { Edit, Trash2, Search, GraduationCap, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -39,6 +41,7 @@ interface Teacher {
     firstName: string
     lastName: string
     email: string
+    profilePicture?: string
     specialization: string
     courseCount?: number
     studentCount?: number
@@ -56,6 +59,7 @@ type SortOrder = "asc" | "desc"
 
 export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: AdminTeachersTableProps) {
     const { toast } = useToast()
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [deleteTeacherId, setDeleteTeacherId] = useState<number | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -273,10 +277,11 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]"></TableHead>
                                     <TableHead>
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center hover:bg-transparent p-0"
+                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("name")}
                                         >
                                             Name
@@ -286,7 +291,7 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                                     <TableHead>
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center hover:bg-transparent p-0"
+                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("email")}
                                         >
                                             Email
@@ -296,7 +301,7 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                                     <TableHead className="text-center">
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center mx-auto hover:bg-transparent p-0"
+                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("courseCount")}
                                         >
                                             Courses
@@ -306,7 +311,7 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                                     <TableHead className="text-center">
                                         <Button
                                             variant="ghost"
-                                            className="flex items-center mx-auto hover:bg-transparent p-0"
+                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
                                             onClick={() => handleSort("studentCount")}
                                         >
                                             Students
@@ -320,13 +325,31 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                             <TableBody>
                                 {paginatedTeachers.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                             No teachers found
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     paginatedTeachers.map((teacher) => (
-                                        <TableRow key={teacher.id}>
+                                        <TableRow
+                                            key={teacher.id}
+                                            className="cursor-pointer hover:bg-muted/50"
+                                            onClick={(e) => {
+                                                // Don't navigate if clicking on buttons
+                                                if ((e.target as HTMLElement).closest('button')) {
+                                                    return
+                                                }
+                                                router.push(`/admin/teachers/${teacher.id}`)
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={teacher.profilePicture || undefined} alt={`${teacher.firstName} ${teacher.lastName}`} />
+                                                    <AvatarFallback>
+                                                        <User className="h-4 w-4" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            </TableCell>
                                             <TableCell className="font-medium">
                                                 {teacher.firstName} {teacher.lastName}
                                             </TableCell>

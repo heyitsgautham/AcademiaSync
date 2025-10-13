@@ -26,6 +26,7 @@ services:
     build:
       context: ./backend/user-service
       dockerfile: Dockerfile
+      target: runner  # Use production stage from multi-stage build
     container_name: academiasync-user-service
     environment:
       PORT: ${USER_SERVICE_PORT}
@@ -58,6 +59,7 @@ services:
     build:
       context: ./backend/course-service
       dockerfile: Dockerfile
+      target: runner  # Use production stage from multi-stage build
     container_name: academiasync-course-service
     environment:
       PORT: ${COURSE_SERVICE_PORT}
@@ -86,6 +88,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: runner  # Use production stage from multi-stage build
     container_name: academiasync-frontend
     environment:
       NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}

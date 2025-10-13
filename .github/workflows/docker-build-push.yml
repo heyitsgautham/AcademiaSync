@@ -5,16 +5,15 @@ on:
     branches:
       - main
       - feature/production
+      - feature/aws-terraform
     paths:
-      - 'frontend/**'
-      - 'backend/**'
+      - 'app-deployment/**'
       - '.github/workflows/docker-build-push.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'frontend/**'
-      - 'backend/**'
+      - 'app-deployment/**'
   workflow_dispatch:  # Allow manual trigger
 
 env:
@@ -42,13 +41,13 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'frontend/**'
+              - 'app-deployment/frontend/**'
               - '.github/workflows/docker-build-push.yml'
             user-service:
-              - 'backend/user-service/**'
+              - 'app-deployment/backend/user-service/**'
               - '.github/workflows/docker-build-push.yml'
             course-service:
-              - 'backend/course-service/**'
+              - 'app-deployment/backend/course-service/**'
               - '.github/workflows/docker-build-push.yml'
 
   # Build, scan, and push Frontend
@@ -119,7 +118,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Push image to ECR
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production' || github.ref == 'refs/heads/feature/aws-terraform')
         run: |
           docker push ${{ steps.build-image.outputs.image }}
           docker push ${{ steps.build-image.outputs.image-latest }}
@@ -198,7 +197,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Push image to ECR
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production' || github.ref == 'refs/heads/feature/aws-terraform')
         run: |
           docker push ${{ steps.build-image.outputs.image }}
           docker push ${{ steps.build-image.outputs.image-latest }}
@@ -277,7 +276,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Push image to ECR
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production' || github.ref == 'refs/heads/feature/aws-terraform')
         run: |
           docker push ${{ steps.build-image.outputs.image }}
           docker push ${{ steps.build-image.outputs.image-latest }}

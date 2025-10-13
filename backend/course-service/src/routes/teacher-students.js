@@ -52,13 +52,13 @@ module.exports = (pool) => {
                             u.last_name,
                             u.email,
                             u.profile_picture,
-                            COALESCE(AVG(s.grade), 0) as performance
+                            COALESCE(AVG(CASE WHEN a.course_id = e.course_id THEN s.grade END), 0) as performance
                          FROM enrollments e
                          INNER JOIN users u ON e.student_id = u.id
                          LEFT JOIN submissions s ON s.student_id = u.id
-                         LEFT JOIN assignments a ON s.assignment_id = a.id AND a.course_id = e.course_id
+                         LEFT JOIN assignments a ON s.assignment_id = a.id
                          WHERE e.course_id = $1 AND u.role = 'Student'
-                         GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture
+                         GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture, e.course_id
                          ORDER BY u.last_name, u.first_name
                     `;
                     const studentsResult = await pool.query(studentsQuery, [course.course_id]);

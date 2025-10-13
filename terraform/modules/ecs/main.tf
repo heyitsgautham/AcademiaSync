@@ -16,6 +16,10 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-namespace"
   }
+
+  lifecycle {
+    ignore_changes = [name, vpc]
+  }
 }
 
 # Service Discovery for User Service
@@ -73,6 +77,10 @@ resource "aws_cloudwatch_log_group" "frontend" {
   name              = "/ecs/${var.project_name}-${var.environment}/frontend"
   retention_in_days = 7 # Free tier: 7 days retention
 
+  lifecycle {
+    ignore_changes = [name]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-frontend-logs"
     Service = "frontend"
@@ -83,6 +91,10 @@ resource "aws_cloudwatch_log_group" "user_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/user-service"
   retention_in_days = 7
 
+  lifecycle {
+    ignore_changes = [name]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-user-service-logs"
     Service = "user-service"
@@ -92,6 +104,10 @@ resource "aws_cloudwatch_log_group" "user_service" {
 resource "aws_cloudwatch_log_group" "course_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/course-service"
   retention_in_days = 7
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-course-service-logs"
@@ -113,6 +129,10 @@ resource "aws_iam_role" "ecs_task_execution" {
       }
     }]
   })
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task-execution"
@@ -139,6 +159,10 @@ resource "aws_iam_role" "ecs_task" {
       }
     }]
   })
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task"
@@ -435,6 +459,10 @@ resource "aws_ecs_service" "frontend" {
 
   depends_on = [aws_lb_listener.frontend]
 
+  lifecycle {
+    ignore_changes = [task_definition, desired_count]
+  }
+
   tags = {
     Name    = "${var.project_name}-${var.environment}-frontend-service"
     Service = "frontend"
@@ -454,14 +482,21 @@ resource "aws_ecs_service" "user_service" {
     assign_public_ip = true
   }
 
-  # Service Discovery - Register this service with Cloud Map
-  service_registries {
-    registry_arn   = aws_service_discovery_service.user_service.arn
-    container_name = "user-service"
+  load_balancer {
+    target_group_arn = aws_lb_target_group.user_service.arn
+    container_name   = "user-service"
+    container_port   = 5000
   }
 
-  # Internal service - no load balancer needed
-  # Frontend proxies requests to this service
+  service_registries {
+    registry_arn = aws_service_discovery_service.user_service.arn
+  }
+
+  depends_on = [aws_lb_listener.frontend]
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, load_balancer]
+  }
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-user-service"
@@ -482,14 +517,21 @@ resource "aws_ecs_service" "course_service" {
     assign_public_ip = true
   }
 
-  # Service Discovery - Register this service with Cloud Map
-  service_registries {
-    registry_arn   = aws_service_discovery_service.course_service.arn
-    container_name = "course-service"
+  load_balancer {
+    target_group_arn = aws_lb_target_group.course_service.arn
+    container_name   = "course-service"
+    container_port   = 5001
   }
 
-  # Internal service - no load balancer needed
-  # Frontend proxies requests to this service
+  service_registries {
+    registry_arn = aws_service_discovery_service.course_service.arn
+  }
+
+  depends_on = [aws_lb_listener.frontend]
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, load_balancer]
+  }
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-course-service"

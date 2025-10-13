@@ -8,17 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
-  type        = string
-}
+# Note: vpc_cidr, availability_zones, and public_subnet_cidrs are no longer needed
+# as we're using the default VPC with existing subnets
 
-variable "availability_zones" {
-  description = "List of availability zones"
-  type        = list(string)
-}
-
-variable "public_subnet_cidrs" {
-  description = "CIDR blocks for public subnets"
-  type        = list(string)
-}

@@ -50,6 +50,8 @@ export const authOptions: AuthOptions = {
         async signIn({ account, profile }: { account: Account | null; profile?: Profile }) {
             if (account?.provider === "google" && account.id_token) {
                 try {
+                    console.log(`[NextAuth] Attempting to authenticate with backend: ${BACKEND_URL}/auth/google`);
+                    
                     // Send Google ID token to backend
                     const response = await fetch(`${BACKEND_URL}/auth/google`, {
                         method: "POST",
@@ -62,8 +64,11 @@ export const authOptions: AuthOptions = {
                         credentials: "include",
                     });
 
+                    console.log(`[NextAuth] Backend response status: ${response.status} ${response.statusText}`);
+
                     if (response.ok) {
                         const data = await response.json();
+                        console.log(`[NextAuth] Authentication successful for user:`, data.user?.email);
 
                         // Extract access token from Set-Cookie header
                         const setCookieHeader = response.headers.get('set-cookie');
@@ -96,11 +101,16 @@ export const authOptions: AuthOptions = {
                     //     return false;
                     // } 
                     else {
-                        console.error("Backend authentication failed:", await response.text());
+                        const errorText = await response.text();
+                        console.error(`[NextAuth] Backend authentication failed with status ${response.status}:`, errorText);
+                        console.error(`[NextAuth] Please check backend logs at: /ecs/academiasync-prod/user-service`);
                     }
                 } catch (error) {
-                    console.error("Error authenticating with backend:", error);
+                    console.error("[NextAuth] Error authenticating with backend:", error);
+                    console.error(`[NextAuth] Backend URL: ${BACKEND_URL}/auth/google`);
+                    console.error("[NextAuth] This could be a network connectivity issue");
                 }
+                console.error("[NextAuth] SignIn callback returning false - user will be redirected to login page");
                 return false;
             }
             return true;

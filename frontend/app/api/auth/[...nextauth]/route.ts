@@ -7,8 +7,9 @@ import { Account, Profile } from "next-auth";
 // This is because the frontend container needs to communicate with user-service container
 const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000";
 
-// Determine if we're in production (Cloud Run uses HTTPS)
-const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
+// Determine if we're using HTTPS (for secure cookies)
+// AWS ALB uses HTTP, GCP Cloud Run uses HTTPS
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://') || false;
 
 export const authOptions: AuthOptions = {
     debug: true, // Enable debug mode to see detailed logs
@@ -18,32 +19,32 @@ export const authOptions: AuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         }),
     ],
-    useSecureCookies: isProduction,
+    useSecureCookies: useSecureCookies,
     cookies: {
         sessionToken: {
-            name: isProduction ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
+            name: useSecureCookies ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: isProduction,
+                secure: useSecureCookies,
             },
         },
         callbackUrl: {
-            name: isProduction ? `__Secure-next-auth.callback-url` : `next-auth.callback-url`,
+            name: useSecureCookies ? `__Secure-next-auth.callback-url` : `next-auth.callback-url`,
             options: {
                 sameSite: 'lax',
                 path: '/',
-                secure: isProduction,
+                secure: useSecureCookies,
             },
         },
         csrfToken: {
-            name: isProduction ? `__Host-next-auth.csrf-token` : `next-auth.csrf-token`,
+            name: useSecureCookies ? `__Host-next-auth.csrf-token` : `next-auth.csrf-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
-                secure: isProduction,
+                secure: useSecureCookies,
             },
         },
     },

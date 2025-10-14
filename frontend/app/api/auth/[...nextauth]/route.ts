@@ -11,6 +11,7 @@ const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:500
 const isProduction = process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://');
 
 export const authOptions: AuthOptions = {
+    debug: true, // Enable debug mode to see detailed logs
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -174,6 +175,17 @@ export const authOptions: AuthOptions = {
     },
     session: {
         strategy: "jwt" as const,
+    },
+    logger: {
+        error(code, ...message) {
+            console.error("[NextAuth Error]", code, message);
+        },
+        warn(code, ...message) {
+            console.warn("[NextAuth Warn]", code, message);
+        },
+        debug(code, ...message) {
+            console.log("[NextAuth Debug]", code, message);
+        },
     },
 };
 

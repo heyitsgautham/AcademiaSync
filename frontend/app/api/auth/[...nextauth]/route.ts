@@ -53,7 +53,7 @@ export const authOptions: AuthOptions = {
             if (account?.provider === "google" && account.id_token) {
                 try {
                     console.log(`[NextAuth] Attempting to authenticate with backend: ${BACKEND_URL}/auth/google`);
-                    
+
                     // Send Google ID token to backend
                     const response = await fetch(`${BACKEND_URL}/auth/google`, {
                         method: "POST",

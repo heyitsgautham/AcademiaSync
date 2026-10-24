@@ -1,3 +1,10 @@
+const {
+    gradeDistributionQuery,
+    toGradeDistribution,
+    STUDENT_COURSE_PROGRESS_QUERY,
+    toCourseProgress,
+} = require('../../queries/grades');
+
 /**
  * Dashboard summary and analytics charts for the signed-in student.
  * @param {Router} router - Student router, already behind authenticate and authorize('Student')
@@ -80,21 +87,7 @@ module.exports = (router, pool) => {
             const activityResult = await pool.query(activityQuery, [studentId]);
 
             // Analytics: Course Progress (for dashboard chart 1)
-            const courseProgressQuery = `
-        SELECT 
-          c.title as course,
-          ROUND((COUNT(DISTINCT s.assignment_id)::numeric / NULLIF(COUNT(DISTINCT a.id), 0) * 100)::numeric, 2) as progress
-        FROM courses c
-        INNER JOIN enrollments e ON c.id = e.course_id
-        LEFT JOIN assignments a ON c.id = a.course_id
-        LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
-        WHERE e.student_id = $1
-        GROUP BY c.id, c.title
-        HAVING COUNT(DISTINCT a.id) > 0
-        ORDER BY progress DESC
-        LIMIT 5
-      `;
-            const courseProgressResult = await pool.query(courseProgressQuery, [studentId]);
+            const courseProgressResult = await pool.query(STUDENT_COURSE_PROGRESS_QUERY, [studentId]);
 
             // Analytics: Submission Status (for dashboard chart 2)
             const submissionStatusQuery = `
@@ -137,10 +130,7 @@ module.exports = (router, pool) => {
                 },
                 recentActivity: activityResult.rows,
                 analytics: {
-                    courseProgress: courseProgressResult.rows.map((row) => ({
-                        course: row.course,
-                        progress: Math.min(parseFloat(row.progress) || 0, 100),
-                    })),
+                    courseProgress: toCourseProgress(courseProgressResult.rows),
                     submissionStatus: submissionStatusResult.rows.map((row) => ({
                         name: row.name,
                         value: parseInt(row.value) || 0,
@@ -224,51 +214,13 @@ module.exports = (router, pool) => {
             const completionResult = await pool.query(completionQuery, [studentId]);
 
             // 3. Course Progress - Progress percentage per course
-            const courseProgressQuery = `
-                SELECT 
-                    c.title as course,
-                    ROUND((COUNT(DISTINCT s.assignment_id)::numeric / NULLIF(COUNT(DISTINCT a.id), 0) * 100)::numeric, 2) as progress
-                FROM courses c
-                INNER JOIN enrollments e ON c.id = e.course_id
-                LEFT JOIN assignments a ON c.id = a.course_id
-                LEFT JOIN submissions s ON a.id = s.assignment_id AND s.student_id = e.student_id
-                WHERE e.student_id = $1
-                GROUP BY c.id, c.title
-                HAVING COUNT(DISTINCT a.id) > 0
-                ORDER BY progress DESC
-                LIMIT 5
-            `;
-            const courseProgressResult = await pool.query(courseProgressQuery, [studentId]);
+            const courseProgressResult = await pool.query(STUDENT_COURSE_PROGRESS_QUERY, [studentId]);
 
             // 4. Grade Distribution - Count of grades in each range
-            const gradeDistributionQuery = `
-                SELECT 
-                    grade_range as name,
-                    COUNT(*) as value
-                FROM (
-                    SELECT 
-                        CASE 
-                            WHEN s.grade >= 90 THEN 'A (90-100)'
-                            WHEN s.grade >= 80 THEN 'B (80-89)'
-                            WHEN s.grade >= 70 THEN 'C (70-79)'
-                            WHEN s.grade >= 60 THEN 'D (60-69)'
-                            ELSE 'F (0-59)'
-                        END as grade_range,
-                        CASE 
-                            WHEN s.grade >= 90 THEN 1
-                            WHEN s.grade >= 80 THEN 2
-                            WHEN s.grade >= 70 THEN 3
-                            WHEN s.grade >= 60 THEN 4
-                            ELSE 5
-                        END as sort_order
-                    FROM submissions s
-                    WHERE s.student_id = $1 
-                      AND s.grade IS NOT NULL
-                ) subquery
-                GROUP BY grade_range, sort_order
-                ORDER BY sort_order
-            `;
-            const gradeDistributionResult = await pool.query(gradeDistributionQuery, [studentId]);
+            const gradeDistributionResult = await pool.query(
+                gradeDistributionQuery('FROM submissions s WHERE s.student_id = $1 AND s.grade IS NOT NULL'),
+                [studentId]
+            );
 
             // Format the data
             const gradeTrends = gradeTrendsResult.rows.map((row) => ({
@@ -282,15 +234,9 @@ module.exports = (router, pool) => {
                 total: parseInt(row.total) || 0,
             }));
 
-            const courseProgress = courseProgressResult.rows.map((row) => ({
-                course: row.course,
-                progress: Math.min(parseFloat(row.progress) || 0, 100), // Cap at 100%
-            }));
+            const courseProgress = toCourseProgress(courseProgressResult.rows);
 
-            const gradeDistribution = gradeDistributionResult.rows.map((row) => ({
-                name: row.name,
-                value: parseInt(row.value) || 0,
-            }));
+            const gradeDistribution = toGradeDistribution(gradeDistributionResult.rows);
 
             res.json({
                 gradeTrends,

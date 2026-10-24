@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
+const { gradeDistributionQuery, toGradeDistribution } = require('../queries/grades');
 
 module.exports = (pool) => {
     const router = express.Router();
@@ -220,40 +221,15 @@ module.exports = (pool) => {
 
             // 4. Grade Distribution - Count of grades in each range
             const gradeDistributionResult = await pool.query(
-                `SELECT 
-                    grade_range as name,
-                    COUNT(*) as value
-                 FROM (
-                    SELECT 
-                        CASE 
-                            WHEN s.grade >= 90 THEN 'A (90-100)'
-                            WHEN s.grade >= 80 THEN 'B (80-89)'
-                            WHEN s.grade >= 70 THEN 'C (70-79)'
-                            WHEN s.grade >= 60 THEN 'D (60-69)'
-                            ELSE 'F (0-59)'
-                        END as grade_range,
-                        CASE 
-                            WHEN s.grade >= 90 THEN 1
-                            WHEN s.grade >= 80 THEN 2
-                            WHEN s.grade >= 70 THEN 3
-                            WHEN s.grade >= 60 THEN 4
-                            ELSE 5
-                        END as sort_order
+                gradeDistributionQuery(`
                     FROM submissions s
                     INNER JOIN assignments a ON s.assignment_id = a.id
                     INNER JOIN courses c ON a.course_id = c.id
-                    WHERE c.teacher_id = $1 
-                      AND s.grade IS NOT NULL
-                 ) subquery
-                 GROUP BY grade_range, sort_order
-                 ORDER BY sort_order`,
+                    WHERE c.teacher_id = $1 AND s.grade IS NOT NULL
+                `),
                 [teacherId]
             );
-
-            const gradeDistribution = gradeDistributionResult.rows.map((row) => ({
-                name: row.name,
-                value: parseInt(row.value) || 0,
-            }));
+            const gradeDistribution = toGradeDistribution(gradeDistributionResult.rows);
 
             res.json({
                 coursePerformance,

@@ -1,7 +1,7 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
-const { addCourseLinks, addAssignmentLinks, addSubmissionLinks, addStudentDashboardLinks } = require('../utils/hateoas');
-const { parsePagination, parseSorting, buildPaginationMeta, buildStudentAssignmentsFilter } = require('../utils/query-helpers');
+const { addCourseLinks, addStudentDashboardLinks } = require('../utils/hateoas');
+const { parseSorting, buildStudentAssignmentsFilter } = require('../utils/query-helpers');
 
 /**
  * Student routes for course enrollment and assignment submission
@@ -522,7 +522,7 @@ module.exports = (pool) => {
     router.post('/submit-assignment', async (req, res) => {
         try {
             const studentId = req.user.id;
-            const { assignmentId, submission, fileName } = req.body;
+            const { assignmentId, submission } = req.body;
 
             if (!assignmentId || !submission) {
                 return res.status(400).json({

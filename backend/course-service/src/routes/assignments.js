@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
-const { addAssignmentLinks, addCourseLinks } = require('../utils/hateoas');
+const { addAssignmentLinks } = require('../utils/hateoas');
 const { parsePagination, parseSorting, buildPaginationMeta, buildSubmissionsFilter } = require('../utils/query-helpers');
 
 module.exports = (pool) => {
@@ -528,7 +528,7 @@ module.exports = (pool) => {
             const { status } = req.query;
 
             // Get all assignments for teacher's courses with submission stats
-            let query = `
+            const query = `
                 SELECT 
                     a.id,
                     a.course_id,

@@ -1,0 +1,6 @@
+# Deployment secrets committed in 6b8a4dd and deleted from the tree in afd38e6.
+# They stay in history, so they must be treated as leaked and rotated in every environment that used them.
+# Listing them here keeps full-history scans quiet about this known incident, and any new leak still fails CI.
+6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:47
+6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:50
+6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:53

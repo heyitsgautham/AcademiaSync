@@ -1,4 +1,4 @@
-const { z, toNumber, emptyToNull, positiveInt, requiredText, grade, optionalDate } = require('./common');
+const { z, typeError, toNumber, emptyToNull, positiveInt, requiredText, grade, optionalDate } = require('./common');
 
 const courseBody = z.object({
     title: requiredText('title', 255),
@@ -6,7 +6,7 @@ const courseBody = z.object({
     weeks: z.preprocess(
         (value) => toNumber(emptyToNull(value)),
         z
-            .number({ invalid_type_error: 'weeks must be a number' })
+            .number({ error: 'weeks must be a number' })
             .int('weeks must be a whole number')
             .min(1, 'weeks must be between 1 and 104')
             .max(104, 'weeks must be between 1 and 104')
@@ -32,15 +32,18 @@ const submitAssignmentBody = z.object({
 
 const gradeBody = z.object({
     grade,
-    feedback: z.string({ invalid_type_error: 'feedback must be text' }).max(5000).nullable().optional(),
+    feedback: z.string({ error: 'feedback must be text' }).max(5000).nullable().optional(),
 });
 
 const bulkGradeBody = z.object({
     submissions: z
-        .array(gradeBody.extend({ submissionId: positiveInt('submissionId') }), {
-            required_error: 'Submissions array is required and cannot be empty',
-            invalid_type_error: 'Submissions array is required and cannot be empty',
-        })
+        .array(
+            gradeBody.extend({ submissionId: positiveInt('submissionId') }),
+            typeError(
+                'Submissions array is required and cannot be empty',
+                'Submissions array is required and cannot be empty'
+            )
+        )
         .min(1, 'Submissions array is required and cannot be empty')
         .max(500, 'At most 500 submissions can be graded at once'),
 });

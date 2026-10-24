@@ -97,6 +97,21 @@ describe('auth routes', () => {
         });
     });
 
+    describe('signing in twice within one second', () => {
+        it('stores two distinct refresh tokens instead of failing on the unique index', async () => {
+            acceptGoogleToken(googleProfile());
+
+            const first = await request(app).post('/auth/google').send({ idToken: 'good' });
+            const second = await request(app).post('/auth/google').send({ idToken: 'good' });
+
+            expect(first.status).toBe(200);
+            expect(second.status).toBe(200);
+            expect(cookieValue(first, 'refreshToken')).not.toBe(cookieValue(second, 'refreshToken'));
+            const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM refresh_tokens');
+            expect(rows[0].n).toBe(2);
+        });
+    });
+
     describe('POST /auth/refresh', () => {
         const signIn = async () => {
             acceptGoogleToken(googleProfile());

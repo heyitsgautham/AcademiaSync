@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
@@ -34,8 +35,11 @@ const generateRefreshToken = (user) => {
         role: user.role
     };
 
+    // jwtid makes every refresh token unique. Without it, two sign-ins in the same second
+    // produce identical tokens and the second insert hits the unique index on refresh_tokens.token.
     return jwt.sign(payload, JWT_REFRESH_SECRET, {
-        expiresIn: JWT_REFRESH_EXPIRY
+        expiresIn: JWT_REFRESH_EXPIRY,
+        jwtid: crypto.randomUUID()
     });
 };
 

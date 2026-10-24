@@ -1,18 +1,8 @@
 name: Terraform Infrastructure Deployment
 
+# Deploys only when someone runs it by hand from the Actions tab.
+# Pushes and pull requests that touch terraform/ are checked by terraform-ci.yml, which never talks to AWS.
 on:
-  push:
-    branches:
-      - main
-      - feature/production
-    paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-deploy.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'terraform/**'
   workflow_dispatch:  # Allow manual trigger
     inputs:
       action:
@@ -181,9 +171,7 @@ jobs:
   terraform-apply:
     name: Terraform Apply
     needs: terraform-plan
-    if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/production')) ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+    if: github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
     defaults:
       run:

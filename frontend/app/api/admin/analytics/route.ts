@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 
 const USER_SERVICE_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
 const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY

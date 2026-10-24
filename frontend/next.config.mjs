@@ -2,12 +2,6 @@
 const nextConfig = {
   // Enable standalone output for Docker optimization
   output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     unoptimized: true,
     remotePatterns: [

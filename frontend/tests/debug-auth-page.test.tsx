@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn().mockResolvedValue(null) }))
-vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }))
+vi.mock("@/lib/auth", () => ({ authOptions: {} }))
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND")

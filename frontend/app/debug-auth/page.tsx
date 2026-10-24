@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { notFound } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 // Shows the session and OAuth settings, so production builds serve a 404 unless
 // NEXTAUTH_DEBUG=true is set for a troubleshooting session.

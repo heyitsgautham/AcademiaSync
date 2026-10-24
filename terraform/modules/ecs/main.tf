@@ -170,12 +170,17 @@ resource "aws_iam_role" "ecs_task" {
 }
 
 # Application Load Balancer
+# This is the public entry point for the web app, so it has to face the internet.
+#trivy:ignore:AWS-0053
 resource "aws_lb" "main" {
   name               = "${var.project_name}-${var.environment}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_security_group_id]
   subnets            = var.public_subnet_ids
+
+  # Reject requests with malformed headers instead of forwarding them to the containers
+  drop_invalid_header_fields = true
 
   enable_deletion_protection = false
 
@@ -255,6 +260,9 @@ resource "aws_lb_target_group" "course_service" {
 }
 
 # ALB Listener - Route traffic to frontend
+# The stack has no domain or ACM certificate, so the ALB serves plain HTTP on its AWS hostname.
+# Add an HTTPS listener with a certificate before using this for real accounts.
+#trivy:ignore:AWS-0054
 resource "aws_lb_listener" "frontend" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"

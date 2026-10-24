@@ -1,3 +1,6 @@
+# CloudWatch alarms cannot publish to a topic encrypted with the AWS managed aws/sns key,
+# and the topic only carries alarm state changes, so it stays unencrypted.
+#trivy:ignore:AWS-0095
 resource "aws_sns_topic" "cloudwatch_alarms" {
   name = "${var.project_name}-${var.environment}-cloudwatch-alarms"
 

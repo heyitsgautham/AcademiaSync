@@ -1,7 +1,16 @@
 import { getServerSession } from "next-auth";
+import { notFound } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 
+// Shows the session and OAuth settings, so production builds serve a 404 unless
+// NEXTAUTH_DEBUG=true is set for a troubleshooting session.
+export const dynamic = "force-dynamic";
+
 export default async function DebugPage() {
+    if (process.env.NODE_ENV === "production" && process.env.NEXTAUTH_DEBUG !== "true") {
+        notFound();
+    }
+
     const session = await getServerSession(authOptions);
 
     const envVars = {

@@ -12,7 +12,9 @@ const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:500
 const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://') || false;
 
 export const authOptions: AuthOptions = {
-    debug: true, // Enable debug mode to see detailed logs
+    // NextAuth debug output includes tokens, so it stays off in production builds.
+    // Set NEXTAUTH_DEBUG=true to turn it on while troubleshooting a deployment.
+    debug: process.env.NODE_ENV !== "production" || process.env.NEXTAUTH_DEBUG === "true",
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",

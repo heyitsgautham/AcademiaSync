@@ -92,10 +92,9 @@ module.exports = (pool) => {
                 ],
             });
         } catch (error) {
-            console.error('Error fetching assignments:', error);
+            req.log.error({ err: error }, 'Error fetching assignments');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -194,10 +193,9 @@ module.exports = (pool) => {
 
             res.status(201).json(result.rows[0]);
         } catch (error) {
-            console.error('Error creating assignment:', error);
+            req.log.error({ err: error }, 'Error creating assignment');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -225,10 +223,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error fetching assignment:', error);
+            req.log.error({ err: error }, 'Error fetching assignment');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -273,10 +270,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error updating assignment:', error);
+            req.log.error({ err: error }, 'Error updating assignment');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -306,10 +302,9 @@ module.exports = (pool) => {
 
             res.status(204).send();
         } catch (error) {
-            console.error('Error deleting assignment:', error);
+            req.log.error({ err: error }, 'Error deleting assignment');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -400,10 +395,9 @@ module.exports = (pool) => {
                 pagination,
             });
         } catch (error) {
-            console.error('Error fetching assignment submissions:', error);
+            req.log.error({ err: error }, 'Error fetching assignment submissions');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -450,10 +444,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error updating submission:', error);
+            req.log.error({ err: error }, 'Error updating submission');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -529,10 +522,9 @@ module.exports = (pool) => {
                     client.release();
                 }
             } catch (error) {
-                console.error('Error bulk updating submissions:', error);
+                req.log.error({ err: error }, 'Error bulk updating submissions');
                 res.status(500).json({
                     error: 'Internal server error',
-                    message: error.message,
                 });
             }
         }
@@ -619,10 +611,9 @@ module.exports = (pool) => {
 
             res.json(assignments);
         } catch (error) {
-            console.error('Error fetching assignments with status:', error);
+            req.log.error({ err: error }, 'Error fetching assignments with status');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -679,10 +670,9 @@ module.exports = (pool) => {
 
             res.json(submissions);
         } catch (error) {
-            console.error('Error fetching recent submissions:', error);
+            req.log.error({ err: error }, 'Error fetching recent submissions');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });

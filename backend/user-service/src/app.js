@@ -1,11 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const morgan = require('morgan');
-const fs = require('fs');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { requestLogger } = require('./middleware/request-logger');
+const { notFoundHandler, errorHandler } = require('./middleware/errors');
 
 /**
  * Builds the Express app around a Postgres pool.
@@ -13,15 +12,6 @@ const swaggerSpec = require('./config/swagger');
  */
 const createApp = (pool) => {
     const app = express();
-
-    // Ensure logs directory exists
-    const logsDir = path.join(__dirname, '../logs');
-    if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-    }
-
-    // Create a write stream for logging
-    const accessLogStream = fs.createWriteStream(path.join(logsDir, 'access.log'), { flags: 'a' });
 
     // Support multiple frontend origins for different environments
     const allowedOrigins = [
@@ -37,17 +27,9 @@ const createApp = (pool) => {
             credentials: true,
         })
     );
+    app.use(requestLogger);
     app.use(express.json());
     app.use(cookieParser());
-    app.use(morgan('combined', { stream: accessLogStream })); // Log to file
-    app.use(morgan('dev')); // Log to console
-
-    // Request logging middleware
-    app.use((req, res, next) => {
-        const timestamp = new Date().toISOString();
-        console.log(`[${timestamp}] ${req.method} ${req.path}`);
-        next();
-    });
 
     // Health check endpoint
     app.get('/health', async (req, res) => {
@@ -61,12 +43,12 @@ const createApp = (pool) => {
                 database: 'connected',
             });
         } catch (error) {
+            req.log.error({ err: error }, 'Health check could not reach the database');
             res.status(503).json({
                 status: 'unhealthy',
                 service: 'user-service',
                 timestamp: new Date().toISOString(),
                 database: 'disconnected',
-                error: error.message,
             });
         }
     });
@@ -112,14 +94,8 @@ const createApp = (pool) => {
     app.use('/admin', adminRoutes);
     app.use('/api/users', usersRoutes);
 
-    // Error handling middleware
-    app.use((err, req, res, _next) => {
-        console.error('Error:', err);
-        res.status(500).json({
-            error: 'Internal server error',
-            message: err.message,
-        });
-    });
+    app.use(notFoundHandler);
+    app.use(errorHandler);
 
     return app;
 };

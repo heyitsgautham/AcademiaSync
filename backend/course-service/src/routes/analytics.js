@@ -100,10 +100,9 @@ module.exports = (pool) => {
                 assignmentStatus,
             });
         } catch (error) {
-            console.error('Error fetching teacher analytics:', error);
+            req.log.error({ err: error }, 'Error fetching teacher analytics');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -263,10 +262,9 @@ module.exports = (pool) => {
                 gradeDistribution,
             });
         } catch (error) {
-            console.error('Error fetching detailed teacher analytics:', error);
+            req.log.error({ err: error }, 'Error fetching detailed teacher analytics');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });

@@ -53,10 +53,9 @@ module.exports = (pool) => {
                 _links: addTeacherDashboardLinks(),
             });
         } catch (error) {
-            console.error('Error fetching courses:', error);
+            req.log.error({ err: error }, 'Error fetching courses');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -117,10 +116,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error fetching course:', error);
+            req.log.error({ err: error }, 'Error fetching course');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -195,10 +193,9 @@ module.exports = (pool) => {
 
             res.status(201).json(result.rows[0]);
         } catch (error) {
-            console.error('Error creating course:', error);
+            req.log.error({ err: error }, 'Error creating course');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -241,10 +238,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error updating course:', error);
+            req.log.error({ err: error }, 'Error updating course');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });
@@ -272,10 +268,9 @@ module.exports = (pool) => {
 
             res.status(204).send();
         } catch (error) {
-            console.error('Error deleting course:', error);
+            req.log.error({ err: error }, 'Error deleting course');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });

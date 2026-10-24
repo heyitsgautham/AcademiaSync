@@ -81,10 +81,9 @@ module.exports = (pool) => {
                 _links: addStudentDashboardLinks(),
             });
         } catch (error) {
-            console.error('Error fetching available courses:', error);
+            req.log.error({ err: error }, 'Error fetching available courses');
             res.status(500).json({
                 error: 'Failed to fetch available courses',
-                message: error.message,
             });
         }
     });
@@ -177,10 +176,9 @@ module.exports = (pool) => {
                 message: 'Successfully enrolled in course',
             });
         } catch (error) {
-            console.error('Error enrolling in course:', error);
+            req.log.error({ err: error }, 'Error enrolling in course');
             res.status(500).json({
                 error: 'Failed to enroll in course',
-                message: error.message,
             });
         }
     });
@@ -270,10 +268,9 @@ module.exports = (pool) => {
                 courses: coursesResult.rows,
             });
         } catch (error) {
-            console.error('Error fetching enrolled courses:', error);
+            req.log.error({ err: error }, 'Error fetching enrolled courses');
             res.status(500).json({
                 error: 'Failed to fetch enrolled courses',
-                message: error.message,
             });
         }
     });
@@ -377,10 +374,9 @@ module.exports = (pool) => {
                 courses: coursesResult.rows,
             });
         } catch (error) {
-            console.error('Error fetching assignments:', error);
+            req.log.error({ err: error }, 'Error fetching assignments');
             res.status(500).json({
                 error: 'Failed to fetch assignments',
-                message: error.message,
             });
         }
     });
@@ -453,10 +449,9 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error fetching assignment details:', error);
+            req.log.error({ err: error }, 'Error fetching assignment details');
             res.status(500).json({
                 error: 'Failed to fetch assignment details',
-                message: error.message,
             });
         }
     });
@@ -557,10 +552,9 @@ module.exports = (pool) => {
                 message: 'Assignment submitted successfully',
             });
         } catch (error) {
-            console.error('Error submitting assignment:', error);
+            req.log.error({ err: error }, 'Error submitting assignment');
             res.status(500).json({
                 error: 'Failed to submit assignment',
-                message: error.message,
             });
         }
     });
@@ -709,10 +703,9 @@ module.exports = (pool) => {
                 },
             });
         } catch (error) {
-            console.error('Error fetching dashboard data:', error);
+            req.log.error({ err: error }, 'Error fetching dashboard data');
             res.status(500).json({
                 error: 'Failed to fetch dashboard data',
-                message: error.message,
             });
         }
     });
@@ -861,10 +854,9 @@ module.exports = (pool) => {
                 gradeDistribution,
             });
         } catch (error) {
-            console.error('Error fetching student analytics:', error);
+            req.log.error({ err: error }, 'Error fetching student analytics');
             res.status(500).json({
                 error: 'Failed to fetch student analytics',
-                message: error.message,
             });
         }
     });

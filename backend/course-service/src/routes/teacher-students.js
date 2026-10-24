@@ -93,10 +93,9 @@ module.exports = (pool) => {
                 pagination,
             });
         } catch (error) {
-            console.error('Error fetching students by course:', error);
+            req.log.error({ err: error }, 'Error fetching students by course');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });

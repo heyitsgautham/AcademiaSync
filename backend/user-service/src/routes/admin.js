@@ -74,7 +74,7 @@ module.exports = (pool) => {
                 _links: addAdminLinks(),
             });
         } catch (error) {
-            console.error('Error fetching admin stats:', error);
+            req.log.error({ err: error }, 'Error fetching admin stats');
             res.status(500).json({ error: 'Failed to fetch statistics' });
         }
     });
@@ -235,7 +235,7 @@ module.exports = (pool) => {
                 _links: addAdminLinks(),
             });
         } catch (error) {
-            console.error('Error fetching analytics:', error);
+            req.log.error({ err: error }, 'Error fetching analytics');
             res.status(500).json({ error: 'Failed to fetch analytics' });
         }
     });
@@ -283,7 +283,7 @@ module.exports = (pool) => {
                 _links: addAdminLinks(),
             });
         } catch (error) {
-            console.error('Error fetching teachers:', error);
+            req.log.error({ err: error }, 'Error fetching teachers');
             res.status(500).json({ error: 'Failed to fetch teachers' });
         }
     });
@@ -325,7 +325,7 @@ module.exports = (pool) => {
 
             res.status(201).json(result.rows[0]);
         } catch (error) {
-            console.error('Error creating teacher:', error);
+            req.log.error({ err: error }, 'Error creating teacher');
             res.status(500).json({ error: 'Failed to create teacher' });
         }
     });
@@ -362,7 +362,7 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error updating teacher:', error);
+            req.log.error({ err: error }, 'Error updating teacher');
             res.status(500).json({ error: 'Failed to update teacher' });
         }
     });
@@ -387,7 +387,7 @@ module.exports = (pool) => {
 
             res.json({ message: 'Teacher deleted successfully' });
         } catch (error) {
-            console.error('Error deleting teacher:', error);
+            req.log.error({ err: error }, 'Error deleting teacher');
             res.status(500).json({ error: 'Failed to delete teacher' });
         }
     });
@@ -429,7 +429,7 @@ module.exports = (pool) => {
 
             res.json(students);
         } catch (error) {
-            console.error('Error fetching students:', error);
+            req.log.error({ err: error }, 'Error fetching students');
             res.status(500).json({ error: 'Failed to fetch students' });
         }
     });
@@ -491,7 +491,7 @@ module.exports = (pool) => {
                 user: result.rows[0],
             });
         } catch (error) {
-            console.error('Error promoting user:', error);
+            req.log.error({ err: error }, 'Error promoting user');
             res.status(500).json({ error: 'Failed to promote user' });
         }
     });
@@ -515,7 +515,7 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error fetching profile:', error);
+            req.log.error({ err: error }, 'Error fetching profile');
             res.status(500).json({ error: 'Failed to fetch profile' });
         }
     });
@@ -547,7 +547,7 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error updating profile:', error);
+            req.log.error({ err: error }, 'Error updating profile');
             res.status(500).json({ error: 'Failed to update profile' });
         }
     });
@@ -607,7 +607,7 @@ module.exports = (pool) => {
                 _links: addAdminLinks(),
             });
         } catch (error) {
-            console.error('Error fetching admin dashboard analytics:', error);
+            req.log.error({ err: error }, 'Error fetching admin dashboard analytics');
             res.status(500).json({ error: 'Failed to fetch dashboard analytics' });
         }
     });

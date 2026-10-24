@@ -164,7 +164,7 @@ module.exports = (pool) => {
                 },
             });
         } catch (error) {
-            console.error('Google auth error:', error);
+            req.log.error({ err: error }, 'Google auth error');
             return res.status(500).json({
                 error: 'Internal Server Error',
                 message: 'Failed to authenticate with Google',
@@ -279,7 +279,7 @@ module.exports = (pool) => {
                 message: 'Access token refreshed successfully',
             });
         } catch (error) {
-            console.error('Token refresh error:', error);
+            req.log.error({ err: error }, 'Token refresh error');
             return res.status(500).json({
                 error: 'Internal Server Error',
                 message: 'Failed to refresh token',
@@ -331,7 +331,7 @@ module.exports = (pool) => {
                 message: 'Logout successful',
             });
         } catch (error) {
-            console.error('Logout error:', error);
+            req.log.error({ err: error }, 'Logout error');
             return res.status(500).json({
                 error: 'Internal Server Error',
                 message: 'Failed to logout',

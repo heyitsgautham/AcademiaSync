@@ -91,10 +91,9 @@ module.exports = (pool) => {
                 pendingAssignmentsToGrade,
             });
         } catch (error) {
-            console.error('Error fetching teacher stats:', error);
+            req.log.error({ err: error }, 'Error fetching teacher stats');
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message,
             });
         }
     });

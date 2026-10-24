@@ -66,7 +66,7 @@ module.exports = (pool) => {
 
             res.json(result.rows[0]);
         } catch (error) {
-            console.error('Error fetching user profile:', error);
+            req.log.error({ err: error }, 'Error fetching user profile');
             res.status(500).json({ message: 'Failed to fetch profile' });
         }
     });
@@ -159,7 +159,7 @@ module.exports = (pool) => {
                 user: result.rows[0],
             });
         } catch (error) {
-            console.error('Error updating user profile:', error);
+            req.log.error({ err: error }, 'Error updating user profile');
             res.status(500).json({ message: 'Failed to update profile' });
         }
     });

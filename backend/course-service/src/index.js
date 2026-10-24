@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const { createPool } = require('./config/db');
 const { createApp } = require('./app');
+const { logger } = require('./utils/logger');
 
 const PORT = process.env.PORT || 5001;
 
@@ -12,8 +13,7 @@ const app = createApp(pool);
 let server;
 if (process.env.NODE_ENV !== 'test') {
     server = app.listen(PORT, () => {
-        console.log(`Course Service running on port ${PORT}`);
-        console.log(`Health check: http://localhost:${PORT}/health`);
+        logger.info({ port: Number(PORT) }, 'Course Service listening');
     });
 }
 

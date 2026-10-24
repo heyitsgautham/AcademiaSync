@@ -61,7 +61,7 @@ module.exports = (pool) => {
 
             res.json(courses);
         } catch (error) {
-            console.error('Error fetching admin courses:', error);
+            req.log.error({ err: error }, 'Error fetching admin courses');
             res.status(500).json({ error: 'Failed to fetch courses' });
         }
     });
@@ -173,7 +173,7 @@ module.exports = (pool) => {
 
             res.json(allActivities);
         } catch (error) {
-            console.error('Error fetching admin recent activity:', error);
+            req.log.error({ err: error }, 'Error fetching admin recent activity');
             res.status(500).json({ error: 'Failed to fetch recent activity' });
         }
     });
@@ -246,7 +246,7 @@ module.exports = (pool) => {
                 courses,
             });
         } catch (error) {
-            console.error('Error fetching student courses:', error);
+            req.log.error({ err: error }, 'Error fetching student courses');
             res.status(500).json({ error: 'Failed to fetch student courses' });
         }
     });
@@ -314,7 +314,7 @@ module.exports = (pool) => {
                 courses,
             });
         } catch (error) {
-            console.error('Error fetching teacher courses:', error);
+            req.log.error({ err: error }, 'Error fetching teacher courses');
             res.status(500).json({ error: 'Failed to fetch teacher courses' });
         }
     });
@@ -391,7 +391,7 @@ module.exports = (pool) => {
                 students,
             });
         } catch (error) {
-            console.error('Error fetching course students:', error);
+            req.log.error({ err: error }, 'Error fetching course students');
             res.status(500).json({ error: 'Failed to fetch course students' });
         }
     });

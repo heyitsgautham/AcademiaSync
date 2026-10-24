@@ -1,6 +1,7 @@
 const express = require('express');
 const { validateBody } = require('../middleware/validate');
 const { googleSignInBody } = require('../schemas');
+const { isBootstrapAdmin } = require('../config/admins');
 const { OAuth2Client } = require('google-auth-library');
 const {
     generateAccessToken,
@@ -94,12 +95,19 @@ module.exports = (pool) => {
 
             let user;
             if (userResult.rows.length === 0) {
-                // Create new user with Student role by default
+                // New accounts are students unless ADMIN_EMAILS names them
                 const insertResult = await pool.query(
                     `INSERT INTO users (email, google_id, first_name, last_name, profile_picture, role) 
          VALUES ($1, $2, $3, $4, $5, $6) 
          RETURNING *`,
-                    [email, googleId, given_name || 'User', family_name || '', picture || null, 'Student']
+                    [
+                        email,
+                        googleId,
+                        given_name || 'User',
+                        family_name || '',
+                        picture || null,
+                        isBootstrapAdmin(email) ? 'Admin' : 'Student',
+                    ]
                 );
                 user = insertResult.rows[0];
             } else {
@@ -114,6 +122,15 @@ module.exports = (pool) => {
                     ]);
                     user.google_id = googleId;
                     user.profile_picture = picture;
+                }
+
+                // An account listed in ADMIN_EMAILS after its first sign-in is promoted on the next one
+                if (user.role !== 'Admin' && isBootstrapAdmin(user.email)) {
+                    await pool.query("UPDATE users SET role = 'Admin', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [
+                        user.id,
+                    ]);
+                    user.role = 'Admin';
+                    req.log.info({ userId: user.id }, 'Promoted user to Admin from ADMIN_EMAILS');
                 }
             }
 

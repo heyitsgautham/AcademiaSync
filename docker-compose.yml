@@ -42,6 +42,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       NODE_ENV: production
       ANALYTICS_API_KEY: ${ANALYTICS_API_KEY}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     ports:
       - "${USER_SERVICE_PORT}:5000"
 

@@ -97,6 +97,45 @@ describe('auth routes', () => {
         });
     });
 
+    describe('ADMIN_EMAILS bootstrap', () => {
+        afterEach(() => {
+            delete process.env.ADMIN_EMAILS;
+        });
+
+        it('creates a listed account as an admin on first sign-in', async () => {
+            process.env.ADMIN_EMAILS = 'someone@example.com, New.Student@Example.com';
+            acceptGoogleToken(googleProfile());
+
+            const res = await request(app).post('/auth/google').send({ idToken: 'good' });
+
+            expect(res.status).toBe(200);
+            expect(res.body.role).toBe('Admin');
+        });
+
+        it('promotes an existing listed account on its next sign-in', async () => {
+            const existing = await db.createUser('Student', { email: 'new.student@example.com' });
+            process.env.ADMIN_EMAILS = 'new.student@example.com';
+            acceptGoogleToken(googleProfile());
+
+            const res = await request(app).post('/auth/google').send({ idToken: 'good' });
+
+            expect(res.body.role).toBe('Admin');
+            const { rows } = await pool.query('SELECT role FROM users WHERE id = $1', [existing.id]);
+            expect(rows[0].role).toBe('Admin');
+            const access = jwt.verify(cookieValue(res, 'accessToken'), process.env.JWT_SECRET);
+            expect(access.role).toBe('Admin');
+        });
+
+        it('leaves unlisted accounts as students', async () => {
+            process.env.ADMIN_EMAILS = 'someone@example.com';
+            acceptGoogleToken(googleProfile());
+
+            const res = await request(app).post('/auth/google').send({ idToken: 'good' });
+
+            expect(res.body.role).toBe('Student');
+        });
+    });
+
     describe('signing in twice within one second', () => {
         it('stores two distinct refresh tokens instead of failing on the unique index', async () => {
             acceptGoogleToken(googleProfile());

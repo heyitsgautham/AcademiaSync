@@ -16,3 +16,8 @@ override.tf.json
 *.key
 secrets/
 *.env
+
+# Plan files and editor backups
+*.tfplan
+*.bak
+*.bak2

@@ -317,7 +317,8 @@ module.exports = (pool) => {
             // Parse query parameters
             const { page, limit, offset } = parsePagination(req.query);
             const { orderByClause } = parseSorting(req.query, ['student_name', 'grade', 'submitted_at', 'status']);
-            const { whereClause, values } = buildSubmissionsFilter(req.query);
+            // $1 is the assignment id and $2 the course id, so filter placeholders start at $3
+            const { whereClause, values } = buildSubmissionsFilter(req.query, 3);
 
             // Verify the assignment belongs to the teacher's course
             const assignmentCheck = await pool.query(

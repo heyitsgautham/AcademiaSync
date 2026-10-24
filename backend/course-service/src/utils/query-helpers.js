@@ -19,11 +19,13 @@ function parsePagination(query) {
  * Parse sorting parameters from query
  * @param {Object} query - Express req.query object
  * @param {Array} allowedFields - Array of allowed sort fields
+ * @param {Object} columnMap - Optional map from a sort field to the SQL expression to order by,
+ *   for fields that would be ambiguous across joined tables
  * @returns {Object} - { sortField, sortOrder, orderByClause }
  */
-function parseSorting(query, allowedFields = []) {
+function parseSorting(query, allowedFields = [], columnMap = {}) {
     const sortBy = query.sortBy || query.sort;
-    const sortOrder = (query.sortOrder || query.order || 'asc').toUpperCase();
+    const sortOrder = String(query.sortOrder || query.order || 'asc').toUpperCase();
 
     // Validate sort order
     const validOrder = ['ASC', 'DESC'].includes(sortOrder) ? sortOrder : 'ASC';
@@ -31,11 +33,13 @@ function parseSorting(query, allowedFields = []) {
     // Validate sort field
     const validFields = allowedFields.length > 0 ? allowedFields : ['id', 'created_at', 'updated_at'];
     const sortField = validFields.includes(sortBy) ? sortBy : validFields[0];
+    const column = columnMap[sortField] || sortField;
 
+    // Rows with no value (an ungraded submission, say) go last in both directions
     return {
         sortField,
         sortOrder: validOrder,
-        orderByClause: `${sortField} ${validOrder}`
+        orderByClause: `${column} ${validOrder} NULLS LAST`
     };
 }
 
@@ -62,124 +66,105 @@ function buildPaginationMeta(totalItems, page, limit) {
 }
 
 /**
- * Apply filters to SQL query for student assignments
- * @param {Object} query - Express req.query object
- * @returns {Object} - { whereClause, values, hasFilters }
+ * Collects SQL conditions with numbered placeholders.
+ * Placeholders start at `startIndex` so they follow the parameters the caller already uses.
  */
-function buildStudentAssignmentsFilter(query) {
+function createConditionBuilder(startIndex) {
     const conditions = [];
     const values = [];
-    let paramIndex = 1;
 
-    // Course filter
-    if (query.course && !isNaN(query.course)) {
-        conditions.push(`a.course_id = $${paramIndex}`);
-        values.push(parseInt(query.course));
-        paramIndex++;
+    return {
+        add(sqlWithPlaceholder, value) {
+            values.push(value);
+            conditions.push(sqlWithPlaceholder.replace('?', `$${startIndex + values.length - 1}`));
+        },
+        addRaw(sql) {
+            conditions.push(sql);
+        },
+        build() {
+            return {
+                whereClause: conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '',
+                values,
+                hasFilters: conditions.length > 0
+            };
+        }
+    };
+}
+
+const isNumeric = (value) => value !== undefined && value !== '' && !isNaN(value);
+
+/**
+ * Apply filters to SQL query for student assignments
+ * @param {Object} query - Express req.query object
+ * @param {number} startIndex - First free placeholder number in the caller's query
+ * @returns {Object} - { whereClause, values, hasFilters }, where whereClause starts with AND
+ */
+function buildStudentAssignmentsFilter(query, startIndex = 1) {
+    const builder = createConditionBuilder(startIndex);
+
+    if (isNumeric(query.course)) {
+        builder.add('a.course_id = ?', parseInt(query.course));
     }
 
-    // Status filter
     if (query.status) {
-        const status = query.status.toLowerCase();
+        const status = String(query.status).toLowerCase();
         if (status === 'pending') {
-            conditions.push(`s.id IS NULL`);
+            builder.addRaw('s.id IS NULL');
         } else if (status === 'submitted') {
-            conditions.push(`s.id IS NOT NULL AND s.grade IS NULL`);
+            builder.addRaw('s.id IS NOT NULL AND s.grade IS NULL');
         } else if (status === 'graded') {
-            conditions.push(`s.grade IS NOT NULL`);
+            builder.addRaw('s.grade IS NOT NULL');
         }
     }
 
-    const whereClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
-
-    return {
-        whereClause,
-        values,
-        hasFilters: conditions.length > 0
-    };
+    return builder.build();
 }
 
 /**
  * Apply filters to SQL query for assignment submissions
  * @param {Object} query - Express req.query object
- * @returns {Object} - { whereClause, values, hasFilters }
+ * @param {number} startIndex - First free placeholder number in the caller's query
+ * @returns {Object} - { whereClause, values, hasFilters }, where whereClause starts with AND
  */
-function buildSubmissionsFilter(query) {
-    const conditions = [];
-    const values = [];
-    let paramIndex = 1;
+function buildSubmissionsFilter(query, startIndex = 1) {
+    const builder = createConditionBuilder(startIndex);
 
-    // Status filter for submissions
     if (query.status) {
-        const status = query.status.toLowerCase();
+        const status = String(query.status).toLowerCase();
         if (status === 'submitted') {
-            conditions.push(`s.id IS NOT NULL`);
+            builder.addRaw('s.id IS NOT NULL');
         } else if (status === 'not-submitted') {
-            conditions.push(`s.id IS NULL`);
+            builder.addRaw('s.id IS NULL');
         } else if (status === 'graded') {
-            conditions.push(`s.grade IS NOT NULL`);
+            builder.addRaw('s.grade IS NOT NULL');
         }
     }
 
-    // Grade filter
-    if (query.minGrade && !isNaN(query.minGrade)) {
-        conditions.push(`s.grade >= $${paramIndex}`);
-        values.push(parseFloat(query.minGrade));
-        paramIndex++;
+    if (isNumeric(query.minGrade)) {
+        builder.add('s.grade >= ?', parseFloat(query.minGrade));
     }
 
-    if (query.maxGrade && !isNaN(query.maxGrade)) {
-        conditions.push(`s.grade <= $${paramIndex}`);
-        values.push(parseFloat(query.maxGrade));
-        paramIndex++;
+    if (isNumeric(query.maxGrade)) {
+        builder.add('s.grade <= ?', parseFloat(query.maxGrade));
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    return {
-        whereClause,
-        values,
-        hasFilters: conditions.length > 0
-    };
+    return builder.build();
 }
 
 /**
  * Apply filters to SQL query for students by course
  * @param {Object} query - Express req.query object
- * @returns {Object} - { whereClause, values, hasFilters }
+ * @param {number} startIndex - First free placeholder number in the caller's query
+ * @returns {Object} - { whereClause, values, hasFilters }, where whereClause starts with AND
  */
-function buildStudentsFilter(query) {
-    const conditions = [];
-    const values = [];
-    let paramIndex = 1;
+function buildStudentsFilter(query, startIndex = 1) {
+    const builder = createConditionBuilder(startIndex);
 
-    // Course filter
-    if (query.courseId && !isNaN(query.courseId)) {
-        conditions.push(`c.id = $${paramIndex}`);
-        values.push(parseInt(query.courseId));
-        paramIndex++;
+    if (isNumeric(query.courseId)) {
+        builder.add('c.id = ?', parseInt(query.courseId));
     }
 
-    // Performance/grade filter
-    if (query.minGrade && !isNaN(query.minGrade)) {
-        conditions.push(`COALESCE(AVG(s.grade), 0) >= $${paramIndex}`);
-        values.push(parseFloat(query.minGrade));
-        paramIndex++;
-    }
-
-    if (query.maxGrade && !isNaN(query.maxGrade)) {
-        conditions.push(`COALESCE(AVG(s.grade), 0) <= $${paramIndex}`);
-        values.push(parseFloat(query.maxGrade));
-        paramIndex++;
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    return {
-        whereClause,
-        values,
-        hasFilters: conditions.length > 0
-    };
+    return builder.build();
 }
 
 module.exports = {

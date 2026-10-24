@@ -11,8 +11,11 @@ module.exports = (pool) => {
 
             // Parse query parameters
             const { page, limit, offset } = parsePagination(req.query);
-            const { orderByClause } = parseSorting(req.query, ['course_name', 'performance', 'name']);
-            const { whereClause, values } = buildStudentsFilter(req.query);
+            const { orderByClause } = parseSorting(req.query, ['course_name', 'name', 'student_count'], {
+                name: 'course_name'
+            });
+            // $1 is the teacher id, so filter placeholders start at $2
+            const { whereClause, values } = buildStudentsFilter(req.query, 2);
 
             // Get total count for pagination (count of courses with students)
             const countQuery = `

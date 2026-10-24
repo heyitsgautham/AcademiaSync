@@ -179,6 +179,28 @@ describe('student routes', () => {
             expect(res.body.assignments.map((a) => a.id)).toEqual([graded.id]);
         });
 
+        it('filters by course without confusing the course id with the student id', async () => {
+            const second = await db.createCourse(teacher.id, { title: 'Second' });
+            await db.enroll(student.id, second.id);
+            const only = await db.createAssignment(second.id, { title: 'Only in second' });
+
+            const res = await request(app)
+                .get(`/api/student/assignments?course=${second.id}`)
+                .set(authHeader(student));
+
+            expect(res.status).toBe(200);
+            expect(res.body.assignments.map((a) => a.id)).toEqual([only.id]);
+        });
+
+        it('sorts by assignment title, a column both joined tables share', async () => {
+            const res = await request(app)
+                .get('/api/student/assignments?sortBy=title')
+                .set(authHeader(student));
+
+            expect(res.status).toBe(200);
+            expect(res.body.assignments.map((a) => a.name)).toEqual(['Graded', 'Pending', 'Submitted']);
+        });
+
         it('returns one assignment by id', async () => {
             const res = await request(app)
                 .get(`/api/student/assignments/${pending.id}`)

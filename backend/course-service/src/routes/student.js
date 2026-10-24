@@ -327,8 +327,12 @@ module.exports = (pool) => {
             const studentId = req.user.id;
 
             // Parse query parameters - removed pagination since frontend handles it
-            const { orderByClause } = parseSorting(req.query, ['due_date', 'title', 'course', 'status']);
-            const { whereClause, values } = buildStudentAssignmentsFilter(req.query);
+            const { orderByClause } = parseSorting(req.query, ['due_date', 'title', 'course', 'status'], {
+                due_date: 'a.due_date',
+                title: 'a.title'
+            });
+            // $1 is the student id, so filter placeholders start at $2
+            const { whereClause, values } = buildStudentAssignmentsFilter(req.query, 2);
 
             // Get student info
             const studentQuery = `

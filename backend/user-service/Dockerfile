@@ -1,7 +1,7 @@
 # ================================
 # Stage 1: Dependencies
 # ================================
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 
 # Copy package files
@@ -14,7 +14,7 @@ RUN npm ci --omit=dev && \
 # ================================
 # Stage 2: Production Runner
 # ================================
-FROM node:22-alpine AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 
 # Set environment to production

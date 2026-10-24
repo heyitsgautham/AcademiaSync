@@ -4,23 +4,17 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 
-# Install dependencies (including devDependencies for build)
-RUN pnpm install
+# Install dependencies (including devDependencies for build) from the lockfile
+RUN npm ci --no-audit --no-fund
 
 # ================================
 # Stage 2: Builder
 # ================================
 FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -33,7 +27,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the Next.js application
-RUN pnpm build
+RUN npm run build
 
 # ================================
 # Stage 3: Production Runner

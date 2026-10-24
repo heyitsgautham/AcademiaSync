@@ -44,7 +44,6 @@ export function StudentDashboardTopbar() {
   } else if (user?.name) {
     userName = user.name;
   }
-  const userEmail = user?.email || ""
   const profilePicture = user?.image || user?.profilePicture
   const userImage = profilePicture && profilePicture !== "" ? profilePicture : undefined;
 

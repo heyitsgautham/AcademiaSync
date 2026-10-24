@@ -4,7 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions)
 

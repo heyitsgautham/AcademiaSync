@@ -148,7 +148,7 @@ export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the course "{course.title}" and all associated
+              This action cannot be undone. This will permanently delete the course &quot;{course.title}&quot; and all associated
               assignments and submissions.
             </AlertDialogDescription>
           </AlertDialogHeader>

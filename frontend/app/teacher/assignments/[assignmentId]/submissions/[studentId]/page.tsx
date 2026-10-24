@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 
@@ -232,7 +231,7 @@ export default function SubmissionDetailPage() {
                                 {/* Student's Answer */}
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Student's Answer</CardTitle>
+                                        <CardTitle>Student&apos;s Answer</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         {submission.submission_text ? (

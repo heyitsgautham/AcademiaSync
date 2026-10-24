@@ -1,5 +1,5 @@
 import type React from "react"
-import { BookOpen, Menu, X } from "lucide-react"
+import { BookOpen } from "lucide-react"
 import Link from "next/link"
 import { StudentDashboardSidebar } from "@/components/student-dashboard-sidebar"
 import { StudentDashboardTopbar } from "@/components/student-dashboard-topbar"

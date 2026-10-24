@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server"
 
-const USER_SERVICE_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
-const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY || "academiasync-analytics-key-2025-secure"
+const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url)
         const apiKey = searchParams.get('apiKey')
+
+        if (!ANALYTICS_API_KEY) {
+            return NextResponse.json({ error: "Analytics API key is not configured" }, { status: 503 })
+        }
 
         // Check if API key matches
         if (!apiKey || apiKey !== ANALYTICS_API_KEY) {

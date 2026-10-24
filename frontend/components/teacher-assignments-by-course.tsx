@@ -159,8 +159,8 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the assignment "
-              {assignmentToDelete?.title}" and all associated submissions.
+              This action cannot be undone. This will permanently delete the assignment &quot;
+              {assignmentToDelete?.title}&quot; and all associated submissions.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

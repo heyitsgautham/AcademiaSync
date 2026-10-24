@@ -1,7 +1,7 @@
-import NextAuth, { AuthOptions, Session, User } from "next-auth";
+import NextAuth, { AuthOptions, Session } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
-import { Account, Profile } from "next-auth";
+import { Account } from "next-auth";
 
 // Use Docker service name for server-side requests (NextAuth callbacks run on server)
 // This is because the frontend container needs to communicate with user-service container
@@ -49,7 +49,7 @@ export const authOptions: AuthOptions = {
         },
     },
     callbacks: {
-        async signIn({ account, profile }: { account: Account | null; profile?: Profile }) {
+        async signIn({ account }: { account: Account | null }) {
             if (account?.provider === "google" && account.id_token) {
                 try {
                     console.log(`[NextAuth] Attempting to authenticate with backend: ${BACKEND_URL}/auth/google`);

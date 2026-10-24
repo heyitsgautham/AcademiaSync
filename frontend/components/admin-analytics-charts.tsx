@@ -97,52 +97,6 @@ export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsCha
             .slice(0, 2)
     }
 
-    const CustomXAxisTick = ({ x, y, payload }: any) => {
-        const text = payload.value
-        const maxCharsPerLine = 15
-        const words = text.split(" ")
-        const lines: string[] = []
-        let currentLine = ""
-
-        words.forEach((word: string) => {
-            const testLine = currentLine ? `${currentLine} ${word}` : word
-
-            if (testLine.length > maxCharsPerLine && currentLine) {
-                lines.push(currentLine)
-                currentLine = word
-            } else {
-                currentLine = testLine
-            }
-        })
-
-        if (currentLine) {
-            lines.push(currentLine)
-        }
-
-        // Limit to 2 lines with ellipsis
-        const displayLines = lines.slice(0, 2)
-        if (lines.length > 2) {
-            displayLines[1] = displayLines[1].substring(0, 12) + "..."
-        }
-
-        return (
-            <g transform={`translate(${x},${y})`}>
-                {displayLines.map((line, index) => (
-                    <text
-                        key={index}
-                        x={0}
-                        y={0}
-                        dy={index * 14 + 8}
-                        textAnchor="middle"
-                        fill={mutedForegroundColor}
-                        fontSize="11"
-                    >
-                        {line}
-                    </text>
-                ))}
-            </g>
-        )
-    }
 
     if (isLoading) {
         return (

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "../../auth/[...nextauth]/route"
 
 const USER_SERVICE_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
-const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY || "academiasync-analytics-key-2025-secure"
+const ANALYTICS_API_KEY = process.env.ANALYTICS_API_KEY
 
 export async function GET() {
     try {
@@ -13,7 +13,11 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
         }
 
-        const response = await fetch(`${USER_SERVICE_URL}/admin/analytics?apiKey=${ANALYTICS_API_KEY}`, {
+        if (!ANALYTICS_API_KEY) {
+            return NextResponse.json({ error: "Analytics API key is not configured" }, { status: 503 })
+        }
+
+        const response = await fetch(`${USER_SERVICE_URL}/admin/analytics?apiKey=${encodeURIComponent(ANALYTICS_API_KEY)}`, {
             headers: {
                 Authorization: `Bearer ${session.backendAccessToken}`,
             },

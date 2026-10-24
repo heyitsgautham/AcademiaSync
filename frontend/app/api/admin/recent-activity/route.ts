@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../../auth/[...nextauth]/route"
 
-const USER_SERVICE_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
 const COURSE_SERVICE_URL = process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
 
 export async function GET() {

@@ -38,9 +38,7 @@ export function AdminDashboardTopbar() {
     } else if (user?.name) {
         userName = user.name;
     }
-    const userEmail = user?.email || ""
     const profilePicture = user?.image || user?.profilePicture
-    const userImage = profilePicture || "/placeholder-user.jpg"
 
     // Get initials for avatar fallback
     const getInitials = (name: string) => {

@@ -125,7 +125,7 @@ export function ApiKeyModal({ isOpen, onValidate, onSuccess }: ApiKeyModalProps)
                     setError(`Invalid API key. ${attemptsRemaining} attempt${attemptsRemaining !== 1 ? 's' : ''} remaining.`)
                 }
             }
-        } catch (err) {
+        } catch {
             setError("Failed to validate API key. Please try again.")
         } finally {
             setIsValidating(false)

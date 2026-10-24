@@ -31,8 +31,6 @@ const GRADE_COLORS = {
   "F (0-59)": "#ef4444", // Red
 }
 
-const COURSE_COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#10b981", "#f59e0b"]
-
 export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps) {
   const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
 

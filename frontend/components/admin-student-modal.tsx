@@ -26,13 +26,6 @@ interface AdminStudentModalProps {
     mode: "create" | "edit"
 }
 
-interface StudentFormData {
-    firstName: string
-    lastName: string
-    email: string
-    age?: number
-    password?: string
-}
 
 export function AdminStudentModal({ open, onOpenChange, student, onSuccess, mode }: AdminStudentModalProps) {
     const { toast } = useToast()

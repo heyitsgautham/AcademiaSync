@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Menu, X, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { Menu, X, Search } from "lucide-react"
 import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
 import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
 import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"

@@ -44,7 +44,7 @@ export default async function DebugPage() {
                             <strong>Required in Google Console:</strong>
                             <ul className="list-disc ml-6 mt-2 space-y-1">
                                 <li>Go to: <a href="https://console.cloud.google.com/apis/credentials" className="text-blue-600 underline">Google Cloud Console</a></li>
-                                <li>Add this exact URI to "Authorized redirect URIs"</li>
+                                <li>Add this exact URI to &quot;Authorized redirect URIs&quot;</li>
                                 <li>Remove any old URIs with different ALB DNS</li>
                             </ul>
                         </div>

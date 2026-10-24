@@ -63,7 +63,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
 
     // Filter and sort courses
     const filteredAndSortedCourses = useMemo(() => {
-        let result = coursesArray.filter((course) => {
+        const result = coursesArray.filter((course) => {
             const matchesSearch =
                 course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 course.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||

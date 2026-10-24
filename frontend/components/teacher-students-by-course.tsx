@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
 
 interface StudentsByCourseProps {
   studentsByCourse: any[]
@@ -39,8 +38,6 @@ export function TeacherStudentsByCourse({
   onPreviousPage,
   onNextPage
 }: StudentsByCourseProps) {
-  const [collapsedCourses, setCollapsedCourses] = useState<Set<string>>(new Set())
-
   // Safe access with fallback
   const coursesArray = Array.isArray(studentsByCourse) ? studentsByCourse : []
 
@@ -87,17 +84,6 @@ export function TeacherStudentsByCourse({
   const endIndex = startIndex + itemsPerPage
   const paginatedStudents = sortedStudents.slice(startIndex, endIndex)
 
-  const toggleCourse = (courseId: string) => {
-    setCollapsedCourses((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(courseId)) {
-        newSet.delete(courseId)
-      } else {
-        newSet.add(courseId)
-      }
-      return newSet
-    })
-  }
 
   return (
     <div className="space-y-6">

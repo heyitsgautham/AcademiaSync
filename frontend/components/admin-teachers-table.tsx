@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Search, GraduationCap, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,14 +19,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
     Select,
     SelectContent,
@@ -93,7 +85,7 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
 
     // Filter and sort teachers
     const filteredAndSortedTeachers = useMemo(() => {
-        let result = teachersArray.filter((teacher) => {
+        const result = teachersArray.filter((teacher) => {
             const matchesSearch =
                 teacher.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 teacher.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -516,7 +508,7 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                             {selectedRoleChange === "Admin" ? "Promote to Admin?" : "Demote to Student?"}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will change the user's role to {selectedRoleChange}.
+                            This will change the user&apos;s role to {selectedRoleChange}.
                             {selectedRoleChange === "Admin"
                                 ? " They will gain full administrative privileges."
                                 : " They will lose teaching privileges and become a student."}

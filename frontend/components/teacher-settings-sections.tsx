@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,7 +21,6 @@ interface TeacherProfile {
 }
 
 export function TeacherSettingsSections() {
-  const { data: session } = useSession()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 

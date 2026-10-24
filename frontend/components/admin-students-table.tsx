@@ -97,7 +97,7 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
 
     // Filter and sort students
     const filteredAndSortedStudents = useMemo(() => {
-        let result = studentsArray.filter((student) => {
+        const result = studentsArray.filter((student) => {
             const matchesSearch =
                 student.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 student.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -566,7 +566,7 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
                     <AlertDialogHeader>
                         <AlertDialogTitle>Promote to {promoteRole}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will change the user's role to {promoteRole}. They will gain {promoteRole === "Admin" ? "full administrative" : "teaching"} privileges.
+                            This will change the user&apos;s role to {promoteRole}. They will gain {promoteRole === "Admin" ? "full administrative" : "teaching"} privileges.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

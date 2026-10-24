@@ -10,7 +10,6 @@ import { TeacherStatCards } from "@/components/teacher-stat-cards"
 import { TeacherRecentActivity } from "@/components/teacher-recent-activity"
 import { TeacherAnalyticsSection } from "@/components/teacher-analytics-section"
 import { TeacherCreateCourseModal } from "@/components/teacher-create-course-modal"
-import { Button } from "@/components/ui/button"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -89,7 +88,7 @@ export default function TeacherDashboard() {
               <div>
                 <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Dashboard</h1>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Welcome back! Here's what's happening with your courses.
+                  Welcome back! Here&apos;s what&apos;s happening with your courses.
                 </p>
               </div>
 

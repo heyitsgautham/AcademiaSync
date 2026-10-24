@@ -1,51 +1,56 @@
+# Local stack: Postgres, the two API services and the Next.js frontend.
+# Copy .env.example to .env, fill in the Google OAuth values, then run `docker compose up --build`.
+# Inside the network the services always listen on 5000, 5001 and 3000; the *_PORT variables only pick host ports.
+
 services:
-  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: academiasync-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-academiasync}
     ports:
-      - "${DB_PORT}:5432"
-
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-academiasync}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - academiasync-network
 
-  # User Service
   user-service:
     build:
       context: ./backend/user-service
       dockerfile: Dockerfile
-      target: runner  # Use production stage from multi-stage build
+      target: runner
     container_name: academiasync-user-service
     environment:
-      PORT: ${USER_SERVICE_PORT}
+      PORT: 5000
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
+      DB_NAME: ${POSTGRES_DB:-academiasync}
+      DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY}
-      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET in .env}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-7d}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      NODE_ENV: production
       ANALYTICS_API_KEY: ${ANALYTICS_API_KEY}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      FRONTEND_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      API_BASE_URL: http://localhost:${USER_SERVICE_PORT:-5000}
+      COURSE_SERVICE_URL: http://localhost:${COURSE_SERVICE_PORT:-5001}
     ports:
-      - "${USER_SERVICE_PORT}:5000"
-
+      - "${USER_SERVICE_PORT:-5000}:5000"
     depends_on:
       db:
         condition: service_healthy
@@ -53,26 +58,28 @@ services:
       - academiasync-network
     restart: unless-stopped
 
-  # Course Service
   course-service:
     build:
       context: ./backend/course-service
       dockerfile: Dockerfile
-      target: runner  # Use production stage from multi-stage build
+      target: runner
     container_name: academiasync-course-service
     environment:
-      PORT: ${COURSE_SERVICE_PORT}
+      PORT: 5001
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB}
-      DB_USER: ${POSTGRES_USER}
+      DB_NAME: ${POSTGRES_DB:-academiasync}
+      DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      NODE_ENV: production
+      FRONTEND_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      API_BASE_URL: http://localhost:${COURSE_SERVICE_PORT:-5001}
+      USER_SERVICE_URL: http://localhost:${USER_SERVICE_PORT:-5000}
     ports:
-      - "${COURSE_SERVICE_PORT}:5001"
-
+      - "${COURSE_SERVICE_PORT:-5001}:5001"
     depends_on:
       db:
         condition: service_healthy
@@ -80,35 +87,35 @@ services:
       - academiasync-network
     restart: unless-stopped
 
-  # Frontend
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: runner  # Use production stage from multi-stage build
+      target: runner
     container_name: academiasync-frontend
     environment:
-      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
-      NEXT_PUBLIC_COURSE_SERVICE_URL: ${NEXT_PUBLIC_COURSE_SERVICE_URL}
-      INTERNAL_BACKEND_URL: ${INTERNAL_BACKEND_URL}
-      INTERNAL_COURSE_SERVICE_URL: ${INTERNAL_COURSE_SERVICE_URL}
-
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:${USER_SERVICE_PORT:-5000}
+      NEXT_PUBLIC_COURSE_SERVICE_URL: http://localhost:${COURSE_SERVICE_PORT:-5001}
+      INTERNAL_BACKEND_URL: http://user-service:5000
+      INTERNAL_COURSE_SERVICE_URL: http://course-service:5001
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET in .env}
+      ANALYTICS_API_KEY: ${ANALYTICS_API_KEY}
     ports:
       - "3000:3000"
     depends_on:
-      - user-service
-      - course-service
+      user-service:
+        condition: service_healthy
+      course-service:
+        condition: service_healthy
     networks:
       - academiasync-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
-    driver: local
 
 networks:
   academiasync-network:

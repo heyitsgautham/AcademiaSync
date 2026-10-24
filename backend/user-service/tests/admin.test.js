@@ -100,9 +100,9 @@ describe('admin routes', () => {
         });
 
         it.each([
-            [{ firstName: 'A', lastName: 'B', email: 'a@b.c', specialization: 'X' }, 'All fields are required'],
+            [{ firstName: 'A', lastName: 'B', email: 'a@example.com', specialization: 'X' }, 'All fields are required'],
             [
-                { firstName: 'A', lastName: 'B', email: 'a@b.c', specialization: 'X', password: '123' },
+                { firstName: 'A', lastName: 'B', email: 'a@example.com', specialization: 'X', password: '123' },
                 'Password must be at least 6 characters',
             ],
         ])('rejects an invalid new teacher', async (body, error) => {

@@ -1,4 +1,6 @@
 const express = require('express');
+const { validateBody } = require('../middleware/validate');
+const { googleSignInBody } = require('../schemas');
 const { OAuth2Client } = require('google-auth-library');
 const {
     generateAccessToken,
@@ -63,16 +65,9 @@ module.exports = (pool) => {
      *             schema:
      *               $ref: '#/components/schemas/Error'
      */
-    router.post('/google', async (req, res) => {
+    router.post('/google', validateBody(googleSignInBody), async (req, res) => {
         try {
             const { idToken } = req.body;
-
-            if (!idToken) {
-                return res.status(400).json({
-                    error: 'Bad Request',
-                    message: 'Google ID token is required',
-                });
-            }
 
             // Verify Google token
             let ticket;

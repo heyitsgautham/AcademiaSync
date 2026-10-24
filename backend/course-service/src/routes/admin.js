@@ -1,8 +1,10 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
+const { validateIdParams } = require('../middleware/validate');
 
 module.exports = (pool) => {
     const router = express.Router();
+    validateIdParams(router, ['studentId', 'teacherId', 'courseId']);
 
     /**
      * @swagger

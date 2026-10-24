@@ -2,6 +2,8 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { addCourseLinks, addStudentDashboardLinks } = require('../utils/hateoas');
 const { parseSorting, buildStudentAssignmentsFilter } = require('../utils/query-helpers');
+const { validateBody, validateIdParams } = require('../middleware/validate');
+const { enrollBody, submitAssignmentBody } = require('../schemas');
 
 /**
  * Student routes for course enrollment and assignment submission
@@ -10,6 +12,7 @@ const { parseSorting, buildStudentAssignmentsFilter } = require('../utils/query-
  */
 module.exports = (pool) => {
     const router = express.Router();
+    validateIdParams(router, ['assignmentId']);
 
     // Apply authentication and authorization middleware to all routes
     router.use(authenticate);
@@ -133,17 +136,10 @@ module.exports = (pool) => {
      *       500:
      *         description: Internal server error
      */
-    router.post('/enroll', async (req, res) => {
+    router.post('/enroll', validateBody(enrollBody), async (req, res) => {
         try {
             const studentId = req.user.id;
             const { courseId } = req.body;
-
-            if (!courseId) {
-                return res.status(400).json({
-                    error: 'Bad Request',
-                    message: 'courseId is required',
-                });
-            }
 
             // Check if course exists
             const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1', [courseId]);
@@ -506,17 +502,10 @@ module.exports = (pool) => {
      *       500:
      *         description: Internal server error
      */
-    router.post('/submit-assignment', async (req, res) => {
+    router.post('/submit-assignment', validateBody(submitAssignmentBody), async (req, res) => {
         try {
             const studentId = req.user.id;
             const { assignmentId, submission } = req.body;
-
-            if (!assignmentId || !submission) {
-                return res.status(400).json({
-                    error: 'Bad Request',
-                    message: 'assignmentId and submission are required',
-                });
-            }
 
             // Check if assignment exists and student is enrolled in the course
             const checkQuery = `

@@ -1,5 +1,7 @@
 const express = require('express');
 const { authenticate } = require('../middleware/auth');
+const { validateBody } = require('../middleware/validate');
+const { userProfileBody } = require('../schemas');
 
 module.exports = (pool) => {
     const router = express.Router();
@@ -127,19 +129,10 @@ module.exports = (pool) => {
      *       500:
      *         description: Internal server error
      */
-    router.put('/profile', authenticate, async (req, res) => {
+    router.put('/profile', authenticate, validateBody(userProfileBody), async (req, res) => {
         try {
             const userId = req.user.id;
             const { first_name, last_name, age, specialization } = req.body;
-
-            // Validation
-            if (!first_name) {
-                return res.status(400).json({ message: 'First name is required' });
-            }
-
-            if (age !== null && age !== undefined && (age < 18 || age > 100)) {
-                return res.status(400).json({ message: 'Age must be between 18 and 100' });
-            }
 
             // Update user profile
             const result = await pool.query(

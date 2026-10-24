@@ -1,10 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { authenticate, authorize } = require('../middleware/auth');
+const { validateBody, validateIdParams } = require('../middleware/validate');
+const { createTeacherBody, updateTeacherBody, promoteRoleBody, adminProfileBody } = require('../schemas');
 const { addAdminLinks, addTeacherLinks, addStudentLinks } = require('../utils/hateoas');
 
 module.exports = (pool) => {
     const router = express.Router();
+    validateIdParams(router, ['id']);
 
     /**
      * @swagger
@@ -292,18 +295,9 @@ module.exports = (pool) => {
      * POST /admin/teachers
      * Create a new teacher
      */
-    router.post('/teachers', authenticate, authorize('Admin'), async (req, res) => {
+    router.post('/teachers', authenticate, authorize('Admin'), validateBody(createTeacherBody), async (req, res) => {
         try {
             const { firstName, lastName, email, specialization, password } = req.body;
-
-            // Validation
-            if (!firstName || !lastName || !email || !specialization || !password) {
-                return res.status(400).json({ error: 'All fields are required' });
-            }
-
-            if (password.length < 6) {
-                return res.status(400).json({ error: 'Password must be at least 6 characters' });
-            }
 
             // Check if email already exists
             const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -334,15 +328,10 @@ module.exports = (pool) => {
      * PUT /admin/teachers/:id
      * Update a teacher
      */
-    router.put('/teachers/:id', authenticate, authorize('Admin'), async (req, res) => {
+    router.put('/teachers/:id', authenticate, authorize('Admin'), validateBody(updateTeacherBody), async (req, res) => {
         try {
             const { id } = req.params;
             const { firstName, lastName, specialization } = req.body;
-
-            // Validation
-            if (!firstName || !lastName || !specialization) {
-                return res.status(400).json({ error: 'First name, last name, and specialization are required' });
-            }
 
             // Check if teacher exists
             const existingTeacher = await pool.query("SELECT id FROM users WHERE id = $1 AND role = 'Teacher'", [id]);
@@ -438,22 +427,9 @@ module.exports = (pool) => {
      * POST /admin/promote-role
      * Promote a user to Teacher or Admin role
      */
-    router.post('/promote-role', authenticate, authorize('Admin'), async (req, res) => {
+    router.post('/promote-role', authenticate, authorize('Admin'), validateBody(promoteRoleBody), async (req, res) => {
         try {
             const { userId, newRole, specialization } = req.body;
-
-            // Validation
-            if (!userId || !newRole) {
-                return res.status(400).json({ error: 'User ID and new role are required' });
-            }
-
-            if (!['Teacher', 'Admin'].includes(newRole)) {
-                return res.status(400).json({ error: 'Invalid role. Must be Teacher or Admin' });
-            }
-
-            if (newRole === 'Teacher' && !specialization) {
-                return res.status(400).json({ error: 'Specialization is required for Teacher role' });
-            }
 
             // Check if user exists
             const existingUser = await pool.query('SELECT id, role FROM users WHERE id = $1', [userId]);
@@ -524,14 +500,9 @@ module.exports = (pool) => {
      * PUT /admin/profile
      * Update admin profile
      */
-    router.put('/profile', authenticate, authorize('Admin'), async (req, res) => {
+    router.put('/profile', authenticate, authorize('Admin'), validateBody(adminProfileBody), async (req, res) => {
         try {
             const { first_name, last_name } = req.body;
-
-            // Validation
-            if (!first_name) {
-                return res.status(400).json({ error: 'First name is required' });
-            }
 
             const result = await pool.query(
                 `UPDATE users 

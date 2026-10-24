@@ -1,9 +1,12 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { addCourseLinks, addTeacherDashboardLinks } = require('../utils/hateoas');
+const { validateBody, validateIdParams } = require('../middleware/validate');
+const { courseBody } = require('../schemas');
 
 module.exports = (pool) => {
     const router = express.Router();
+    validateIdParams(router, ['id']);
 
     /**
      * @swagger
@@ -171,18 +174,10 @@ module.exports = (pool) => {
      *       500:
      *         description: Internal server error
      */
-    router.post('/', authenticate, authorize('teacher'), async (req, res) => {
+    router.post('/', authenticate, authorize('teacher'), validateBody(courseBody), async (req, res) => {
         try {
             const { title, description, weeks } = req.body;
             const teacherId = req.user.id;
-
-            // Validation
-            if (!title || !description) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Title and description are required',
-                });
-            }
 
             const result = await pool.query(
                 `INSERT INTO courses (title, description, teacher_id, weeks)
@@ -201,19 +196,11 @@ module.exports = (pool) => {
     });
 
     // Update a course
-    router.put('/:id', authenticate, authorize('teacher'), async (req, res) => {
+    router.put('/:id', authenticate, authorize('teacher'), validateBody(courseBody), async (req, res) => {
         try {
             const { id } = req.params;
             const { title, description, weeks } = req.body;
             const teacherId = req.user.id;
-
-            // Validation
-            if (!title || !description) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Title and description are required',
-                });
-            }
 
             // Check if course exists and belongs to teacher
             const checkResult = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [

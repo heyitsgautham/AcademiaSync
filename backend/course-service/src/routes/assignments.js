@@ -1,6 +1,8 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 const { addAssignmentLinks } = require('../utils/hateoas');
+const { validateBody, validateIdParams } = require('../middleware/validate');
+const { assignmentBody, gradeBody, bulkGradeBody } = require('../schemas');
 const {
     parsePagination,
     parseSorting,
@@ -10,6 +12,7 @@ const {
 
 module.exports = (pool) => {
     const router = express.Router();
+    validateIdParams(router, ['id', 'courseId', 'assignmentId', 'submissionId']);
 
     /**
      * @swagger
@@ -157,48 +160,46 @@ module.exports = (pool) => {
      *       500:
      *         description: Internal server error
      */
-    router.post('/courses/:courseId/assignments', authenticate, authorize('teacher'), async (req, res) => {
-        try {
-            const { courseId } = req.params;
-            const { title, description, due_date } = req.body;
-            const teacherId = req.user.id;
+    router.post(
+        '/courses/:courseId/assignments',
+        authenticate,
+        authorize('teacher'),
+        validateBody(assignmentBody),
+        async (req, res) => {
+            try {
+                const { courseId } = req.params;
+                const { title, description, due_date } = req.body;
+                const teacherId = req.user.id;
 
-            // Validation
-            if (!title || !description) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Title and description are required',
-                });
-            }
+                // Verify the course belongs to the teacher
+                const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
+                    courseId,
+                    teacherId,
+                ]);
 
-            // Verify the course belongs to the teacher
-            const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
-                courseId,
-                teacherId,
-            ]);
+                if (courseCheck.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'Not found',
+                        message: 'Course not found or access denied',
+                    });
+                }
 
-            if (courseCheck.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'Not found',
-                    message: 'Course not found or access denied',
-                });
-            }
-
-            const result = await pool.query(
-                `INSERT INTO assignments (course_id, title, description, due_date)
+                const result = await pool.query(
+                    `INSERT INTO assignments (course_id, title, description, due_date)
                  VALUES ($1, $2, $3, $4)
                  RETURNING *`,
-                [courseId, title, description, due_date || null]
-            );
+                    [courseId, title, description, due_date || null]
+                );
 
-            res.status(201).json(result.rows[0]);
-        } catch (error) {
-            req.log.error({ err: error }, 'Error creating assignment');
-            res.status(500).json({
-                error: 'Internal server error',
-            });
+                res.status(201).json(result.rows[0]);
+            } catch (error) {
+                req.log.error({ err: error }, 'Error creating assignment');
+                res.status(500).json({
+                    error: 'Internal server error',
+                });
+            }
         }
-    });
+    );
 
     // Get a single assignment by ID
     router.get('/assignments/:id', authenticate, authorize('teacher'), async (req, res) => {
@@ -231,51 +232,49 @@ module.exports = (pool) => {
     });
 
     // Update an assignment
-    router.put('/assignments/:id', authenticate, authorize('teacher'), async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { title, description, due_date } = req.body;
-            const teacherId = req.user.id;
+    router.put(
+        '/assignments/:id',
+        authenticate,
+        authorize('teacher'),
+        validateBody(assignmentBody),
+        async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { title, description, due_date } = req.body;
+                const teacherId = req.user.id;
 
-            // Validation
-            if (!title || !description) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Title and description are required',
-                });
-            }
-
-            // Check if assignment exists and belongs to teacher's course
-            const checkResult = await pool.query(
-                `SELECT a.id FROM assignments a
+                // Check if assignment exists and belongs to teacher's course
+                const checkResult = await pool.query(
+                    `SELECT a.id FROM assignments a
                  JOIN courses c ON a.course_id = c.id
                  WHERE a.id = $1 AND c.teacher_id = $2`,
-                [id, teacherId]
-            );
+                    [id, teacherId]
+                );
 
-            if (checkResult.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'Not found',
-                    message: 'Assignment not found or access denied',
-                });
-            }
+                if (checkResult.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'Not found',
+                        message: 'Assignment not found or access denied',
+                    });
+                }
 
-            const result = await pool.query(
-                `UPDATE assignments
+                const result = await pool.query(
+                    `UPDATE assignments
                  SET title = $1, description = $2, due_date = $3, updated_at = CURRENT_TIMESTAMP
                  WHERE id = $4
                  RETURNING *`,
-                [title, description, due_date || null, id]
-            );
+                    [title, description, due_date || null, id]
+                );
 
-            res.json(result.rows[0]);
-        } catch (error) {
-            req.log.error({ err: error }, 'Error updating assignment');
-            res.status(500).json({
-                error: 'Internal server error',
-            });
+                res.json(result.rows[0]);
+            } catch (error) {
+                req.log.error({ err: error }, 'Error updating assignment');
+                res.status(500).json({
+                    error: 'Internal server error',
+                });
+            }
         }
-    });
+    );
 
     // Delete an assignment
     router.delete('/assignments/:id', authenticate, authorize('teacher'), async (req, res) => {
@@ -403,72 +402,63 @@ module.exports = (pool) => {
     });
 
     // Update a single submission (grade and feedback)
-    router.put('/submissions/:submissionId', authenticate, authorize('teacher'), async (req, res) => {
-        try {
-            const { submissionId } = req.params;
-            const { grade, feedback } = req.body;
-            const teacherId = req.user.id;
+    router.put(
+        '/submissions/:submissionId',
+        authenticate,
+        authorize('teacher'),
+        validateBody(gradeBody),
+        async (req, res) => {
+            try {
+                const { submissionId } = req.params;
+                const { grade, feedback } = req.body;
+                const teacherId = req.user.id;
 
-            // Validation
-            if (grade !== undefined && (grade < 0 || grade > 100)) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Grade must be between 0 and 100',
-                });
-            }
-
-            // Verify the submission belongs to an assignment in teacher's course
-            const submissionCheck = await pool.query(
-                `SELECT s.id
+                // Verify the submission belongs to an assignment in teacher's course
+                const submissionCheck = await pool.query(
+                    `SELECT s.id
                  FROM submissions s
                  JOIN assignments a ON s.assignment_id = a.id
                  JOIN courses c ON a.course_id = c.id
                  WHERE s.id = $1 AND c.teacher_id = $2`,
-                [submissionId, teacherId]
-            );
+                    [submissionId, teacherId]
+                );
 
-            if (submissionCheck.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'Not found',
-                    message: 'Submission not found or access denied',
-                });
-            }
+                if (submissionCheck.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'Not found',
+                        message: 'Submission not found or access denied',
+                    });
+                }
 
-            const result = await pool.query(
-                `UPDATE submissions
+                const result = await pool.query(
+                    `UPDATE submissions
                  SET grade = $1, feedback = $2
                  WHERE id = $3
                  RETURNING *`,
-                [grade, feedback, submissionId]
-            );
+                    [grade, feedback, submissionId]
+                );
 
-            res.json(result.rows[0]);
-        } catch (error) {
-            req.log.error({ err: error }, 'Error updating submission');
-            res.status(500).json({
-                error: 'Internal server error',
-            });
+                res.json(result.rows[0]);
+            } catch (error) {
+                req.log.error({ err: error }, 'Error updating submission');
+                res.status(500).json({
+                    error: 'Internal server error',
+                });
+            }
         }
-    });
+    );
 
     // Bulk update submissions (grades and feedback)
     router.post(
         '/assignments/:assignmentId/submissions/bulk-grade',
         authenticate,
         authorize('teacher'),
+        validateBody(bulkGradeBody),
         async (req, res) => {
             try {
                 const { assignmentId } = req.params;
                 const { submissions } = req.body;
                 const teacherId = req.user.id;
-
-                // Validation
-                if (!Array.isArray(submissions) || submissions.length === 0) {
-                    return res.status(400).json({
-                        error: 'Bad request',
-                        message: 'Submissions array is required and cannot be empty',
-                    });
-                }
 
                 // Verify the assignment belongs to the teacher's course
                 const assignmentCheck = await pool.query(
@@ -493,11 +483,6 @@ module.exports = (pool) => {
 
                     const updatePromises = submissions.map(async (sub) => {
                         const { submissionId, grade, feedback } = sub;
-
-                        // Validate grade
-                        if (grade !== undefined && (grade < 0 || grade > 100)) {
-                            throw new Error(`Invalid grade ${grade} for submission ${submissionId}`);
-                        }
 
                         return client.query(
                             `UPDATE submissions

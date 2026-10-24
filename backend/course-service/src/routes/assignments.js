@@ -1,5 +1,4 @@
 const express = require('express');
-const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { addAssignmentLinks } = require('../utils/hateoas');
 const {
@@ -10,6 +9,8 @@ const {
 } = require('../utils/query-helpers');
 
 module.exports = (pool) => {
+    const router = express.Router();
+
     /**
      * @swagger
      * /api/teacher/courses/{courseId}/assignments:

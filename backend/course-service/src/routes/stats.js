@@ -1,8 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 
 module.exports = (pool) => {
+    const router = express.Router();
+
     /**
      * @swagger
      * /api/teacher/stats:

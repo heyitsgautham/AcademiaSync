@@ -1,9 +1,10 @@
 const express = require('express');
-const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { parsePagination, parseSorting, buildPaginationMeta, buildStudentsFilter } = require('../utils/query-helpers');
 
 module.exports = (pool) => {
+    const router = express.Router();
+
     // Get students grouped by course for the authenticated teacher (with pagination, filtering, sorting)
     router.get('/students-by-course', authenticate, authorize('teacher'), async (req, res) => {
         try {

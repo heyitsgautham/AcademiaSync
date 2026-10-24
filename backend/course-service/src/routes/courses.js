@@ -1,9 +1,10 @@
 const express = require('express');
-const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { addCourseLinks, addTeacherDashboardLinks } = require('../utils/hateoas');
 
 module.exports = (pool) => {
+    const router = express.Router();
+
     /**
      * @swagger
      * /api/teacher/courses:

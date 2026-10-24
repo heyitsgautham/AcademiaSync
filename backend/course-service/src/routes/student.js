@@ -74,19 +74,17 @@ module.exports = (pool) => {
       `;
 
             const result = await pool.query(query, [studentId]);
-            const coursesWithLinks = result.rows.map(course =>
-                addCourseLinks(course, 'Student', false)
-            );
+            const coursesWithLinks = result.rows.map((course) => addCourseLinks(course, 'Student', false));
 
             res.json({
                 courses: coursesWithLinks,
-                _links: addStudentDashboardLinks()
+                _links: addStudentDashboardLinks(),
             });
         } catch (error) {
             console.error('Error fetching available courses:', error);
             res.status(500).json({
                 error: 'Failed to fetch available courses',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -144,20 +142,17 @@ module.exports = (pool) => {
             if (!courseId) {
                 return res.status(400).json({
                     error: 'Bad Request',
-                    message: 'courseId is required'
+                    message: 'courseId is required',
                 });
             }
 
             // Check if course exists
-            const courseCheck = await pool.query(
-                'SELECT id FROM courses WHERE id = $1',
-                [courseId]
-            );
+            const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1', [courseId]);
 
             if (courseCheck.rows.length === 0) {
                 return res.status(400).json({
                     error: 'Bad Request',
-                    message: 'Course not found'
+                    message: 'Course not found',
                 });
             }
 
@@ -170,25 +165,22 @@ module.exports = (pool) => {
             if (enrollmentCheck.rows.length > 0) {
                 return res.status(409).json({
                     error: 'Conflict',
-                    message: 'Already enrolled in this course'
+                    message: 'Already enrolled in this course',
                 });
             }
 
             // Create enrollment
-            await pool.query(
-                'INSERT INTO enrollments (student_id, course_id) VALUES ($1, $2)',
-                [studentId, courseId]
-            );
+            await pool.query('INSERT INTO enrollments (student_id, course_id) VALUES ($1, $2)', [studentId, courseId]);
 
             res.json({
                 success: true,
-                message: 'Successfully enrolled in course'
+                message: 'Successfully enrolled in course',
             });
         } catch (error) {
             console.error('Error enrolling in course:', error);
             res.status(500).json({
                 error: 'Failed to enroll in course',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -275,13 +267,13 @@ module.exports = (pool) => {
 
             res.json({
                 student: studentResult.rows[0],
-                courses: coursesResult.rows
+                courses: coursesResult.rows,
             });
         } catch (error) {
             console.error('Error fetching enrolled courses:', error);
             res.status(500).json({
                 error: 'Failed to fetch enrolled courses',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -329,7 +321,7 @@ module.exports = (pool) => {
             // Parse query parameters - removed pagination since frontend handles it
             const { orderByClause } = parseSorting(req.query, ['due_date', 'title', 'course', 'status'], {
                 due_date: 'a.due_date',
-                title: 'a.title'
+                title: 'a.title',
             });
             // $1 is the student id, so filter placeholders start at $2
             const { whereClause, values } = buildStudentAssignmentsFilter(req.query, 2);
@@ -382,13 +374,13 @@ module.exports = (pool) => {
             res.json({
                 student: studentResult.rows[0],
                 assignments: assignmentsResult.rows,
-                courses: coursesResult.rows
+                courses: coursesResult.rows,
             });
         } catch (error) {
             console.error('Error fetching assignments:', error);
             res.status(500).json({
                 error: 'Failed to fetch assignments',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -455,7 +447,7 @@ module.exports = (pool) => {
 
             if (result.rows.length === 0) {
                 return res.status(404).json({
-                    error: 'Assignment not found or you are not enrolled in this course'
+                    error: 'Assignment not found or you are not enrolled in this course',
                 });
             }
 
@@ -464,7 +456,7 @@ module.exports = (pool) => {
             console.error('Error fetching assignment details:', error);
             res.status(500).json({
                 error: 'Failed to fetch assignment details',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -527,7 +519,7 @@ module.exports = (pool) => {
             if (!assignmentId || !submission) {
                 return res.status(400).json({
                     error: 'Bad Request',
-                    message: 'assignmentId and submission are required'
+                    message: 'assignmentId and submission are required',
                 });
             }
 
@@ -544,7 +536,7 @@ module.exports = (pool) => {
             if (checkResult.rows.length === 0) {
                 return res.status(403).json({
                     error: 'Forbidden',
-                    message: 'Assignment not found or you are not enrolled in this course'
+                    message: 'Assignment not found or you are not enrolled in this course',
                 });
             }
 
@@ -562,13 +554,13 @@ module.exports = (pool) => {
 
             res.json({
                 success: true,
-                message: 'Assignment submitted successfully'
+                message: 'Assignment submitted successfully',
             });
         } catch (error) {
             console.error('Error submitting assignment:', error);
             res.status(500).json({
                 error: 'Failed to submit assignment',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -702,25 +694,25 @@ module.exports = (pool) => {
                     totalCourses: parseInt(coursesResult.rows[0].count) || 0,
                     assignmentsDue: parseInt(assignmentsDueResult.rows[0].count) || 0,
                     averageGrade: parseFloat(gradeResult.rows[0].average) || 0,
-                    gradedAssignments: parseInt(gradedAssignmentsResult.rows[0].count) || 0
+                    gradedAssignments: parseInt(gradedAssignmentsResult.rows[0].count) || 0,
                 },
                 recentActivity: activityResult.rows,
                 analytics: {
-                    courseProgress: courseProgressResult.rows.map(row => ({
+                    courseProgress: courseProgressResult.rows.map((row) => ({
                         course: row.course,
-                        progress: Math.min(parseFloat(row.progress) || 0, 100)
+                        progress: Math.min(parseFloat(row.progress) || 0, 100),
                     })),
-                    submissionStatus: submissionStatusResult.rows.map(row => ({
+                    submissionStatus: submissionStatusResult.rows.map((row) => ({
                         name: row.name,
-                        value: parseInt(row.value) || 0
-                    }))
-                }
+                        value: parseInt(row.value) || 0,
+                    })),
+                },
             });
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
             res.status(500).json({
                 error: 'Failed to fetch dashboard data',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -841,38 +833,38 @@ module.exports = (pool) => {
             const gradeDistributionResult = await pool.query(gradeDistributionQuery, [studentId]);
 
             // Format the data
-            const gradeTrends = gradeTrendsResult.rows.map(row => ({
+            const gradeTrends = gradeTrendsResult.rows.map((row) => ({
                 period: row.period,
-                grade: parseFloat(row.grade) || 0
+                grade: parseFloat(row.grade) || 0,
             }));
 
-            const assignmentCompletion = completionResult.rows.map(row => ({
+            const assignmentCompletion = completionResult.rows.map((row) => ({
                 period: row.period,
                 completed: parseInt(row.completed) || 0,
-                total: parseInt(row.total) || 0
+                total: parseInt(row.total) || 0,
             }));
 
-            const courseProgress = courseProgressResult.rows.map(row => ({
+            const courseProgress = courseProgressResult.rows.map((row) => ({
                 course: row.course,
-                progress: Math.min(parseFloat(row.progress) || 0, 100) // Cap at 100%
+                progress: Math.min(parseFloat(row.progress) || 0, 100), // Cap at 100%
             }));
 
-            const gradeDistribution = gradeDistributionResult.rows.map(row => ({
+            const gradeDistribution = gradeDistributionResult.rows.map((row) => ({
                 name: row.name,
-                value: parseInt(row.value) || 0
+                value: parseInt(row.value) || 0,
             }));
 
             res.json({
                 gradeTrends,
                 assignmentCompletion,
                 courseProgress,
-                gradeDistribution
+                gradeDistribution,
             });
         } catch (error) {
             console.error('Error fetching student analytics:', error);
             res.status(500).json({
                 error: 'Failed to fetch student analytics',
-                message: error.message
+                message: error.message,
             });
         }
     });

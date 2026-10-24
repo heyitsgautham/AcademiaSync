@@ -64,9 +64,9 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const studentsPerCourse = studentsPerCourseResult.rows.map(row => ({
+            const studentsPerCourse = studentsPerCourseResult.rows.map((row) => ({
                 course: row.course,
-                students: parseInt(row.students) || 0
+                students: parseInt(row.students) || 0,
             }));
 
             // Get assignment status (completed vs pending)
@@ -86,23 +86,23 @@ module.exports = (pool) => {
             const assignmentStatus = [
                 {
                     name: 'Completed',
-                    value: parseInt(statusData.completed) || 0
+                    value: parseInt(statusData.completed) || 0,
                 },
                 {
                     name: 'Pending',
-                    value: parseInt(statusData.pending) || 0
-                }
+                    value: parseInt(statusData.pending) || 0,
+                },
             ];
 
             res.json({
                 studentsPerCourse,
-                assignmentStatus
+                assignmentStatus,
             });
         } catch (error) {
             console.error('Error fetching teacher analytics:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -170,9 +170,9 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const coursePerformance = coursePerformanceResult.rows.map(row => ({
+            const coursePerformance = coursePerformanceResult.rows.map((row) => ({
                 course: row.course,
-                performance: parseFloat(row.performance) || 0
+                performance: parseFloat(row.performance) || 0,
             }));
 
             // 2. Student Progress Over Time - Average grades by month
@@ -191,9 +191,9 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const studentProgress = studentProgressResult.rows.map(row => ({
+            const studentProgress = studentProgressResult.rows.map((row) => ({
                 period: row.period,
-                progress: parseFloat(row.progress) || 0
+                progress: parseFloat(row.progress) || 0,
             }));
 
             // 3. Completion Rates - Percentage of submissions per assignment
@@ -213,9 +213,9 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const completionRates = completionRatesResult.rows.map(row => ({
+            const completionRates = completionRatesResult.rows.map((row) => ({
                 assignment: row.assignment,
-                rate: Math.min(parseFloat(row.rate) || 0, 100) // Cap at 100%
+                rate: Math.min(parseFloat(row.rate) || 0, 100), // Cap at 100%
             }));
 
             // 4. Grade Distribution - Count of grades in each range
@@ -250,22 +250,22 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const gradeDistribution = gradeDistributionResult.rows.map(row => ({
+            const gradeDistribution = gradeDistributionResult.rows.map((row) => ({
                 name: row.name,
-                value: parseInt(row.value) || 0
+                value: parseInt(row.value) || 0,
             }));
 
             res.json({
                 coursePerformance,
                 studentProgress,
                 completionRates,
-                gradeDistribution
+                gradeDistribution,
             });
         } catch (error) {
             console.error('Error fetching detailed teacher analytics:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });

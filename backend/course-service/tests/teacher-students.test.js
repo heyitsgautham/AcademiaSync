@@ -65,9 +65,7 @@ describe('GET /api/teacher/students-by-course', () => {
     });
 
     it('pages through courses', async () => {
-        const res = await request(app)
-            .get('/api/teacher/students-by-course?limit=1&page=2')
-            .set(authHeader(teacher));
+        const res = await request(app).get('/api/teacher/students-by-course?limit=1&page=2').set(authHeader(teacher));
 
         expect(res.body.data.map((c) => c.courseName)).toEqual(['Biology']);
         expect(res.body.pagination).toMatchObject({ totalPages: 2, hasPrevPage: true, hasNextPage: false });

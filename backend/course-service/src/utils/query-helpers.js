@@ -39,7 +39,7 @@ function parseSorting(query, allowedFields = [], columnMap = {}) {
     return {
         sortField,
         sortOrder: validOrder,
-        orderByClause: `${column} ${validOrder} NULLS LAST`
+        orderByClause: `${column} ${validOrder} NULLS LAST`,
     };
 }
 
@@ -61,7 +61,7 @@ function buildPaginationMeta(totalItems, page, limit) {
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
         nextPage: page < totalPages ? page + 1 : null,
-        prevPage: page > 1 ? page - 1 : null
+        prevPage: page > 1 ? page - 1 : null,
     };
 }
 
@@ -85,9 +85,9 @@ function createConditionBuilder(startIndex) {
             return {
                 whereClause: conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '',
                 values,
-                hasFilters: conditions.length > 0
+                hasFilters: conditions.length > 0,
             };
-        }
+        },
     };
 }
 
@@ -173,5 +173,5 @@ module.exports = {
     buildPaginationMeta,
     buildStudentAssignmentsFilter,
     buildSubmissionsFilter,
-    buildStudentsFilter
+    buildStudentsFilter,
 };

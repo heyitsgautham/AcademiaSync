@@ -20,7 +20,7 @@ const authenticate = (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Access token not found'
+                message: 'Access token not found',
             });
         }
 
@@ -31,7 +31,7 @@ const authenticate = (req, res, next) => {
     } catch (error) {
         return res.status(401).json({
             error: 'Unauthorized',
-            message: error.message
+            message: error.message,
         });
     }
 };
@@ -46,18 +46,18 @@ const authorize = (...roles) => {
         if (!req.user) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'User not authenticated'
+                message: 'User not authenticated',
             });
         }
 
         // Normalize role comparison (case-insensitive)
         const userRole = req.user.role.toLowerCase();
-        const allowedRoles = roles.map(role => role.toLowerCase());
+        const allowedRoles = roles.map((role) => role.toLowerCase());
 
         if (!allowedRoles.includes(userRole)) {
             return res.status(403).json({
                 error: 'Forbidden',
-                message: `Access denied. Required role(s): ${roles.join(', ')}`
+                message: `Access denied. Required role(s): ${roles.join(', ')}`,
             });
         }
 
@@ -67,5 +67,5 @@ const authorize = (...roles) => {
 
 module.exports = {
     authenticate,
-    authorize
+    authorize,
 };

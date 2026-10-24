@@ -98,7 +98,12 @@ describe('admin course routes', () => {
         expect(res.status).toBe(200);
         expect(res.body).toMatchObject({ courseId: course.id, teacherName: 'Tia Teach' });
         expect(res.body.students).toEqual([
-            expect.objectContaining({ studentId: student.id, averageGrade: 84, totalSubmissions: 1, totalAssignments: 2 }),
+            expect.objectContaining({
+                studentId: student.id,
+                averageGrade: 84,
+                totalSubmissions: 1,
+                totalAssignments: 2,
+            }),
         ]);
     });
 

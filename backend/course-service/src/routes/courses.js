@@ -45,19 +45,17 @@ module.exports = (pool) => {
                 [teacherId]
             );
 
-            const coursesWithLinks = result.rows.map(course =>
-                addCourseLinks(course, req.user.role, true)
-            );
+            const coursesWithLinks = result.rows.map((course) => addCourseLinks(course, req.user.role, true));
 
             res.json({
                 courses: coursesWithLinks,
-                _links: addTeacherDashboardLinks()
+                _links: addTeacherDashboardLinks(),
             });
         } catch (error) {
             console.error('Error fetching courses:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -112,7 +110,7 @@ module.exports = (pool) => {
             if (result.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Course not found or access denied'
+                    message: 'Course not found or access denied',
                 });
             }
 
@@ -121,7 +119,7 @@ module.exports = (pool) => {
             console.error('Error fetching course:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -183,7 +181,7 @@ module.exports = (pool) => {
             if (!title || !description) {
                 return res.status(400).json({
                     error: 'Bad request',
-                    message: 'Title and description are required'
+                    message: 'Title and description are required',
                 });
             }
 
@@ -199,7 +197,7 @@ module.exports = (pool) => {
             console.error('Error creating course:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -215,20 +213,20 @@ module.exports = (pool) => {
             if (!title || !description) {
                 return res.status(400).json({
                     error: 'Bad request',
-                    message: 'Title and description are required'
+                    message: 'Title and description are required',
                 });
             }
 
             // Check if course exists and belongs to teacher
-            const checkResult = await pool.query(
-                'SELECT id FROM courses WHERE id = $1 AND teacher_id = $2',
-                [id, teacherId]
-            );
+            const checkResult = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
+                id,
+                teacherId,
+            ]);
 
             if (checkResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Course not found or access denied'
+                    message: 'Course not found or access denied',
                 });
             }
 
@@ -245,7 +243,7 @@ module.exports = (pool) => {
             console.error('Error updating course:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -257,29 +255,26 @@ module.exports = (pool) => {
             const teacherId = req.user.id;
 
             // Check if course exists and belongs to teacher
-            const checkResult = await pool.query(
-                'SELECT id FROM courses WHERE id = $1 AND teacher_id = $2',
-                [id, teacherId]
-            );
+            const checkResult = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
+                id,
+                teacherId,
+            ]);
 
             if (checkResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Course not found or access denied'
+                    message: 'Course not found or access denied',
                 });
             }
 
-            await pool.query(
-                'DELETE FROM courses WHERE id = $1 AND teacher_id = $2',
-                [id, teacherId]
-            );
+            await pool.query('DELETE FROM courses WHERE id = $1 AND teacher_id = $2', [id, teacherId]);
 
             res.status(204).send();
         } catch (error) {
             console.error('Error deleting course:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });

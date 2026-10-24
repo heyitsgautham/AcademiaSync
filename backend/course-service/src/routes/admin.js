@@ -2,31 +2,31 @@ const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
 
 module.exports = (pool) => {
-  const router = express.Router();
+    const router = express.Router();
 
-  /**
-   * @swagger
-   * /admin/courses:
-   *   get:
-   *     summary: Get all courses (Admin)
-   *     tags: [Admin]
-   *     description: Retrieve all courses in the system with teacher and enrollment information
-   *     security:
-   *       - bearerAuth: []
-   *       - cookieAuth: []
-   *     responses:
-   *       200:
-   *         description: List of all courses
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Admin role required
-   *       500:
-   *         description: Internal server error
-   */
-  router.get('/courses', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      const result = await pool.query(`
+    /**
+     * @swagger
+     * /admin/courses:
+     *   get:
+     *     summary: Get all courses (Admin)
+     *     tags: [Admin]
+     *     description: Retrieve all courses in the system with teacher and enrollment information
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: List of all courses
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Admin role required
+     *       500:
+     *         description: Internal server error
+     */
+    router.get('/courses', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            const result = await pool.query(`
                 SELECT 
                     c.id, 
                     c.title, 
@@ -45,51 +45,51 @@ module.exports = (pool) => {
                 ORDER BY c.created_at DESC
             `);
 
-      // Transform to camelCase for frontend
-      const courses = result.rows.map(course => ({
-        id: course.id,
-        title: course.title,
-        description: course.description,
-        weeks: course.weeks,
-        teacherId: course.teacher_id,
-        teacherName: course.teacher_name,
-        teacherEmail: course.teacher_email,
-        enrolledCount: parseInt(course.students_enrolled) || 0,
-        createdAt: course.created_at,
-        updatedAt: course.updated_at
-      }));
+            // Transform to camelCase for frontend
+            const courses = result.rows.map((course) => ({
+                id: course.id,
+                title: course.title,
+                description: course.description,
+                weeks: course.weeks,
+                teacherId: course.teacher_id,
+                teacherName: course.teacher_name,
+                teacherEmail: course.teacher_email,
+                enrolledCount: parseInt(course.students_enrolled) || 0,
+                createdAt: course.created_at,
+                updatedAt: course.updated_at,
+            }));
 
-      res.json(courses);
-    } catch (error) {
-      console.error('Error fetching admin courses:', error);
-      res.status(500).json({ error: 'Failed to fetch courses' });
-    }
-  });
+            res.json(courses);
+        } catch (error) {
+            console.error('Error fetching admin courses:', error);
+            res.status(500).json({ error: 'Failed to fetch courses' });
+        }
+    });
 
-  /**
-   * @swagger
-   * /admin/recent-activity:
-   *   get:
-   *     summary: Get recent admin activity
-   *     tags: [Admin]
-   *     description: Retrieve recent course CRUD operations and student enrollments
-   *     security:
-   *       - bearerAuth: []
-   *       - cookieAuth: []
-   *     responses:
-   *       200:
-   *         description: Recent activity retrieved successfully
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Admin role required
-   *       500:
-   *         description: Internal server error
-   */
-  router.get('/recent-activity', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      // Get recent course CRUD operations
-      const courseActivity = await pool.query(`
+    /**
+     * @swagger
+     * /admin/recent-activity:
+     *   get:
+     *     summary: Get recent admin activity
+     *     tags: [Admin]
+     *     description: Retrieve recent course CRUD operations and student enrollments
+     *     security:
+     *       - bearerAuth: []
+     *       - cookieAuth: []
+     *     responses:
+     *       200:
+     *         description: Recent activity retrieved successfully
+     *       401:
+     *         description: Unauthorized
+     *       403:
+     *         description: Forbidden - Admin role required
+     *       500:
+     *         description: Internal server error
+     */
+    router.get('/recent-activity', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            // Get recent course CRUD operations
+            const courseActivity = await pool.query(`
         SELECT 
           'course_' || activity_type as type,
           teacher_name as "actorName",
@@ -132,8 +132,8 @@ module.exports = (pool) => {
         LIMIT 10
       `);
 
-      // Get recent enrollments
-      const enrollmentActivity = await pool.query(`
+            // Get recent enrollments
+            const enrollmentActivity = await pool.query(`
         SELECT 
           'student_enrolled' as type,
           CONCAT(s.first_name, ' ', COALESCE(s.last_name, '')) as "actorName",
@@ -153,55 +153,57 @@ module.exports = (pool) => {
         LIMIT 10
       `);
 
-      // Combine and sort all activities
-      const allActivities = [
-        ...courseActivity.rows,
-        ...enrollmentActivity.rows
-      ].sort((a, b) => new Date(b.sort_date) - new Date(a.sort_date))
-        .slice(0, 10)
-        .map((activity, index) => ({
-          id: `activity-${index}`,
-          type: activity.type,
-          actorName: activity.actorName,
-          actorAvatar: activity.actorAvatar,
-          actorId: activity.actorId,
-          courseName: activity.courseName,
-          courseId: activity.courseId,
-          teacherId: activity.teacherId,
-          studentName: activity.studentName,
-          studentId: activity.studentId,
-          timestamp: activity.timestamp
-        }));
+            // Combine and sort all activities
+            const allActivities = [...courseActivity.rows, ...enrollmentActivity.rows]
+                .sort((a, b) => new Date(b.sort_date) - new Date(a.sort_date))
+                .slice(0, 10)
+                .map((activity, index) => ({
+                    id: `activity-${index}`,
+                    type: activity.type,
+                    actorName: activity.actorName,
+                    actorAvatar: activity.actorAvatar,
+                    actorId: activity.actorId,
+                    courseName: activity.courseName,
+                    courseId: activity.courseId,
+                    teacherId: activity.teacherId,
+                    studentName: activity.studentName,
+                    studentId: activity.studentId,
+                    timestamp: activity.timestamp,
+                }));
 
-      res.json(allActivities);
-    } catch (error) {
-      console.error('Error fetching admin recent activity:', error);
-      res.status(500).json({ error: 'Failed to fetch recent activity' });
-    }
-  });
+            res.json(allActivities);
+        } catch (error) {
+            console.error('Error fetching admin recent activity:', error);
+            res.status(500).json({ error: 'Failed to fetch recent activity' });
+        }
+    });
 
-  /**
-   * Get student's enrolled courses with grades (Admin)
-   */
-  router.get('/students/:studentId/courses', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      const { studentId } = req.params;
+    /**
+     * Get student's enrolled courses with grades (Admin)
+     */
+    router.get('/students/:studentId/courses', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            const { studentId } = req.params;
 
-      // Get student info
-      const studentResult = await pool.query(`
+            // Get student info
+            const studentResult = await pool.query(
+                `
         SELECT id, first_name, last_name, email, profile_picture
         FROM users
         WHERE id = $1 AND role = 'Student'
-      `, [studentId]);
+      `,
+                [studentId]
+            );
 
-      if (studentResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Student not found' });
-      }
+            if (studentResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Student not found' });
+            }
 
-      const student = studentResult.rows[0];
+            const student = studentResult.rows[0];
 
-      // Get enrolled courses with grades
-      const coursesResult = await pool.query(`
+            // Get enrolled courses with grades
+            const coursesResult = await pool.query(
+                `
         SELECT 
           c.id as course_id,
           c.title as course_title,
@@ -220,55 +222,61 @@ module.exports = (pool) => {
         WHERE e.student_id = $1
         GROUP BY c.id, c.title, c.description, t.first_name, t.last_name, t.id, e.enrolled_at
         ORDER BY e.enrolled_at DESC
-      `, [studentId]);
+      `,
+                [studentId]
+            );
 
-      const courses = coursesResult.rows.map(row => ({
-        courseId: row.course_id,
-        courseTitle: row.course_title,
-        courseDescription: row.course_description,
-        instructorName: row.instructor_name,
-        instructorId: row.instructor_id,
-        averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
-        totalSubmissions: parseInt(row.total_submissions) || 0,
-        totalAssignments: parseInt(row.total_assignments) || 0
-      }));
+            const courses = coursesResult.rows.map((row) => ({
+                courseId: row.course_id,
+                courseTitle: row.course_title,
+                courseDescription: row.course_description,
+                instructorName: row.instructor_name,
+                instructorId: row.instructor_id,
+                averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
+                totalSubmissions: parseInt(row.total_submissions) || 0,
+                totalAssignments: parseInt(row.total_assignments) || 0,
+            }));
 
-      res.json({
-        studentId: student.id,
-        firstName: student.first_name,
-        lastName: student.last_name,
-        email: student.email,
-        profilePicture: student.profile_picture,
-        courses
-      });
-    } catch (error) {
-      console.error('Error fetching student courses:', error);
-      res.status(500).json({ error: 'Failed to fetch student courses' });
-    }
-  });
+            res.json({
+                studentId: student.id,
+                firstName: student.first_name,
+                lastName: student.last_name,
+                email: student.email,
+                profilePicture: student.profile_picture,
+                courses,
+            });
+        } catch (error) {
+            console.error('Error fetching student courses:', error);
+            res.status(500).json({ error: 'Failed to fetch student courses' });
+        }
+    });
 
-  /**
-   * Get teacher's courses with student count and avg grades (Admin)
-   */
-  router.get('/teachers/:teacherId/courses', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      const { teacherId } = req.params;
+    /**
+     * Get teacher's courses with student count and avg grades (Admin)
+     */
+    router.get('/teachers/:teacherId/courses', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            const { teacherId } = req.params;
 
-      // Get teacher info
-      const teacherResult = await pool.query(`
+            // Get teacher info
+            const teacherResult = await pool.query(
+                `
         SELECT id, first_name, last_name, email, profile_picture, specialization
         FROM users
         WHERE id = $1 AND role = 'Teacher'
-      `, [teacherId]);
+      `,
+                [teacherId]
+            );
 
-      if (teacherResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Teacher not found' });
-      }
+            if (teacherResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Teacher not found' });
+            }
 
-      const teacher = teacherResult.rows[0];
+            const teacher = teacherResult.rows[0];
 
-      // Get courses with stats
-      const coursesResult = await pool.query(`
+            // Get courses with stats
+            const coursesResult = await pool.query(
+                `
         SELECT 
           c.id as course_id,
           c.title as course_title,
@@ -283,41 +291,44 @@ module.exports = (pool) => {
         WHERE c.teacher_id = $1
         GROUP BY c.id, c.title, c.description
         ORDER BY c.created_at DESC
-      `, [teacherId]);
+      `,
+                [teacherId]
+            );
 
-      const courses = coursesResult.rows.map(row => ({
-        courseId: row.course_id,
-        courseTitle: row.course_title,
-        courseDescription: row.course_description,
-        studentCount: parseInt(row.student_count) || 0,
-        averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
-        totalAssignments: parseInt(row.total_assignments) || 0
-      }));
+            const courses = coursesResult.rows.map((row) => ({
+                courseId: row.course_id,
+                courseTitle: row.course_title,
+                courseDescription: row.course_description,
+                studentCount: parseInt(row.student_count) || 0,
+                averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
+                totalAssignments: parseInt(row.total_assignments) || 0,
+            }));
 
-      res.json({
-        teacherId: teacher.id,
-        firstName: teacher.first_name,
-        lastName: teacher.last_name,
-        email: teacher.email,
-        profilePicture: teacher.profile_picture,
-        specialization: teacher.specialization,
-        courses
-      });
-    } catch (error) {
-      console.error('Error fetching teacher courses:', error);
-      res.status(500).json({ error: 'Failed to fetch teacher courses' });
-    }
-  });
+            res.json({
+                teacherId: teacher.id,
+                firstName: teacher.first_name,
+                lastName: teacher.last_name,
+                email: teacher.email,
+                profilePicture: teacher.profile_picture,
+                specialization: teacher.specialization,
+                courses,
+            });
+        } catch (error) {
+            console.error('Error fetching teacher courses:', error);
+            res.status(500).json({ error: 'Failed to fetch teacher courses' });
+        }
+    });
 
-  /**
-   * Get students in a specific course with their grades (Admin)
-   */
-  router.get('/courses/:courseId/students/grades', authenticate, authorize('Admin'), async (req, res) => {
-    try {
-      const { courseId } = req.params;
+    /**
+     * Get students in a specific course with their grades (Admin)
+     */
+    router.get('/courses/:courseId/students/grades', authenticate, authorize('Admin'), async (req, res) => {
+        try {
+            const { courseId } = req.params;
 
-      // Get course info
-      const courseResult = await pool.query(`
+            // Get course info
+            const courseResult = await pool.query(
+                `
         SELECT 
           c.id as course_id,
           c.title as course_title,
@@ -327,16 +338,19 @@ module.exports = (pool) => {
         FROM courses c
         JOIN users t ON c.teacher_id = t.id
         WHERE c.id = $1
-      `, [courseId]);
+      `,
+                [courseId]
+            );
 
-      if (courseResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Course not found' });
-      }
+            if (courseResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Course not found' });
+            }
 
-      const course = courseResult.rows[0];
+            const course = courseResult.rows[0];
 
-      // Get enrolled students with their grades
-      const studentsResult = await pool.query(`
+            // Get enrolled students with their grades
+            const studentsResult = await pool.query(
+                `
         SELECT 
           s.id as student_id,
           s.first_name,
@@ -353,32 +367,34 @@ module.exports = (pool) => {
         WHERE e.course_id = $1
         GROUP BY s.id, s.first_name, s.last_name, s.email, s.profile_picture
         ORDER BY s.first_name, s.last_name
-      `, [courseId]);
+      `,
+                [courseId]
+            );
 
-      const students = studentsResult.rows.map(row => ({
-        studentId: row.student_id,
-        firstName: row.first_name,
-        lastName: row.last_name,
-        email: row.email,
-        profilePicture: row.profile_picture,
-        averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
-        totalSubmissions: parseInt(row.total_submissions) || 0,
-        totalAssignments: parseInt(row.total_assignments) || 0
-      }));
+            const students = studentsResult.rows.map((row) => ({
+                studentId: row.student_id,
+                firstName: row.first_name,
+                lastName: row.last_name,
+                email: row.email,
+                profilePicture: row.profile_picture,
+                averageGrade: row.average_grade ? parseFloat(row.average_grade) : null,
+                totalSubmissions: parseInt(row.total_submissions) || 0,
+                totalAssignments: parseInt(row.total_assignments) || 0,
+            }));
 
-      res.json({
-        courseId: course.course_id,
-        courseTitle: course.course_title,
-        courseDescription: course.course_description,
-        teacherName: course.teacher_name,
-        teacherId: course.teacher_id,
-        students
-      });
-    } catch (error) {
-      console.error('Error fetching course students:', error);
-      res.status(500).json({ error: 'Failed to fetch course students' });
-    }
-  });
+            res.json({
+                courseId: course.course_id,
+                courseTitle: course.course_title,
+                courseDescription: course.course_description,
+                teacherName: course.teacher_name,
+                teacherId: course.teacher_id,
+                students,
+            });
+        } catch (error) {
+            console.error('Error fetching course students:', error);
+            res.status(500).json({ error: 'Failed to fetch course students' });
+        }
+    });
 
-  return router;
+    return router;
 };

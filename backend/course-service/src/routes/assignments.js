@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const { addAssignmentLinks } = require('../utils/hateoas');
-const { parsePagination, parseSorting, buildPaginationMeta, buildSubmissionsFilter } = require('../utils/query-helpers');
+const {
+    parsePagination,
+    parseSorting,
+    buildPaginationMeta,
+    buildSubmissionsFilter,
+} = require('../utils/query-helpers');
 
 module.exports = (pool) => {
     /**
@@ -46,15 +51,15 @@ module.exports = (pool) => {
             const teacherId = req.user.id;
 
             // Verify the course belongs to the teacher
-            const courseCheck = await pool.query(
-                'SELECT id FROM courses WHERE id = $1 AND teacher_id = $2',
-                [courseId, teacherId]
-            );
+            const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
+                courseId,
+                teacherId,
+            ]);
 
             if (courseCheck.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Course not found or access denied'
+                    message: 'Course not found or access denied',
                 });
             }
 
@@ -69,7 +74,7 @@ module.exports = (pool) => {
                 [courseId]
             );
 
-            const assignmentsWithLinks = result.rows.map(assignment =>
+            const assignmentsWithLinks = result.rows.map((assignment) =>
                 addAssignmentLinks(assignment, req.user.role, true)
             );
 
@@ -81,15 +86,15 @@ module.exports = (pool) => {
                         rel: 'course',
                         href: `${baseUrl}/teacher/courses/${courseId}`,
                         method: 'GET',
-                        description: 'Get parent course'
-                    }
-                ]
+                        description: 'Get parent course',
+                    },
+                ],
             });
         } catch (error) {
             console.error('Error fetching assignments:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -162,20 +167,20 @@ module.exports = (pool) => {
             if (!title || !description) {
                 return res.status(400).json({
                     error: 'Bad request',
-                    message: 'Title and description are required'
+                    message: 'Title and description are required',
                 });
             }
 
             // Verify the course belongs to the teacher
-            const courseCheck = await pool.query(
-                'SELECT id FROM courses WHERE id = $1 AND teacher_id = $2',
-                [courseId, teacherId]
-            );
+            const courseCheck = await pool.query('SELECT id FROM courses WHERE id = $1 AND teacher_id = $2', [
+                courseId,
+                teacherId,
+            ]);
 
             if (courseCheck.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Course not found or access denied'
+                    message: 'Course not found or access denied',
                 });
             }
 
@@ -191,7 +196,7 @@ module.exports = (pool) => {
             console.error('Error creating assignment:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -213,7 +218,7 @@ module.exports = (pool) => {
             if (result.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Assignment not found or access denied'
+                    message: 'Assignment not found or access denied',
                 });
             }
 
@@ -222,7 +227,7 @@ module.exports = (pool) => {
             console.error('Error fetching assignment:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -238,7 +243,7 @@ module.exports = (pool) => {
             if (!title || !description) {
                 return res.status(400).json({
                     error: 'Bad request',
-                    message: 'Title and description are required'
+                    message: 'Title and description are required',
                 });
             }
 
@@ -253,7 +258,7 @@ module.exports = (pool) => {
             if (checkResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Assignment not found or access denied'
+                    message: 'Assignment not found or access denied',
                 });
             }
 
@@ -270,7 +275,7 @@ module.exports = (pool) => {
             console.error('Error updating assignment:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -292,7 +297,7 @@ module.exports = (pool) => {
             if (checkResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Assignment not found or access denied'
+                    message: 'Assignment not found or access denied',
                 });
             }
 
@@ -303,7 +308,7 @@ module.exports = (pool) => {
             console.error('Error deleting assignment:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -332,7 +337,7 @@ module.exports = (pool) => {
             if (assignmentCheck.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Assignment not found or access denied'
+                    message: 'Assignment not found or access denied',
                 });
             }
 
@@ -371,7 +376,13 @@ module.exports = (pool) => {
                 ORDER BY ${orderByClause}
                 LIMIT $${values.length + 3} OFFSET $${values.length + 4}
             `;
-            const submissionsResult = await pool.query(submissionsQuery, [assignmentId, assignment.course_id, ...values, limit, offset]);
+            const submissionsResult = await pool.query(submissionsQuery, [
+                assignmentId,
+                assignment.course_id,
+                ...values,
+                limit,
+                offset,
+            ]);
 
             // Build pagination metadata
             const pagination = buildPaginationMeta(totalItems, page, limit);
@@ -382,16 +393,16 @@ module.exports = (pool) => {
                     title: assignment.title,
                     description: assignment.description,
                     due_date: assignment.due_date,
-                    course_id: assignment.course_id
+                    course_id: assignment.course_id,
                 },
                 submissions: submissionsResult.rows,
-                pagination
+                pagination,
             });
         } catch (error) {
             console.error('Error fetching assignment submissions:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -407,7 +418,7 @@ module.exports = (pool) => {
             if (grade !== undefined && (grade < 0 || grade > 100)) {
                 return res.status(400).json({
                     error: 'Bad request',
-                    message: 'Grade must be between 0 and 100'
+                    message: 'Grade must be between 0 and 100',
                 });
             }
 
@@ -424,7 +435,7 @@ module.exports = (pool) => {
             if (submissionCheck.rows.length === 0) {
                 return res.status(404).json({
                     error: 'Not found',
-                    message: 'Submission not found or access denied'
+                    message: 'Submission not found or access denied',
                 });
             }
 
@@ -441,85 +452,90 @@ module.exports = (pool) => {
             console.error('Error updating submission:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
 
     // Bulk update submissions (grades and feedback)
-    router.post('/assignments/:assignmentId/submissions/bulk-grade', authenticate, authorize('teacher'), async (req, res) => {
-        try {
-            const { assignmentId } = req.params;
-            const { submissions } = req.body;
-            const teacherId = req.user.id;
+    router.post(
+        '/assignments/:assignmentId/submissions/bulk-grade',
+        authenticate,
+        authorize('teacher'),
+        async (req, res) => {
+            try {
+                const { assignmentId } = req.params;
+                const { submissions } = req.body;
+                const teacherId = req.user.id;
 
-            // Validation
-            if (!Array.isArray(submissions) || submissions.length === 0) {
-                return res.status(400).json({
-                    error: 'Bad request',
-                    message: 'Submissions array is required and cannot be empty'
-                });
-            }
+                // Validation
+                if (!Array.isArray(submissions) || submissions.length === 0) {
+                    return res.status(400).json({
+                        error: 'Bad request',
+                        message: 'Submissions array is required and cannot be empty',
+                    });
+                }
 
-            // Verify the assignment belongs to the teacher's course
-            const assignmentCheck = await pool.query(
-                `SELECT a.id
+                // Verify the assignment belongs to the teacher's course
+                const assignmentCheck = await pool.query(
+                    `SELECT a.id
                  FROM assignments a
                  JOIN courses c ON a.course_id = c.id
                  WHERE a.id = $1 AND c.teacher_id = $2`,
-                [assignmentId, teacherId]
-            );
+                    [assignmentId, teacherId]
+                );
 
-            if (assignmentCheck.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'Not found',
-                    message: 'Assignment not found or access denied'
-                });
-            }
+                if (assignmentCheck.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'Not found',
+                        message: 'Assignment not found or access denied',
+                    });
+                }
 
-            // Update each submission in a transaction
-            const client = await pool.connect();
-            try {
-                await client.query('BEGIN');
+                // Update each submission in a transaction
+                const client = await pool.connect();
+                try {
+                    await client.query('BEGIN');
 
-                const updatePromises = submissions.map(async (sub) => {
-                    const { submissionId, grade, feedback } = sub;
+                    const updatePromises = submissions.map(async (sub) => {
+                        const { submissionId, grade, feedback } = sub;
 
-                    // Validate grade
-                    if (grade !== undefined && (grade < 0 || grade > 100)) {
-                        throw new Error(`Invalid grade ${grade} for submission ${submissionId}`);
-                    }
+                        // Validate grade
+                        if (grade !== undefined && (grade < 0 || grade > 100)) {
+                            throw new Error(`Invalid grade ${grade} for submission ${submissionId}`);
+                        }
 
-                    return client.query(
-                        `UPDATE submissions
+                        return client.query(
+                            `UPDATE submissions
                          SET grade = $1, feedback = $2
                          WHERE id = $3 AND assignment_id = $4`,
-                        [grade, feedback, submissionId, assignmentId]
-                    );
-                });
+                            [grade, feedback, submissionId, assignmentId]
+                        );
+                    });
 
-                await Promise.all(updatePromises);
-                await client.query('COMMIT');
+                    await Promise.all(updatePromises);
+                    await client.query('COMMIT');
 
-                res.json({
-                    success: true,
-                    message: `Successfully updated ${submissions.length} submissions`,
-                    count: submissions.length
-                });
+                    res.json({
+                        success: true,
+                        message: `Successfully updated ${submissions.length} submissions`,
+                        count: submissions.length,
+                    });
+                } catch (error) {
+                    await client.query('ROLLBACK');
+                    throw error;
+                } finally {
+                    client.release();
+                }
             } catch (error) {
-                await client.query('ROLLBACK');
-                throw error;
-            } finally {
-                client.release();
+                console.error('Error bulk updating submissions:', error);
+                res.status(500).json({
+                    error: 'Internal server error',
+                    message: error.message,
+                });
             }
-        } catch (error) {
-            console.error('Error bulk updating submissions:', error);
-            res.status(500).json({
-                error: 'Internal server error',
-                message: error.message
-            });
         }
-    });
+    );
 
     // Get all assignments with status information for teacher
     router.get('/assignments-with-status', authenticate, authorize('teacher'), async (req, res) => {
@@ -555,16 +571,14 @@ module.exports = (pool) => {
             const result = await pool.query(query, [teacherId]);
 
             // Process assignments to add status flags
-            let assignments = result.rows.map(assignment => {
+            let assignments = result.rows.map((assignment) => {
                 const totalStudents = parseInt(assignment.total_students) || 0;
                 const totalSubmissions = parseInt(assignment.total_submissions) || 0;
                 const gradedSubmissions = parseInt(assignment.graded_submissions) || 0;
                 const lateSubmissions = parseInt(assignment.late_submissions) || 0;
                 const notSubmitted = totalStudents - totalSubmissions;
                 const submittedNotGraded = totalSubmissions - gradedSubmissions;
-                const averageGrade = assignment.average_grade
-                    ? parseFloat(assignment.average_grade).toFixed(1)
-                    : null;
+                const averageGrade = assignment.average_grade ? parseFloat(assignment.average_grade).toFixed(1) : null;
 
                 return {
                     ...assignment,
@@ -580,7 +594,7 @@ module.exports = (pool) => {
                     has_graded: gradedSubmissions > 0,
                     has_not_submitted: notSubmitted > 0,
                     has_late: lateSubmissions > 0,
-                    is_overdue: assignment.due_date && new Date(assignment.due_date) < new Date()
+                    is_overdue: assignment.due_date && new Date(assignment.due_date) < new Date(),
                 };
             });
 
@@ -588,16 +602,16 @@ module.exports = (pool) => {
             if (status) {
                 switch (status) {
                     case 'submitted':
-                        assignments = assignments.filter(a => a.submitted_not_graded > 0);
+                        assignments = assignments.filter((a) => a.submitted_not_graded > 0);
                         break;
                     case 'not-submitted':
-                        assignments = assignments.filter(a => a.has_not_submitted);
+                        assignments = assignments.filter((a) => a.has_not_submitted);
                         break;
                     case 'graded':
-                        assignments = assignments.filter(a => a.has_graded);
+                        assignments = assignments.filter((a) => a.has_graded);
                         break;
                     case 'late':
-                        assignments = assignments.filter(a => a.has_late);
+                        assignments = assignments.filter((a) => a.has_late);
                         break;
                 }
             }
@@ -607,7 +621,7 @@ module.exports = (pool) => {
             console.error('Error fetching assignments with status:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });
@@ -648,7 +662,7 @@ module.exports = (pool) => {
             );
 
             // Transform the data to match the frontend format
-            const submissions = result.rows.map(row => ({
+            const submissions = result.rows.map((row) => ({
                 id: row.id.toString(),
                 studentId: row.student_id,
                 studentName: row.student_name,
@@ -659,7 +673,7 @@ module.exports = (pool) => {
                 assignmentId: row.assignment_id,
                 status: row.status,
                 submittedAt: formatTimeAgo(new Date(row.submitted_at)),
-                grade: row.grade
+                grade: row.grade,
             }));
 
             res.json(submissions);
@@ -667,7 +681,7 @@ module.exports = (pool) => {
             console.error('Error fetching recent submissions:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });

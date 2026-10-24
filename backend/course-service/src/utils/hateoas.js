@@ -31,25 +31,43 @@ function createLink(rel, href, method = 'GET', description = '') {
  * Add HATEOAS links to a course resource
  */
 function addCourseLinks(course, userRole, isTeacher = false) {
-    const links = [
-        createLink('self', `${BASE_URL}/teacher/courses/${course.id}`, 'GET', 'Get course details'),
-    ];
+    const links = [createLink('self', `${BASE_URL}/teacher/courses/${course.id}`, 'GET', 'Get course details')];
 
     // Only allow modifications if user is the course teacher or admin
     if (isTeacher || userRole === 'Admin') {
         links.push(
             createLink('update', `${BASE_URL}/teacher/courses/${course.id}`, 'PUT', 'Update course'),
             createLink('delete', `${BASE_URL}/teacher/courses/${course.id}`, 'DELETE', 'Delete course'),
-            createLink('assignments', `${BASE_URL}/teacher/courses/${course.id}/assignments`, 'GET', 'Get course assignments'),
-            createLink('create-assignment', `${BASE_URL}/teacher/courses/${course.id}/assignments`, 'POST', 'Create new assignment'),
-            createLink('students', `${BASE_URL}/teacher/students-by-course?courseId=${course.id}`, 'GET', 'Get enrolled students')
+            createLink(
+                'assignments',
+                `${BASE_URL}/teacher/courses/${course.id}/assignments`,
+                'GET',
+                'Get course assignments'
+            ),
+            createLink(
+                'create-assignment',
+                `${BASE_URL}/teacher/courses/${course.id}/assignments`,
+                'POST',
+                'Create new assignment'
+            ),
+            createLink(
+                'students',
+                `${BASE_URL}/teacher/students-by-course?courseId=${course.id}`,
+                'GET',
+                'Get enrolled students'
+            )
         );
     }
 
     if (userRole === 'Student') {
         links.push(
             createLink('enroll', `${BASE_URL}/student/courses/${course.id}/enroll`, 'POST', 'Enroll in course'),
-            createLink('assignments', `${BASE_URL}/student/courses/${course.id}/assignments`, 'GET', 'Get course assignments')
+            createLink(
+                'assignments',
+                `${BASE_URL}/student/courses/${course.id}/assignments`,
+                'GET',
+                'Get course assignments'
+            )
         );
     }
 
@@ -68,20 +86,40 @@ function addAssignmentLinks(assignment, userRole, isTeacher = false) {
         links.push(
             createLink('update', `${BASE_URL}/teacher/assignments/${assignment.id}`, 'PUT', 'Update assignment'),
             createLink('delete', `${BASE_URL}/teacher/assignments/${assignment.id}`, 'DELETE', 'Delete assignment'),
-            createLink('submissions', `${BASE_URL}/teacher/assignments/${assignment.id}/submissions`, 'GET', 'View all submissions')
+            createLink(
+                'submissions',
+                `${BASE_URL}/teacher/assignments/${assignment.id}/submissions`,
+                'GET',
+                'View all submissions'
+            )
         );
     }
 
     if (userRole === 'Student') {
         links.push(
-            createLink('submit', `${BASE_URL}/student/assignments/${assignment.id}/submit`, 'POST', 'Submit assignment'),
-            createLink('my-submission', `${BASE_URL}/student/assignments/${assignment.id}/submission`, 'GET', 'Get my submission')
+            createLink(
+                'submit',
+                `${BASE_URL}/student/assignments/${assignment.id}/submit`,
+                'POST',
+                'Submit assignment'
+            ),
+            createLink(
+                'my-submission',
+                `${BASE_URL}/student/assignments/${assignment.id}/submission`,
+                'GET',
+                'Get my submission'
+            )
         );
     }
 
     if (assignment.course_id || assignment.courseId) {
         links.push(
-            createLink('course', `${BASE_URL}/teacher/courses/${assignment.course_id || assignment.courseId}`, 'GET', 'Get parent course')
+            createLink(
+                'course',
+                `${BASE_URL}/teacher/courses/${assignment.course_id || assignment.courseId}`,
+                'GET',
+                'Get parent course'
+            )
         );
     }
 
@@ -95,7 +133,12 @@ function addSubmissionLinks(submission, userRole, isTeacher = false) {
     const assignmentId = submission.assignment_id || submission.assignmentId;
 
     const links = [
-        createLink('self', `${BASE_URL}/student/assignments/${assignmentId}/submission`, 'GET', 'Get submission details'),
+        createLink(
+            'self',
+            `${BASE_URL}/student/assignments/${assignmentId}/submission`,
+            'GET',
+            'Get submission details'
+        ),
     ];
 
     if (isTeacher || userRole === 'Admin') {
@@ -118,13 +161,28 @@ function addSubmissionLinks(submission, userRole, isTeacher = false) {
  */
 function addEnrollmentLinks(enrollment, userRole) {
     const links = [
-        createLink('course', `${BASE_URL}/teacher/courses/${enrollment.course_id || enrollment.courseId}`, 'GET', 'Get course details'),
-        createLink('assignments', `${BASE_URL}/student/courses/${enrollment.course_id || enrollment.courseId}/assignments`, 'GET', 'Get course assignments'),
+        createLink(
+            'course',
+            `${BASE_URL}/teacher/courses/${enrollment.course_id || enrollment.courseId}`,
+            'GET',
+            'Get course details'
+        ),
+        createLink(
+            'assignments',
+            `${BASE_URL}/student/courses/${enrollment.course_id || enrollment.courseId}/assignments`,
+            'GET',
+            'Get course assignments'
+        ),
     ];
 
     if (userRole === 'Student') {
         links.push(
-            createLink('unenroll', `${BASE_URL}/student/courses/${enrollment.course_id || enrollment.courseId}/unenroll`, 'DELETE', 'Unenroll from course')
+            createLink(
+                'unenroll',
+                `${BASE_URL}/student/courses/${enrollment.course_id || enrollment.courseId}/unenroll`,
+                'DELETE',
+                'Unenroll from course'
+            )
         );
     }
 
@@ -135,9 +193,7 @@ function addEnrollmentLinks(enrollment, userRole) {
  * Add pagination links to a collection response
  */
 function addPaginationLinks(baseUrl, currentPage, totalPages, limit) {
-    const links = [
-        createLink('self', `${baseUrl}?page=${currentPage}&limit=${limit}`, 'GET', 'Current page'),
-    ];
+    const links = [createLink('self', `${baseUrl}?page=${currentPage}&limit=${limit}`, 'GET', 'Current page')];
 
     if (currentPage > 1) {
         links.push(

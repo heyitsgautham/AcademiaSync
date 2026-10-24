@@ -46,10 +46,9 @@ module.exports = (pool) => {
             const teacherId = req.user.id;
 
             // Get total courses for this teacher
-            const coursesResult = await pool.query(
-                'SELECT COUNT(*) as total FROM courses WHERE teacher_id = $1',
-                [teacherId]
-            );
+            const coursesResult = await pool.query('SELECT COUNT(*) as total FROM courses WHERE teacher_id = $1', [
+                teacherId,
+            ]);
             const totalCourses = parseInt(coursesResult.rows[0].total) || 0;
 
             // Get total students enrolled in all teacher's courses
@@ -71,9 +70,7 @@ module.exports = (pool) => {
                  WHERE c.teacher_id = $1 AND s.grade IS NOT NULL`,
                 [teacherId]
             );
-            const averageGrade = gradeResult.rows[0].average
-                ? parseFloat(gradeResult.rows[0].average).toFixed(1)
-                : 0;
+            const averageGrade = gradeResult.rows[0].average ? parseFloat(gradeResult.rows[0].average).toFixed(1) : 0;
 
             // Get pending assignments to grade (submissions without a grade)
             const pendingResult = await pool.query(
@@ -90,13 +87,13 @@ module.exports = (pool) => {
                 totalCourses,
                 totalStudents,
                 averageGrade: parseFloat(averageGrade),
-                pendingAssignmentsToGrade
+                pendingAssignmentsToGrade,
             });
         } catch (error) {
             console.error('Error fetching teacher stats:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });

@@ -24,9 +24,7 @@ describe('student routes', () => {
         });
 
         it('rejects a malformed token', async () => {
-            const res = await request(app)
-                .get('/api/student/courses')
-                .set('Authorization', 'Bearer not-a-jwt');
+            const res = await request(app).get('/api/student/courses').set('Authorization', 'Bearer not-a-jwt');
             expect(res.status).toBe(401);
             expect(res.body.message).toBe('Invalid access token');
         });
@@ -73,10 +71,7 @@ describe('student routes', () => {
         });
 
         it('rejects an unknown course', async () => {
-            const res = await request(app)
-                .post('/api/student/enroll')
-                .set(authHeader(student))
-                .send({ courseId: 999 });
+            const res = await request(app).post('/api/student/enroll').set(authHeader(student)).send({ courseId: 999 });
             expect(res.status).toBe(400);
             expect(res.body.message).toBe('Course not found');
         });
@@ -172,9 +167,7 @@ describe('student routes', () => {
         });
 
         it('filters by status', async () => {
-            const res = await request(app)
-                .get('/api/student/assignments?status=graded')
-                .set(authHeader(student));
+            const res = await request(app).get('/api/student/assignments?status=graded').set(authHeader(student));
 
             expect(res.body.assignments.map((a) => a.id)).toEqual([graded.id]);
         });
@@ -184,27 +177,21 @@ describe('student routes', () => {
             await db.enroll(student.id, second.id);
             const only = await db.createAssignment(second.id, { title: 'Only in second' });
 
-            const res = await request(app)
-                .get(`/api/student/assignments?course=${second.id}`)
-                .set(authHeader(student));
+            const res = await request(app).get(`/api/student/assignments?course=${second.id}`).set(authHeader(student));
 
             expect(res.status).toBe(200);
             expect(res.body.assignments.map((a) => a.id)).toEqual([only.id]);
         });
 
         it('sorts by assignment title, a column both joined tables share', async () => {
-            const res = await request(app)
-                .get('/api/student/assignments?sortBy=title')
-                .set(authHeader(student));
+            const res = await request(app).get('/api/student/assignments?sortBy=title').set(authHeader(student));
 
             expect(res.status).toBe(200);
             expect(res.body.assignments.map((a) => a.name)).toEqual(['Graded', 'Pending', 'Submitted']);
         });
 
         it('returns one assignment by id', async () => {
-            const res = await request(app)
-                .get(`/api/student/assignments/${pending.id}`)
-                .set(authHeader(student));
+            const res = await request(app).get(`/api/student/assignments/${pending.id}`).set(authHeader(student));
 
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({ id: pending.id, courseId: course.id, status: 'Pending' });
@@ -214,9 +201,7 @@ describe('student routes', () => {
             const other = await db.createCourse(teacher.id);
             const hidden = await db.createAssignment(other.id);
 
-            const res = await request(app)
-                .get(`/api/student/assignments/${hidden.id}`)
-                .set(authHeader(student));
+            const res = await request(app).get(`/api/student/assignments/${hidden.id}`).set(authHeader(student));
 
             expect(res.status).toBe(404);
         });
@@ -325,9 +310,7 @@ describe('student routes', () => {
         });
 
         it.each(['weekly', 'biweekly', 'monthly', 'unknown'])('accepts the %s filter', async (filter) => {
-            const res = await request(app)
-                .get(`/api/student/analytics?filter=${filter}`)
-                .set(authHeader(student));
+            const res = await request(app).get(`/api/student/analytics?filter=${filter}`).set(authHeader(student));
 
             expect(res.status).toBe(200);
             expect(Object.keys(res.body).sort()).toEqual([

@@ -23,5 +23,5 @@ const verifyAccessToken = (token) => {
 };
 
 module.exports = {
-    verifyAccessToken
+    verifyAccessToken,
 };

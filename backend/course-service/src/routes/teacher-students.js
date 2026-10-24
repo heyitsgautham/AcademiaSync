@@ -12,7 +12,7 @@ module.exports = (pool) => {
             // Parse query parameters
             const { page, limit, offset } = parsePagination(req.query);
             const { orderByClause } = parseSorting(req.query, ['course_name', 'name', 'student_count'], {
-                name: 'course_name'
+                name: 'course_name',
             });
             // $1 is the teacher id, so filter placeholders start at $2
             const { whereClause, values } = buildStudentsFilter(req.query, 2);
@@ -67,19 +67,19 @@ module.exports = (pool) => {
                     const studentsResult = await pool.query(studentsQuery, [course.course_id]);
 
                     // Format students data
-                    const students = studentsResult.rows.map(student => ({
+                    const students = studentsResult.rows.map((student) => ({
                         id: student.id.toString(),
                         name: `${student.first_name} ${student.last_name}`,
                         email: student.email,
                         avatar: student.profile_picture || null,
-                        performance: parseFloat(student.performance).toFixed(0)
+                        performance: parseFloat(student.performance).toFixed(0),
                     }));
 
                     return {
                         courseId: course.course_id.toString(),
                         courseName: course.course_name,
                         students: students,
-                        studentCount: parseInt(course.student_count)
+                        studentCount: parseInt(course.student_count),
                     };
                 })
             );
@@ -89,13 +89,13 @@ module.exports = (pool) => {
 
             res.json({
                 data: studentsByCourse,
-                pagination
+                pagination,
             });
         } catch (error) {
             console.error('Error fetching students by course:', error);
             res.status(500).json({
                 error: 'Internal server error',
-                message: error.message
+                message: error.message,
             });
         }
     });

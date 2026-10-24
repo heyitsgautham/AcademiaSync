@@ -28,7 +28,9 @@ describe('parseSorting', () => {
     });
 
     it('accepts the short sort and order aliases', () => {
-        expect(parseSorting({ sort: 'grade', order: 'desc' }, ['name', 'grade']).orderByClause).toBe('grade DESC NULLS LAST');
+        expect(parseSorting({ sort: 'grade', order: 'desc' }, ['name', 'grade']).orderByClause).toBe(
+            'grade DESC NULLS LAST'
+        );
     });
 
     it('orders by the mapped column when one is given', () => {

@@ -3,7 +3,6 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
 # Testing
 coverage
@@ -54,12 +53,14 @@ docker-compose*.yml
 .travis.yml
 azure-pipelines.yml
 
-# Logs (logs directory is created in Dockerfile)
+# Logs
 logs
 *.log
 
 # Misc
 .editorconfig
 .eslintrc*
+eslint.config.js
 .prettierrc*
+.prettierignore
 nodemon.json

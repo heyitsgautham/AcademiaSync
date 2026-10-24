@@ -1,20 +1,20 @@
 # ================================
 # Stage 1: Dependencies
 # ================================
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm install --omit=dev && \
+# Install only production dependencies, exactly as pinned in package-lock.json
+RUN npm ci --omit=dev && \
     npm cache clean --force
 
 # ================================
 # Stage 2: Production Runner
 # ================================
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 # Set environment to production
@@ -30,9 +30,8 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application code
 COPY . .
 
-# Create logs directory with proper permissions
-RUN mkdir -p logs && \
-    chown -R appuser:nodejs /app
+# Give the runtime user ownership of the app directory
+RUN chown -R appuser:nodejs /app
 
 # Switch to non-root user
 USER appuser
@@ -42,7 +41,7 @@ EXPOSE 5001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:5001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5001) + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)}).on('error', () => process.exit(1))"
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "src/index.js"]

@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
+import { useTableControls } from "@/hooks/use-table-controls"
+import { SortableHeader, TablePagination, TableToolbar } from "@/components/data-table-controls"
+import type { SortValue } from "@/lib/table"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Trash2, Search, GraduationCap, Users as UsersIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, User } from "lucide-react"
+import { Edit, Trash2, GraduationCap, Users as UsersIcon, RefreshCw, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -20,13 +22,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
 interface Teacher {
     id: number
@@ -47,105 +42,30 @@ interface AdminTeachersTableProps {
 }
 
 type SortField = "name" | "email" | "courseCount" | "studentCount"
-type SortOrder = "asc" | "desc"
+
+const SORT_VALUES: Record<SortField, (r: Teacher) => SortValue> = {
+    name: (r) => `${r.firstName} ${r.lastName}`,
+    email: (r) => r.email,
+    courseCount: (r) => r.courseCount ?? 0,
+    studentCount: (r) => r.studentCount ?? 0,
+}
+const SEARCH_FIELDS = (r: Teacher) => [r.firstName, r.lastName, r.email, r.specialization]
 
 export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: AdminTeachersTableProps) {
     const { toast } = useToast()
     const router = useRouter()
-    const [searchQuery, setSearchQuery] = useState("")
     const [deleteTeacherId, setDeleteTeacherId] = useState<number | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
-    const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(10)
-    const [sortField, setSortField] = useState<SortField>("name")
-    const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
     const [roleChangeTeacherId, setRoleChangeTeacherId] = useState<number | null>(null)
     const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false)
     const [selectedRoleChange, setSelectedRoleChange] = useState<"Student" | "Admin" | null>(null)
     const [isChangingRole, setIsChangingRole] = useState(false)
 
-    const teachersArray = Array.isArray(teachers) ? teachers : []
-
-    // Handle sorting
-    const handleSort = (field: SortField) => {
-        if (sortField === field) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-        } else {
-            setSortField(field)
-            setSortOrder("asc")
-        }
-    }
-
-    const getSortIcon = (field: SortField) => {
-        if (sortField !== field) {
-            return <ArrowUpDown className="ml-2 h-4 w-4" />
-        }
-        return sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-    }
-
-    // Filter and sort teachers
-    const filteredAndSortedTeachers = useMemo(() => {
-        const result = teachersArray.filter((teacher) => {
-            const matchesSearch =
-                teacher.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                teacher.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                teacher.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                teacher.specialization?.toLowerCase().includes(searchQuery.toLowerCase())
-
-            return matchesSearch
-        })
-
-        // Sort teachers
-        result.sort((a, b) => {
-            let aValue: any
-            let bValue: any
-
-            if (sortField === "name") {
-                aValue = `${a.firstName} ${a.lastName}`.toLowerCase()
-                bValue = `${b.firstName} ${b.lastName}`.toLowerCase()
-            } else if (sortField === "courseCount") {
-                aValue = a.courseCount ?? 0
-                bValue = b.courseCount ?? 0
-            } else if (sortField === "studentCount") {
-                aValue = a.studentCount ?? 0
-                bValue = b.studentCount ?? 0
-            } else {
-                aValue = a[sortField as keyof Teacher]
-                bValue = b[sortField as keyof Teacher]
-            }
-
-            // Handle undefined values
-            if (aValue === undefined) aValue = ""
-            if (bValue === undefined) bValue = ""
-
-            // Convert to lowercase for string comparison
-            if (typeof aValue === "string") aValue = aValue.toLowerCase()
-            if (typeof bValue === "string") bValue = bValue.toLowerCase()
-
-            if (aValue < bValue) return sortOrder === "asc" ? -1 : 1
-            if (aValue > bValue) return sortOrder === "asc" ? 1 : -1
-            return 0
-        })
-
-        return result
-    }, [teachersArray, searchQuery, sortField, sortOrder])
-
-    // Pagination
-    const totalPages = Math.ceil(filteredAndSortedTeachers.length / itemsPerPage)
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const paginatedTeachers = filteredAndSortedTeachers.slice(startIndex, endIndex)
-
-    // Reset to first page when filter changes
-    const handleSearchChange = (value: string) => {
-        setSearchQuery(value)
-        setCurrentPage(1)
-    }
-
-    const handleItemsPerPageChange = (value: string) => {
-        setItemsPerPage(Number(value))
-        setCurrentPage(1)
-    }
+    const table = useTableControls<Teacher, SortField>(teachers, {
+        searchFields: SEARCH_FIELDS,
+        sortValues: SORT_VALUES,
+        initialSort: "name",
+    })
 
     const handleDelete = async () => {
         if (!deleteTeacherId) return
@@ -237,32 +157,13 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                     <CardTitle>Teachers Management</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {/* Search and Filter */}
-                    <div className="flex flex-col gap-4 mb-6 sm:flex-row">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Search teachers..."
-                                value={searchQuery}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                                className="pl-9"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">Items:</span>
-                            <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                                <SelectTrigger className="w-[80px]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="5">5</SelectItem>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="20">20</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                    <TableToolbar
+                        searchPlaceholder="Search teachers..."
+                        searchQuery={table.searchQuery}
+                        onSearchChange={table.setSearchQuery}
+                        perPage={table.perPage}
+                        onPerPageChange={table.setPerPage}
+                    />
 
                     {/* Teachers Table */}
                     <div className="rounded-md border">
@@ -271,58 +172,30 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                                 <TableRow>
                                     <TableHead className="w-[50px]"></TableHead>
                                     <TableHead>
-                                        <Button
-                                            variant="ghost"
-                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
-                                            onClick={() => handleSort("name")}
-                                        >
-                                            Name
-                                            {getSortIcon("name")}
-                                        </Button>
+                                        <SortableHeader label="Name" field="name" sortField={table.sortField} sortOrder={table.sortOrder} onSort={table.toggleSort} />
                                     </TableHead>
                                     <TableHead>
-                                        <Button
-                                            variant="ghost"
-                                            className="flex items-center p-0 hover:bg-accent hover:text-accent-foreground"
-                                            onClick={() => handleSort("email")}
-                                        >
-                                            Email
-                                            {getSortIcon("email")}
-                                        </Button>
+                                        <SortableHeader label="Email" field="email" sortField={table.sortField} sortOrder={table.sortOrder} onSort={table.toggleSort} />
                                     </TableHead>
                                     <TableHead className="text-center">
-                                        <Button
-                                            variant="ghost"
-                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
-                                            onClick={() => handleSort("courseCount")}
-                                        >
-                                            Courses
-                                            {getSortIcon("courseCount")}
-                                        </Button>
+                                        <SortableHeader label="Courses" field="courseCount" sortField={table.sortField} sortOrder={table.sortOrder} onSort={table.toggleSort} centered />
                                     </TableHead>
                                     <TableHead className="text-center">
-                                        <Button
-                                            variant="ghost"
-                                            className="flex items-center mx-auto p-0 hover:bg-accent hover:text-accent-foreground"
-                                            onClick={() => handleSort("studentCount")}
-                                        >
-                                            Students
-                                            {getSortIcon("studentCount")}
-                                        </Button>
+                                        <SortableHeader label="Students" field="studentCount" sortField={table.sortField} sortOrder={table.sortOrder} onSort={table.toggleSort} centered />
                                     </TableHead>
                                     <TableHead className="text-center">Change Role</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedTeachers.length === 0 ? (
+                                {table.rows.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                             No teachers found
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    paginatedTeachers.map((teacher) => (
+                                    table.rows.map((teacher) => (
                                         <TableRow
                                             key={teacher.id}
                                             className="cursor-pointer hover:bg-muted/50"
@@ -394,51 +267,15 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
                         </Table>
                     </div>
 
-                    {/* Pagination Controls */}
-                    {filteredAndSortedTeachers.length > 0 && (
-                        <div className="flex flex-col gap-4 mt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="text-sm text-muted-foreground">
-                                Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedTeachers.length)} of {filteredAndSortedTeachers.length} teachers
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(1)}
-                                    disabled={currentPage === 1}
-                                >
-                                    <ChevronsLeft className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(totalPages)}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    <ChevronsRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    <TablePagination
+                        page={table.page}
+                        totalPages={table.totalPages}
+                        startIndex={table.startIndex}
+                        endIndex={table.endIndex}
+                        total={table.filteredCount}
+                        noun="teachers"
+                        onPageChange={table.setPage}
+                    />
                 </CardContent>
             </Card>
 

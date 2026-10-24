@@ -15,11 +15,11 @@ const generateAccessToken = (user) => {
     const payload = {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
     };
 
     return jwt.sign(payload, JWT_SECRET, {
-        expiresIn: JWT_ACCESS_EXPIRY
+        expiresIn: JWT_ACCESS_EXPIRY,
     });
 };
 
@@ -32,14 +32,14 @@ const generateRefreshToken = (user) => {
     const payload = {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
     };
 
     // jwtid makes every refresh token unique. Without it, two sign-ins in the same second
     // produce identical tokens and the second insert hits the unique index on refresh_tokens.token.
     return jwt.sign(payload, JWT_REFRESH_SECRET, {
         expiresIn: JWT_REFRESH_EXPIRY,
-        jwtid: crypto.randomUUID()
+        jwtid: crypto.randomUUID(),
     });
 };
 
@@ -88,10 +88,10 @@ const getRefreshTokenExpiry = () => {
     const unit = match[2];
 
     const multipliers = {
-        's': 1000,
-        'm': 60 * 1000,
-        'h': 60 * 60 * 1000,
-        'd': 24 * 60 * 60 * 1000
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
     };
 
     return new Date(Date.now() + value * multipliers[unit]);
@@ -102,5 +102,5 @@ module.exports = {
     generateRefreshToken,
     verifyAccessToken,
     verifyRefreshToken,
-    getRefreshTokenExpiry
+    getRefreshTokenExpiry,
 };

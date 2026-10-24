@@ -1,6 +1,11 @@
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
-const { generateAccessToken, generateRefreshToken, verifyRefreshToken, getRefreshTokenExpiry } = require('../utils/jwt');
+const {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyRefreshToken,
+    getRefreshTokenExpiry,
+} = require('../utils/jwt');
 
 const router = express.Router();
 
@@ -73,7 +78,7 @@ router.post('/google', async (req, res) => {
         if (!idToken) {
             return res.status(400).json({
                 error: 'Bad Request',
-                message: 'Google ID token is required'
+                message: 'Google ID token is required',
             });
         }
 
@@ -82,12 +87,12 @@ router.post('/google', async (req, res) => {
         try {
             ticket = await googleClient.verifyIdToken({
                 idToken,
-                audience: process.env.GOOGLE_CLIENT_ID
+                audience: process.env.GOOGLE_CLIENT_ID,
             });
         } catch (error) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Invalid Google token'
+                message: 'Invalid Google token',
             });
         }
 
@@ -96,10 +101,10 @@ router.post('/google', async (req, res) => {
 
         // Find the user by Google id, or by email for accounts an admin created first
         const dbPool = getPool();
-        const userResult = await dbPool.query(
-            'SELECT * FROM users WHERE google_id = $1 OR email = $2',
-            [googleId, email]
-        );
+        const userResult = await dbPool.query('SELECT * FROM users WHERE google_id = $1 OR email = $2', [
+            googleId,
+            email,
+        ]);
 
         let user;
         if (userResult.rows.length === 0) {
@@ -116,10 +121,11 @@ router.post('/google', async (req, res) => {
 
             // Update google_id and profile_picture if not set or if picture changed
             if (!user.google_id || user.profile_picture !== picture) {
-                await dbPool.query(
-                    'UPDATE users SET google_id = $1, profile_picture = $2 WHERE id = $3',
-                    [googleId, picture || null, user.id]
-                );
+                await dbPool.query('UPDATE users SET google_id = $1, profile_picture = $2 WHERE id = $3', [
+                    googleId,
+                    picture || null,
+                    user.id,
+                ]);
                 user.google_id = googleId;
                 user.profile_picture = picture;
             }
@@ -131,10 +137,11 @@ router.post('/google', async (req, res) => {
 
         // Store refresh token in database
         const expiresAt = getRefreshTokenExpiry();
-        await dbPool.query(
-            'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-            [user.id, refreshToken, expiresAt]
-        );
+        await dbPool.query('INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)', [
+            user.id,
+            refreshToken,
+            expiresAt,
+        ]);
 
         // Set tokens as httpOnly cookies
         const isProduction = process.env.NODE_ENV === 'production';
@@ -143,14 +150,14 @@ router.post('/google', async (req, res) => {
             httpOnly: true,
             secure: isProduction,
             sameSite: isProduction ? 'strict' : 'lax',
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: 15 * 60 * 1000, // 15 minutes
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: isProduction,
             sameSite: isProduction ? 'strict' : 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
         return res.status(200).json({
@@ -162,14 +169,14 @@ router.post('/google', async (req, res) => {
                 firstName: user.first_name,
                 lastName: user.last_name,
                 profilePicture: user.profile_picture,
-                role: user.role
-            }
+                role: user.role,
+            },
         });
     } catch (error) {
         console.error('Google auth error:', error);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to authenticate with Google'
+            message: 'Failed to authenticate with Google',
         });
     }
 });
@@ -213,7 +220,7 @@ router.post('/refresh', async (req, res) => {
         if (!refreshToken) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Refresh token not found'
+                message: 'Refresh token not found',
             });
         }
 
@@ -224,21 +231,21 @@ router.post('/refresh', async (req, res) => {
         } catch (error) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Invalid or expired refresh token'
+                message: 'Invalid or expired refresh token',
             });
         }
 
         // Check if refresh token exists in database
         const dbPool = getPool();
-        const tokenResult = await dbPool.query(
-            'SELECT * FROM refresh_tokens WHERE token = $1 AND user_id = $2',
-            [refreshToken, decoded.id]
-        );
+        const tokenResult = await dbPool.query('SELECT * FROM refresh_tokens WHERE token = $1 AND user_id = $2', [
+            refreshToken,
+            decoded.id,
+        ]);
 
         if (tokenResult.rows.length === 0) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Refresh token not found in database'
+                message: 'Refresh token not found in database',
             });
         }
 
@@ -250,7 +257,7 @@ router.post('/refresh', async (req, res) => {
             await dbPool.query('DELETE FROM refresh_tokens WHERE id = $1', [tokenRecord.id]);
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Refresh token has expired'
+                message: 'Refresh token has expired',
             });
         }
 
@@ -259,7 +266,7 @@ router.post('/refresh', async (req, res) => {
         if (userResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'Not Found',
-                message: 'User not found'
+                message: 'User not found',
             });
         }
 
@@ -275,17 +282,17 @@ router.post('/refresh', async (req, res) => {
             httpOnly: true,
             secure: isProduction,
             sameSite: isProduction ? 'strict' : 'lax',
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: 15 * 60 * 1000, // 15 minutes
         });
 
         return res.status(200).json({
-            message: 'Access token refreshed successfully'
+            message: 'Access token refreshed successfully',
         });
     } catch (error) {
         console.error('Token refresh error:', error);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to refresh token'
+            message: 'Failed to refresh token',
         });
     }
 });
@@ -332,13 +339,13 @@ router.post('/logout', async (req, res) => {
         res.clearCookie('refreshToken');
 
         return res.status(200).json({
-            message: 'Logout successful'
+            message: 'Logout successful',
         });
     } catch (error) {
         console.error('Logout error:', error);
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to logout'
+            message: 'Failed to logout',
         });
     }
 });

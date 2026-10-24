@@ -31,9 +31,7 @@ function createLink(rel, href, method = 'GET', description = '') {
  * Add HATEOAS links to a teacher resource
  */
 function addTeacherLinks(teacher, userRole) {
-    const links = [
-        createLink('self', `${BASE_URL}/admin/teachers/${teacher.id}`, 'GET', 'Get teacher details'),
-    ];
+    const links = [createLink('self', `${BASE_URL}/admin/teachers/${teacher.id}`, 'GET', 'Get teacher details')];
 
     if (userRole === 'Admin') {
         links.push(
@@ -43,9 +41,7 @@ function addTeacherLinks(teacher, userRole) {
         );
     }
 
-    links.push(
-        createLink('courses', `${COURSE_SERVICE_URL}/teacher/courses`, 'GET', 'Get teacher courses')
-    );
+    links.push(createLink('courses', `${COURSE_SERVICE_URL}/teacher/courses`, 'GET', 'Get teacher courses'));
 
     return { ...teacher, _links: links };
 }
@@ -54,14 +50,10 @@ function addTeacherLinks(teacher, userRole) {
  * Add HATEOAS links to a student resource
  */
 function addStudentLinks(student, userRole) {
-    const links = [
-        createLink('self', `${BASE_URL}/admin/students/${student.id}`, 'GET', 'Get student details'),
-    ];
+    const links = [createLink('self', `${BASE_URL}/admin/students/${student.id}`, 'GET', 'Get student details')];
 
     if (userRole === 'Admin') {
-        links.push(
-            createLink('promote', `${BASE_URL}/admin/promote-role`, 'POST', 'Change user role')
-        );
+        links.push(createLink('promote', `${BASE_URL}/admin/promote-role`, 'POST', 'Change user role'));
     }
 
     links.push(

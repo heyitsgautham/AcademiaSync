@@ -57,37 +57,27 @@ router.get('/stats', authenticate, authorize('Admin'), async (req, res) => {
         const db = getPool();
 
         // Get total teachers
-        const teachersResult = await db.query(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'Teacher'"
-        );
+        const teachersResult = await db.query("SELECT COUNT(*) as count FROM users WHERE role = 'Teacher'");
         const totalTeachers = parseInt(teachersResult.rows[0].count);
 
         // Get total students
-        const studentsResult = await db.query(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'Student'"
-        );
+        const studentsResult = await db.query("SELECT COUNT(*) as count FROM users WHERE role = 'Student'");
         const totalStudents = parseInt(studentsResult.rows[0].count);
 
         // Get total courses
-        const coursesResult = await db.query(
-            "SELECT COUNT(*) as count FROM courses"
-        );
+        const coursesResult = await db.query('SELECT COUNT(*) as count FROM courses');
         const totalCourses = parseInt(coursesResult.rows[0].count);
 
         // Get average grade across all submissions
-        const gradeResult = await db.query(
-            "SELECT AVG(grade) as avg_grade FROM submissions WHERE grade IS NOT NULL"
-        );
-        const averageGrade = gradeResult.rows[0].avg_grade
-            ? parseFloat(gradeResult.rows[0].avg_grade).toFixed(2)
-            : 0;
+        const gradeResult = await db.query('SELECT AVG(grade) as avg_grade FROM submissions WHERE grade IS NOT NULL');
+        const averageGrade = gradeResult.rows[0].avg_grade ? parseFloat(gradeResult.rows[0].avg_grade).toFixed(2) : 0;
 
         res.json({
             totalTeachers,
             totalStudents,
             totalCourses,
             averageGrade: parseFloat(averageGrade),
-            _links: addAdminLinks()
+            _links: addAdminLinks(),
         });
     } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -163,9 +153,9 @@ router.get('/analytics', authenticate, authorize('Admin'), async (req, res) => {
             ORDER BY student_count DESC
         `);
 
-        const studentsPerTeacher = studentsPerTeacherResult.rows.map(row => ({
+        const studentsPerTeacher = studentsPerTeacherResult.rows.map((row) => ({
             teacherName: row.teacher_name,
-            studentCount: parseInt(row.student_count)
+            studentCount: parseInt(row.student_count),
         }));
 
         // Get top 5 performing students by average grade
@@ -185,12 +175,12 @@ router.get('/analytics', authenticate, authorize('Admin'), async (req, res) => {
             LIMIT 5
         `);
 
-        const topStudents = topStudentsResult.rows.map(row => ({
+        const topStudents = topStudentsResult.rows.map((row) => ({
             id: row.id,
             studentName: row.student_name,
             profilePicture: row.profile_picture,
             avgGrade: parseFloat(row.avg_grade).toFixed(2),
-            submissionCount: parseInt(row.submission_count)
+            submissionCount: parseInt(row.submission_count),
         }));
 
         // Get top 5 performing teachers by average student grades
@@ -212,12 +202,12 @@ router.get('/analytics', authenticate, authorize('Admin'), async (req, res) => {
             LIMIT 5
         `);
 
-        const topTeachers = topTeachersResult.rows.map(row => ({
+        const topTeachers = topTeachersResult.rows.map((row) => ({
             id: row.id,
             teacherName: row.teacher_name,
             profilePicture: row.profile_picture,
             avgGrade: parseFloat(row.avg_grade).toFixed(2),
-            studentCount: parseInt(row.student_count)
+            studentCount: parseInt(row.student_count),
         }));
 
         // Get top 5 performing courses by average grade
@@ -238,19 +228,19 @@ router.get('/analytics', authenticate, authorize('Admin'), async (req, res) => {
             LIMIT 5
         `);
 
-        const topCourses = topCoursesResult.rows.map(row => ({
+        const topCourses = topCoursesResult.rows.map((row) => ({
             courseName: row.course_name,
             avgGrade: parseFloat(row.avg_grade).toFixed(2),
             enrolledCount: parseInt(row.enrolled_count),
-            submissionCount: parseInt(row.submission_count)
+            submissionCount: parseInt(row.submission_count),
         }));
 
         res.json({
             studentsPerTeacher,
-            topStudents: topStudents.map(student => addStudentLinks(student, 'Admin')),
-            topTeachers: topTeachers.map(teacher => addTeacherLinks(teacher, 'Admin')),
+            topStudents: topStudents.map((student) => addStudentLinks(student, 'Admin')),
+            topTeachers: topTeachers.map((teacher) => addTeacherLinks(teacher, 'Admin')),
             topCourses,
-            _links: addAdminLinks()
+            _links: addAdminLinks(),
         });
     } catch (error) {
         console.error('Error fetching analytics:', error);
@@ -284,7 +274,7 @@ router.get('/teachers', authenticate, authorize('Admin'), async (req, res) => {
             ORDER BY u.last_name, u.first_name
         `);
 
-        const teachers = result.rows.map(row => {
+        const teachers = result.rows.map((row) => {
             const teacher = {
                 id: row.id,
                 firstName: row.firstName,
@@ -293,14 +283,14 @@ router.get('/teachers', authenticate, authorize('Admin'), async (req, res) => {
                 profilePicture: row.profile_picture,
                 specialization: row.specialization || '',
                 courseCount: parseInt(row.course_count),
-                studentCount: parseInt(row.student_count)
+                studentCount: parseInt(row.student_count),
             };
             return addTeacherLinks(teacher, 'Admin');
         });
 
         res.json({
             teachers,
-            _links: addAdminLinks()
+            _links: addAdminLinks(),
         });
     } catch (error) {
         console.error('Error fetching teachers:', error);
@@ -328,10 +318,7 @@ router.post('/teachers', authenticate, authorize('Admin'), async (req, res) => {
         const db = getPool();
 
         // Check if email already exists
-        const existingUser = await db.query(
-            'SELECT id FROM users WHERE email = $1',
-            [email]
-        );
+        const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
 
         if (existingUser.rows.length > 0) {
             return res.status(409).json({ error: 'Email already exists' });
@@ -372,10 +359,7 @@ router.put('/teachers/:id', authenticate, authorize('Admin'), async (req, res) =
         const db = getPool();
 
         // Check if teacher exists
-        const existingTeacher = await db.query(
-            "SELECT id FROM users WHERE id = $1 AND role = 'Teacher'",
-            [id]
-        );
+        const existingTeacher = await db.query("SELECT id FROM users WHERE id = $1 AND role = 'Teacher'", [id]);
 
         if (existingTeacher.rows.length === 0) {
             return res.status(404).json({ error: 'Teacher not found' });
@@ -407,10 +391,7 @@ router.delete('/teachers/:id', authenticate, authorize('Admin'), async (req, res
         const db = getPool();
 
         // Check if teacher exists
-        const existingTeacher = await db.query(
-            "SELECT id FROM users WHERE id = $1 AND role = 'Teacher'",
-            [id]
-        );
+        const existingTeacher = await db.query("SELECT id FROM users WHERE id = $1 AND role = 'Teacher'", [id]);
 
         if (existingTeacher.rows.length === 0) {
             return res.status(404).json({ error: 'Teacher not found' });
@@ -452,7 +433,7 @@ router.get('/students', authenticate, authorize('Admin'), async (req, res) => {
             ORDER BY u.last_name, u.first_name
         `);
 
-        const students = result.rows.map(row => ({
+        const students = result.rows.map((row) => ({
             id: row.id,
             firstName: row.firstName,
             lastName: row.lastName,
@@ -460,7 +441,7 @@ router.get('/students', authenticate, authorize('Admin'), async (req, res) => {
             profilePicture: row.profile_picture,
             age: row.age,
             enrolledCourses: parseInt(row.enrolled_courses),
-            avgScore: row.avg_score ? parseFloat(row.avg_score).toFixed(2) : null
+            avgScore: row.avg_score ? parseFloat(row.avg_score).toFixed(2) : null,
         }));
 
         res.json(students);
@@ -494,10 +475,7 @@ router.post('/promote-role', authenticate, authorize('Admin'), async (req, res) 
         const db = getPool();
 
         // Check if user exists
-        const existingUser = await db.query(
-            'SELECT id, role FROM users WHERE id = $1',
-            [userId]
-        );
+        const existingUser = await db.query('SELECT id, role FROM users WHERE id = $1', [userId]);
 
         if (existingUser.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -529,7 +507,7 @@ router.post('/promote-role', authenticate, authorize('Admin'), async (req, res) 
 
         res.json({
             message: `User promoted to ${newRole} successfully`,
-            user: result.rows[0]
+            user: result.rows[0],
         });
     } catch (error) {
         console.error('Error promoting user:', error);
@@ -651,7 +629,7 @@ router.get('/dashboard-analytics', authenticate, authorize('Admin'), async (req,
         res.json({
             userRoleDistribution: roleDistribution.rows,
             enrollmentTrend: enrollmentTrend.rows,
-            _links: addAdminLinks()
+            _links: addAdminLinks(),
         });
     } catch (error) {
         console.error('Error fetching admin dashboard analytics:', error);

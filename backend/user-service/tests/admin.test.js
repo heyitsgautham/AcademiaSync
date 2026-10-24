@@ -13,7 +13,11 @@ describe('admin routes', () => {
     beforeEach(async () => {
         await db.resetDatabase();
         admin = await db.createUser('Admin', { first_name: 'Ada', last_name: 'Admin' });
-        teacher = await db.createUser('Teacher', { first_name: 'Tom', last_name: 'Teacher', specialization: 'Physics' });
+        teacher = await db.createUser('Teacher', {
+            first_name: 'Tom',
+            last_name: 'Teacher',
+            specialization: 'Physics',
+        });
         student = await db.createUser('Student', { first_name: 'Sue', last_name: 'Student', age: 20 });
         const course = await db.createCourse(teacher.id, { title: 'Optics' });
         await db.enroll(student.id, course.id);
@@ -49,14 +53,20 @@ describe('admin routes', () => {
         });
 
         it('ranks students, teachers and courses by grade', async () => {
-            const res = await request(app)
-                .get('/admin/analytics?apiKey=test-analytics-key')
-                .set(authHeader(admin));
+            const res = await request(app).get('/admin/analytics?apiKey=test-analytics-key').set(authHeader(admin));
 
             expect(res.status).toBe(200);
             expect(res.body.studentsPerTeacher).toEqual([{ teacherName: 'Tom Teacher', studentCount: 1 }]);
-            expect(res.body.topStudents[0]).toMatchObject({ studentName: 'Sue Student', avgGrade: '80.00', submissionCount: 2 });
-            expect(res.body.topTeachers[0]).toMatchObject({ teacherName: 'Tom Teacher', avgGrade: '80.00', studentCount: 1 });
+            expect(res.body.topStudents[0]).toMatchObject({
+                studentName: 'Sue Student',
+                avgGrade: '80.00',
+                submissionCount: 2,
+            });
+            expect(res.body.topTeachers[0]).toMatchObject({
+                teacherName: 'Tom Teacher',
+                avgGrade: '80.00',
+                studentCount: 1,
+            });
             expect(res.body.topCourses).toEqual([
                 { courseName: 'Optics', avgGrade: '80.00', enrolledCount: 1, submissionCount: 2 },
             ]);

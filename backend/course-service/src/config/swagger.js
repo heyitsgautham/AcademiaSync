@@ -227,7 +227,7 @@ const options = {
             },
         ],
     },
-    apis: ['./src/routes/*.js'], // Path to route files with JSDoc comments
+    apis: ['./src/routes/**/*.js'], // Path to route files with JSDoc comments
 };
 
 const swaggerSpec = swaggerJsdoc(options);

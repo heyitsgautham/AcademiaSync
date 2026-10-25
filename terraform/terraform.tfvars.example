@@ -24,13 +24,18 @@ course_service_cpu     = 256
 course_service_memory  = 512
 
 # Application Environment Variables
-# IMPORTANT: DO NOT commit actual values - use CI/CD secrets or AWS Secrets Manager
+# IMPORTANT: DO NOT commit actual values. Terraform stores the secrets below as SSM SecureString
+# parameters, and the task definitions reference them by ARN.
 nextauth_secret      = "REPLACE_WITH_SECRET"
 google_client_id     = "REPLACE_WITH_GOOGLE_CLIENT_ID"
 google_client_secret = "REPLACE_WITH_GOOGLE_CLIENT_SECRET"
 jwt_secret           = "REPLACE_WITH_JWT_SECRET"
 jwt_refresh_secret   = "REPLACE_WITH_JWT_REFRESH_SECRET"
 database_url         = "postgresql://user:password@host:5432/database"
+analytics_api_key    = "REPLACE_WITH_ANALYTICS_API_KEY"
+
+# Google accounts that become Admin when they sign in
+admin_emails = ["you@example.com"]
 
 # CloudWatch Alarm Thresholds
 cpu_alarm_threshold    = 80

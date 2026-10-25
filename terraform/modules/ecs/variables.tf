@@ -111,3 +111,15 @@ variable "database_url" {
   type        = string
   sensitive   = true
 }
+
+variable "analytics_api_key" {
+  description = "Key that unlocks GET /admin/analytics, shared by the frontend and user-service"
+  type        = string
+  sensitive   = true
+}
+
+variable "admin_emails" {
+  description = "Google accounts that user-service makes Admin when they sign in"
+  type        = list(string)
+  default     = []
+}

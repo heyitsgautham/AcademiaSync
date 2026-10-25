@@ -20,6 +20,12 @@ mock_data "aws_region" {
   }
 }
 
+mock_data "aws_iam_policy_document" {
+  defaults = {
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+  }
+}
+
 mock_resource "aws_iam_role" {
   defaults = {
     arn = "arn:aws:iam::123456789012:role/mock-role"

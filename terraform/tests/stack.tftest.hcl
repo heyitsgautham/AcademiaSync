@@ -13,6 +13,7 @@ variables {
   jwt_secret           = "test-jwt-secret"
   jwt_refresh_secret   = "test-jwt-refresh-secret"
   database_url         = "postgresql://app:pw@db.example.com:5432/academiasync"
+  analytics_api_key    = "test-analytics-key"
 }
 
 run "creates_the_stack" {

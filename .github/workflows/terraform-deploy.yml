@@ -17,7 +17,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  TF_VERSION: 1.5.7
+  TF_VERSION: 1.9.8
   WORKING_DIR: ./terraform
 
 jobs:
@@ -112,6 +112,8 @@ jobs:
           jwt_secret           = "${{ secrets.JWT_SECRET }}"
           jwt_refresh_secret   = "${{ secrets.JWT_REFRESH_SECRET }}"
           database_url         = "${{ secrets.DATABASE_URL }}"
+          analytics_api_key    = "${{ secrets.ANALYTICS_API_KEY }}"
+          admin_emails         = ${{ vars.ADMIN_EMAILS_JSON || '[]' }}
           
           cpu_alarm_threshold    = 80
           memory_alarm_threshold = 80
@@ -226,6 +228,8 @@ jobs:
           jwt_secret           = "${{ secrets.JWT_SECRET }}"
           jwt_refresh_secret   = "${{ secrets.JWT_REFRESH_SECRET }}"
           database_url         = "${{ secrets.DATABASE_URL }}"
+          analytics_api_key    = "${{ secrets.ANALYTICS_API_KEY }}"
+          admin_emails         = ${{ vars.ADMIN_EMAILS_JSON || '[]' }}
           
           cpu_alarm_threshold    = 80
           memory_alarm_threshold = 80
@@ -334,7 +338,7 @@ jobs:
           # Import Service Discovery Namespace
           echo "🔍 Looking for Service Discovery Namespace..."
           NS_ID=$(aws servicediscovery list-namespaces --filters Name=NAME,Values=academiasync-prod.local --query 'Namespaces[0].Id' --output text 2>/dev/null || echo "")
-          VPC_ID=$(terraform output -raw vpc_id 2>/dev/null || echo "vpc-0a2ad78d07019ee5e")
+          VPC_ID=$(aws ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
           
           echo "Namespace ID: $NS_ID"
           echo "VPC ID: $VPC_ID"
@@ -482,12 +486,12 @@ jobs:
           course_service_memory  = 512
           
           nextauth_secret      = "placeholder"
-          nextauth_url         = "http://localhost:3000"
           google_client_id     = "placeholder"
           google_client_secret = "placeholder"
           jwt_secret           = "placeholder"
           jwt_refresh_secret   = "placeholder"
           database_url         = "postgresql://localhost/db"
+          analytics_api_key    = "placeholder"
           
           cpu_alarm_threshold    = 80
           memory_alarm_threshold = 80

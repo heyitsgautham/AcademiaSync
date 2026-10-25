@@ -25,9 +25,13 @@ resource "aws_ecs_task_definition" "frontend" {
       { name = "INTERNAL_BACKEND_URL", value = "http://user-service.${aws_service_discovery_private_dns_namespace.main.name}:5000" },
       { name = "NEXT_PUBLIC_COURSE_SERVICE_URL", value = "http://${aws_lb.main.dns_name}" },
       { name = "INTERNAL_COURSE_SERVICE_URL", value = "http://course-service.${aws_service_discovery_private_dns_namespace.main.name}:5001" },
-      { name = "NEXTAUTH_SECRET", value = var.nextauth_secret },
-      { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
-      { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret }
+      { name = "GOOGLE_CLIENT_ID", value = var.google_client_id }
+    ]
+
+    secrets = [
+      { name = "NEXTAUTH_SECRET", valueFrom = local.secret_arns["nextauth-secret"] },
+      { name = "GOOGLE_CLIENT_SECRET", valueFrom = local.secret_arns["google-client-secret"] },
+      { name = "ANALYTICS_API_KEY", valueFrom = local.secret_arns["analytics-api-key"] }
     ]
 
     logConfiguration = {
@@ -68,11 +72,15 @@ resource "aws_ecs_task_definition" "user_service" {
       { name = "PORT", value = "5000" },
       { name = "NODE_ENV", value = "production" },
       { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" },
-      { name = "DATABASE_URL", value = var.database_url },
-      { name = "JWT_SECRET", value = var.jwt_secret },
-      { name = "JWT_REFRESH_SECRET", value = var.jwt_refresh_secret },
       { name = "GOOGLE_CLIENT_ID", value = var.google_client_id },
-      { name = "GOOGLE_CLIENT_SECRET", value = var.google_client_secret }
+      { name = "ADMIN_EMAILS", value = join(",", var.admin_emails) }
+    ]
+
+    secrets = [
+      { name = "DATABASE_URL", valueFrom = local.secret_arns["database-url"] },
+      { name = "JWT_SECRET", valueFrom = local.secret_arns["jwt-secret"] },
+      { name = "JWT_REFRESH_SECRET", valueFrom = local.secret_arns["jwt-refresh-secret"] },
+      { name = "ANALYTICS_API_KEY", valueFrom = local.secret_arns["analytics-api-key"] }
     ]
 
     logConfiguration = {
@@ -112,10 +120,12 @@ resource "aws_ecs_task_definition" "course_service" {
     environment = [
       { name = "PORT", value = "5001" },
       { name = "NODE_ENV", value = "production" },
-      { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" },
-      { name = "DATABASE_URL", value = var.database_url },
-      { name = "JWT_SECRET", value = var.jwt_secret },
-      { name = "JWT_REFRESH_SECRET", value = var.jwt_refresh_secret }
+      { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" }
+    ]
+
+    secrets = [
+      { name = "DATABASE_URL", valueFrom = local.secret_arns["database-url"] },
+      { name = "JWT_SECRET", valueFrom = local.secret_arns["jwt-secret"] }
     ]
 
     logConfiguration = {

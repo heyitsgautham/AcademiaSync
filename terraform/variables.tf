@@ -123,6 +123,18 @@ variable "database_url" {
   sensitive   = true
 }
 
+variable "analytics_api_key" {
+  description = "Key that unlocks GET /admin/analytics, shared by the frontend and user-service"
+  type        = string
+  sensitive   = true
+}
+
+variable "admin_emails" {
+  description = "Google accounts that become Admin when they sign in"
+  type        = list(string)
+  default     = []
+}
+
 # CloudWatch Alarm Thresholds
 variable "cpu_alarm_threshold" {
   description = "CPU utilization threshold for alarms (%)"

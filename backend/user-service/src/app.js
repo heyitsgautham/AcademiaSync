@@ -13,6 +13,13 @@ const { notFoundHandler, errorHandler } = require('./middleware/errors');
 const createApp = (pool) => {
     const app = express();
 
+    // Behind a load balancer or the Next.js proxy, TRUST_PROXY tells Express how many hops to trust
+    // so req.ip, and with it the rate limiter, sees the client address instead of the proxy's.
+    if (process.env.TRUST_PROXY) {
+        const hops = Number(process.env.TRUST_PROXY);
+        app.set('trust proxy', Number.isInteger(hops) ? hops : process.env.TRUST_PROXY);
+    }
+
     // Support multiple frontend origins for different environments
     const allowedOrigins = [
         'http://localhost:3000',

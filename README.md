@@ -176,7 +176,7 @@ createdb academiasync_test
 
 cd backend/user-service
 npm ci
-npm test                  # 73 tests
+npm test                  # 85 tests
 npm run test:coverage     # fails under 75% line coverage
 npm run lint
 npm run format:check
@@ -223,6 +223,9 @@ Each service also has its own `.env.example` for running it alone.
 | `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | frontend | NextAuth base URL and session encryption key |
 | `NEXTAUTH_DEBUG` | frontend | `true` turns on NextAuth debug logs and `/debug-auth` in production builds |
 | `ADMIN_EMAILS` | user-service | Comma-separated Google accounts that become Admin when they sign in |
+| `LOGIN_RATE_LIMIT_MAX`, `LOGIN_RATE_LIMIT_WINDOW_MS` | user-service | Failed sign-ins allowed per IP per window before 429, default 10 per 15 minutes |
+| `REFRESH_RATE_LIMIT_MAX`, `REFRESH_RATE_LIMIT_WINDOW_MS` | user-service | Failed token refreshes allowed per IP per window, default 30 per 15 minutes |
+| `TRUST_PROXY` | user-service | Proxy hops to trust when reading the client IP |
 | `ANALYTICS_API_KEY` | user-service, frontend | Extra key required by `GET /admin/analytics` |
 | `FRONTEND_URL`, `NEXTAUTH_URL` | both services | Allowed CORS origins |
 | `API_BASE_URL`, `USER_SERVICE_URL`, `COURSE_SERVICE_URL` | both services | Base URLs in hypermedia links and Swagger |
@@ -239,8 +242,8 @@ Ids in paths must be positive integers, and request bodies are validated with zo
 
 | Method | Path | Role |
 |---|---|---|
-| POST | `/auth/google` | Public, exchanges a Google ID token for JWTs |
-| POST | `/auth/refresh` | Refresh cookie |
+| POST | `/auth/google` | Public, exchanges a Google ID token for JWTs, 429 after repeated failures |
+| POST | `/auth/refresh` | Refresh cookie, 429 after repeated failures |
 | POST | `/auth/logout` | Any |
 | GET, PUT | `/api/users/profile` | Any signed-in user |
 | GET | `/student/dashboard`, `/teacher/dashboard` | Student, Teacher |

@@ -1,5 +1,6 @@
 const express = require('express');
 const { validateBody } = require('../middleware/validate');
+const { createAuthLimiters } = require('../middleware/rate-limit');
 const { googleSignInBody } = require('../schemas');
 const { isBootstrapAdmin } = require('../config/admins');
 const { OAuth2Client } = require('google-auth-library');
@@ -12,6 +13,7 @@ const {
 
 module.exports = (pool) => {
     const router = express.Router();
+    const limiters = createAuthLimiters();
 
     // Initialize Google OAuth client
     const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -66,7 +68,7 @@ module.exports = (pool) => {
      *             schema:
      *               $ref: '#/components/schemas/Error'
      */
-    router.post('/google', validateBody(googleSignInBody), async (req, res) => {
+    router.post('/google', limiters.login, validateBody(googleSignInBody), async (req, res) => {
         try {
             const { idToken } = req.body;
 
@@ -216,7 +218,7 @@ module.exports = (pool) => {
      *             schema:
      *               $ref: '#/components/schemas/Error'
      */
-    router.post('/refresh', async (req, res) => {
+    router.post('/refresh', limiters.refresh, async (req, res) => {
         try {
             const refreshToken = req.cookies.refreshToken;
 

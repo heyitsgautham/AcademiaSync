@@ -1,7 +1,7 @@
 # AcademiaSync AWS Infrastructure
 # This configuration deploys the complete application stack to AWS
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.5"
 
   required_providers {
     aws = {

@@ -3,11 +3,6 @@ aws_region  = "us-east-1"
 project_name = "academiasync"
 environment  = "prod"
 
-# VPC Configuration
-vpc_cidr            = "10.0.0.0/16"
-availability_zones  = ["us-east-1a", "us-east-1b"]
-public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
-
 # ECR Repositories
 ecr_repositories = ["frontend", "user-service", "course-service"]
 
@@ -31,7 +26,6 @@ course_service_memory  = 512
 # Application Environment Variables
 # IMPORTANT: DO NOT commit actual values - use CI/CD secrets or AWS Secrets Manager
 nextauth_secret      = "REPLACE_WITH_SECRET"
-nextauth_url         = "http://your-frontend-url.amazonaws.com"
 google_client_id     = "REPLACE_WITH_GOOGLE_CLIENT_ID"
 google_client_secret = "REPLACE_WITH_GOOGLE_CLIENT_SECRET"
 jwt_secret           = "REPLACE_WITH_JWT_SECRET"

@@ -42,6 +42,29 @@ jobs:
       - name: Validate
         run: terraform validate -no-color
 
+  lint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.53.0
+
+      - name: Install TFLint plugins
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Lint
+        run: tflint --recursive --format compact
+
   security-scan:
     name: Security scan
     runs-on: ubuntu-latest

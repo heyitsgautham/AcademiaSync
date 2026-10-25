@@ -45,7 +45,7 @@ From the repo root, `npm test`, `npm run test:coverage`, `npm run lint`, `npm ru
 | `backend/user-service`, `backend/course-service` | `npm run lint`, `npm run format:check`, `npm run test:coverage` |
 | `frontend` | `npm run lint`, `npm run typecheck`, `npm run test:coverage`, `npm run build` |
 | `backend/database` | `psql -d scratch -f init.sql`, then `seed-demo-data.sql` and `check-seed.sql` with `-v ON_ERROR_STOP=1` |
-| `terraform` | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate` |
+| `terraform` | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `tflint --init && tflint --recursive` |
 
 `npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json`.
 The backend coverage thresholds live in each `jest.config.js`, and a run below them fails.

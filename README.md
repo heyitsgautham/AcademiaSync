@@ -322,6 +322,8 @@ The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy o
 
 Dependabot proposes npm updates weekly and Docker, Terraform and Actions updates monthly.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
+
 ## License
 
 The repository has no license file yet, so default copyright applies until one is added.

@@ -13,8 +13,8 @@ variables {
     user_service   = "academiasync-prod-user-service"
     course_service = "academiasync-prod-course-service"
   }
-  sns_topic_arn    = "arn:aws:sns:us-east-1:123456789012:alarms"
-  alb_arn_suffix   = "app/academiasync-prod-alb/0123456789abcdef"
+  sns_topic_arn  = "arn:aws:sns:us-east-1:123456789012:alarms"
+  alb_arn_suffix = "app/academiasync-prod-alb/0123456789abcdef"
   target_group_arn_suffixes = {
     frontend       = "targetgroup/frontend/1111"
     user_service   = "targetgroup/user/2222"

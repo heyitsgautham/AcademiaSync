@@ -19,9 +19,9 @@ run "accepts_valid_input" {
   command = plan
 
   variables {
-    environment    = "staging"
-    frontend_cpu   = 512
-    admin_emails   = ["owner@example.com"]
+    environment         = "staging"
+    frontend_cpu        = 512
+    admin_emails        = ["owner@example.com"]
     user_service_memory = 1024
   }
 }

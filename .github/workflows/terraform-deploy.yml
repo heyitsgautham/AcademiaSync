@@ -485,11 +485,11 @@ jobs:
           course_service_cpu     = 256
           course_service_memory  = 512
           
-          nextauth_secret      = "placeholder"
+          nextauth_secret      = "placeholder-for-destroy-0123456789abcdef"
           google_client_id     = "placeholder"
           google_client_secret = "placeholder"
-          jwt_secret           = "placeholder"
-          jwt_refresh_secret   = "placeholder"
+          jwt_secret           = "placeholder-for-destroy-0123456789abcdef"
+          jwt_refresh_secret   = "placeholder-for-destroy-0123456789abcdef"
           database_url         = "postgresql://localhost/db"
           analytics_api_key    = "placeholder"
           

@@ -7,11 +7,11 @@ mock_provider "aws" {
 
 variables {
   alert_email          = "ops@example.com"
-  nextauth_secret      = "test-nextauth-secret"
+  nextauth_secret      = "test-nextauth-secret-0123456789abcdef"
   google_client_id     = "test-client.apps.googleusercontent.com"
   google_client_secret = "test-google-secret"
-  jwt_secret           = "test-jwt-secret"
-  jwt_refresh_secret   = "test-jwt-refresh-secret"
+  jwt_secret           = "test-jwt-secret-0123456789abcdef0123"
+  jwt_refresh_secret   = "test-jwt-refresh-secret-0123456789abc"
   database_url         = "postgresql://app:pw@db.example.com:5432/academiasync"
   analytics_api_key    = "test-analytics-key"
 }

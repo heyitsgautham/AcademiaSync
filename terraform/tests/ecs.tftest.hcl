@@ -113,6 +113,40 @@ run "execution_role_reads_only_the_app_parameters" {
     condition     = length(data.aws_iam_policy_document.read_secrets.statement[0].resources) == 6
     error_message = "The execution role may read the six app parameters and nothing else."
   }
+
+  assert {
+    condition     = data.aws_iam_policy_document.read_secrets.statement[1].actions == toset(["kms:Decrypt"]) && data.aws_iam_policy_document.read_secrets.statement[1].resources == toset([aws_kms_key.app.arn])
+    error_message = "The execution role may decrypt with the app key only."
+  }
+}
+
+run "secrets_and_logs_use_the_app_key" {
+  module {
+    source = "./modules/ecs"
+  }
+
+  assert {
+    condition     = aws_kms_key.app.enable_key_rotation
+    error_message = "The app key should rotate yearly."
+  }
+
+  assert {
+    condition     = alltrue([for p in aws_ssm_parameter.secrets : p.key_id == aws_kms_key.app.arn])
+    error_message = "Every secret should be encrypted with the app key."
+  }
+
+  assert {
+    condition = alltrue([
+      for g in [aws_cloudwatch_log_group.frontend, aws_cloudwatch_log_group.user_service, aws_cloudwatch_log_group.course_service] :
+      g.kms_key_id == aws_kms_key.app.arn
+    ])
+    error_message = "Every container log group should be encrypted with the app key."
+  }
+
+  assert {
+    condition     = toset(one(data.aws_iam_policy_document.app_key.statement[1].condition).values) == toset(["arn:aws:logs:us-east-1:123456789012:log-group:/ecs/academiasync-prod/*"])
+    error_message = "CloudWatch Logs may use the key only for this stack's log groups."
+  }
 }
 
 run "container_insights_follows_the_variable" {

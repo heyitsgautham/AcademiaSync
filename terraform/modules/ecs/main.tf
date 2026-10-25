@@ -82,6 +82,7 @@ resource "aws_service_discovery_service" "course_service" {
 resource "aws_cloudwatch_log_group" "frontend" {
   name              = "/ecs/${var.project_name}-${var.environment}/frontend"
   retention_in_days = 7 # Free tier: 7 days retention
+  kms_key_id        = aws_kms_key.app.arn
 
   lifecycle {
     ignore_changes = [name]
@@ -96,6 +97,7 @@ resource "aws_cloudwatch_log_group" "frontend" {
 resource "aws_cloudwatch_log_group" "user_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/user-service"
   retention_in_days = 7
+  kms_key_id        = aws_kms_key.app.arn
 
   lifecycle {
     ignore_changes = [name]
@@ -110,6 +112,7 @@ resource "aws_cloudwatch_log_group" "user_service" {
 resource "aws_cloudwatch_log_group" "course_service" {
   name              = "/ecs/${var.project_name}-${var.environment}/course-service"
   retention_in_days = 7
+  kms_key_id        = aws_kms_key.app.arn
 
   lifecycle {
     ignore_changes = [name]

@@ -20,6 +20,12 @@ mock_data "aws_region" {
   }
 }
 
+mock_data "aws_caller_identity" {
+  defaults = {
+    account_id = "123456789012"
+  }
+}
+
 mock_data "aws_iam_policy_document" {
   defaults = {
     json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
@@ -54,5 +60,12 @@ mock_resource "aws_sns_topic" {
 mock_resource "aws_service_discovery_service" {
   defaults = {
     arn = "arn:aws:servicediscovery:us-east-1:123456789012:service/srv-mock"
+  }
+}
+
+mock_resource "aws_kms_key" {
+  defaults = {
+    arn    = "arn:aws:kms:us-east-1:123456789012:key/0e1d2c3b-4a59-6877-8695-a4b3c2d1e0f9"
+    key_id = "0e1d2c3b-4a59-6877-8695-a4b3c2d1e0f9"
   }
 }

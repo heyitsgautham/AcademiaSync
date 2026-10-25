@@ -1,4 +1,4 @@
-# Application secrets live in SSM Parameter Store as SecureString parameters.
+# Application secrets live in SSM Parameter Store as SecureString parameters, encrypted with the stack's key.
 # Task definitions reference them by ARN, so the values never appear in a task definition,
 # the ECS console or `aws ecs describe-task-definition` output. ECS fetches them at task start
 # with the execution role, which may read these parameters and nothing else.
@@ -32,6 +32,7 @@ resource "aws_ssm_parameter" "secrets" {
   name        = "/${var.project_name}/${var.environment}/${each.key}"
   description = "AcademiaSync ${each.key}, injected into ECS tasks as an environment variable"
   type        = "SecureString"
+  key_id      = aws_kms_key.app.arn
   value       = local.secret_values[each.key]
 
   tags = {
@@ -44,6 +45,12 @@ data "aws_iam_policy_document" "read_secrets" {
     sid       = "ReadAppSecrets"
     actions   = ["ssm:GetParameters"]
     resources = values(local.secret_arns)
+  }
+
+  statement {
+    sid       = "DecryptAppSecrets"
+    actions   = ["kms:Decrypt"]
+    resources = [aws_kms_key.app.arn]
   }
 }
 

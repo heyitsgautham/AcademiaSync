@@ -83,6 +83,8 @@ module "ecs" {
   database_url         = var.database_url
   analytics_api_key    = var.analytics_api_key
   admin_emails         = var.admin_emails
+
+  container_insights = var.container_insights
 }
 
 # CloudWatch Module - Creates monitoring and alarms
@@ -94,6 +96,9 @@ module "cloudwatch" {
   ecs_cluster_name = module.ecs.cluster_name
   ecs_services     = module.ecs.service_names
   sns_topic_arn    = module.sns.topic_arn
+
+  alb_arn_suffix            = module.ecs.alb_arn_suffix
+  target_group_arn_suffixes = module.ecs.target_group_arn_suffixes
 
   # Alarm thresholds
   cpu_threshold    = var.cpu_alarm_threshold

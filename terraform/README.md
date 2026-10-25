@@ -142,9 +142,11 @@ aws logs tail /ecs/academiasync-prod/course-service --follow
 ```
 
 ### CloudWatch Alarms
-- CPU > 80% for any service triggers email alert
-- Memory > 80% for any service triggers email alert
-- Check AWS Console → CloudWatch → Alarms
+- CPU or memory above `cpu_alarm_threshold` or `memory_alarm_threshold` (80% by default) on any service
+- More than 10 load balancer 5xx responses, or 10 frontend 5xx responses, in five minutes
+- Any target failing its health check for two minutes, per service
+- Every alarm emails the SNS topic subscriber when it fires and when it clears
+- Container Insights is on by default (`container_insights = false` turns it off) and adds per-task CPU, memory, network and restart metrics
 
 ### ECS Service Status
 ```bash

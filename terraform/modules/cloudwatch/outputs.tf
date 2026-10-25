@@ -18,5 +18,9 @@ output "memory_alarm_arns" {
 
 output "alarm_names" {
   description = "Names of all CloudWatch alarms"
-  value       = sort([for alarm in aws_cloudwatch_metric_alarm.service_utilization : alarm.alarm_name])
+  value = sort(concat(
+    [for alarm in aws_cloudwatch_metric_alarm.service_utilization : alarm.alarm_name],
+    [aws_cloudwatch_metric_alarm.alb_5xx.alarm_name, aws_cloudwatch_metric_alarm.frontend_5xx.alarm_name],
+    [for alarm in aws_cloudwatch_metric_alarm.unhealthy_targets : alarm.alarm_name],
+  ))
 }

@@ -141,6 +141,12 @@ variable "admin_emails" {
   default     = []
 }
 
+variable "container_insights" {
+  description = "Turn on CloudWatch Container Insights for the ECS cluster"
+  type        = bool
+  default     = true
+}
+
 # CloudWatch Alarm Thresholds
 variable "cpu_alarm_threshold" {
   description = "CPU utilization threshold for alarms (%)"

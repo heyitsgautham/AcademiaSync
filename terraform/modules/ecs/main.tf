@@ -2,6 +2,12 @@
 resource "aws_ecs_cluster" "main" {
   name = "${var.project_name}-${var.environment}-cluster"
 
+  # Per-task CPU, memory, network and restart metrics in CloudWatch
+  setting {
+    name  = "containerInsights"
+    value = var.container_insights ? "enabled" : "disabled"
+  }
+
   tags = {
     Name = "${var.project_name}-${var.environment}-cluster"
   }

@@ -114,3 +114,33 @@ run "execution_role_reads_only_the_app_parameters" {
     error_message = "The execution role may read the six app parameters and nothing else."
   }
 }
+
+run "container_insights_follows_the_variable" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  assert {
+    condition     = one([for s in aws_ecs_cluster.main.setting : s.value if s.name == "containerInsights"]) == "enabled"
+    error_message = "Container Insights should be on by default."
+  }
+}
+
+run "container_insights_can_be_turned_off" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  variables {
+    container_insights = false
+  }
+
+  assert {
+    condition     = one([for s in aws_ecs_cluster.main.setting : s.value if s.name == "containerInsights"]) == "disabled"
+    error_message = "container_insights = false should disable Container Insights."
+  }
+}

@@ -123,3 +123,9 @@ variable "admin_emails" {
   type        = list(string)
   default     = []
 }
+
+variable "container_insights" {
+  description = "Turn on CloudWatch Container Insights for the cluster"
+  type        = bool
+  default     = true
+}

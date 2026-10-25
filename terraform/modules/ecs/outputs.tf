@@ -60,3 +60,17 @@ output "log_group_names" {
     course_service = aws_cloudwatch_log_group.course_service.name
   }
 }
+
+output "alb_arn_suffix" {
+  description = "ARN suffix of the load balancer, the LoadBalancer dimension in CloudWatch"
+  value       = aws_lb.main.arn_suffix
+}
+
+output "target_group_arn_suffixes" {
+  description = "ARN suffix of each target group, the TargetGroup dimension in CloudWatch"
+  value = {
+    frontend       = aws_lb_target_group.frontend.arn_suffix
+    user_service   = aws_lb_target_group.user_service.arn_suffix
+    course_service = aws_lb_target_group.course_service.arn_suffix
+  }
+}

@@ -63,6 +63,9 @@ resource "aws_ecs_task_definition" "user_service" {
     name  = "user-service"
     image = var.user_service_image
 
+    # The service only reads its own code and logs to stdout, so nothing in the container may change.
+    readonlyRootFilesystem = true
+
     portMappings = [{
       containerPort = 5000
       protocol      = "tcp"
@@ -111,6 +114,9 @@ resource "aws_ecs_task_definition" "course_service" {
   container_definitions = jsonencode([{
     name  = "course-service"
     image = var.course_service_image
+
+    # The service only reads its own code and logs to stdout, so nothing in the container may change.
+    readonlyRootFilesystem = true
 
     portMappings = [{
       containerPort = 5001

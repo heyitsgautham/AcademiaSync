@@ -184,3 +184,19 @@ run "staging_names_fit_the_32_character_limit" {
     error_message = "The course-service target group name should be cut to 32 characters without the trailing hyphen."
   }
 }
+
+run "api_containers_have_read_only_root_filesystems" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  assert {
+    condition = alltrue([
+      jsondecode(aws_ecs_task_definition.user_service.container_definitions)[0].readonlyRootFilesystem,
+      jsondecode(aws_ecs_task_definition.course_service.container_definitions)[0].readonlyRootFilesystem,
+    ])
+    error_message = "user-service and course-service never write to disk, so their root filesystems should be read-only."
+  }
+}

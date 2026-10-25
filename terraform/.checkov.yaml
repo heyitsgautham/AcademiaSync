@@ -1,0 +1,11 @@
+# Checkov settings for terraform/. Run from this folder: checkov --config-file .checkov.yaml
+# Accepted findings are skipped inline on the resource with a #checkov:skip comment that says why.
+directory:
+  - .
+framework:
+  - terraform
+skip-path:
+  - tests
+compact: true
+quiet: true
+download-external-modules: false

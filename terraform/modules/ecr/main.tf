@@ -1,4 +1,6 @@
 resource "aws_ecr_repository" "repos" {
+  #checkov:skip=CKV_AWS_51:CI pushes a commit tag and moves latest on every build, which immutable tags forbid
+  #checkov:skip=CKV_AWS_136:AES256 encryption at rest; switching an existing repository to KMS replaces it and deletes its images
   for_each = toset(var.repositories)
 
   name                 = "${var.project_name}-${var.environment}-${each.value}"

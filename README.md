@@ -333,7 +333,8 @@ The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy o
 | Database | Applies `init.sql` twice, loads the demo seed and runs `check-seed.sql` |
 | Secret scan | gitleaks over the pushed commits |
 
-`terraform-ci.yml` runs `terraform fmt -check`, `terraform validate`, `terraform test` against a mocked AWS provider, TFLint with the AWS ruleset and a Trivy scan that fails on high or critical findings, whenever `terraform/` changes.
+`terraform-ci.yml` runs `terraform fmt -check`, `terraform validate`, `terraform test` against a mocked AWS provider, TFLint with the AWS ruleset, Checkov, and a Trivy scan that fails on high or critical findings, whenever `terraform/` changes.
+Each finding the stack accepts is skipped on its resource with a `#checkov:skip` or `#trivy:ignore` comment that says why.
 
 `docker-build-push.yml` builds the three images and pushes them to ECR on pushes to `main` that touch their folders.
 

@@ -4,6 +4,10 @@
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "app_key" {
+  # In a key policy, "*" as the resource means this key and nothing else.
+  #checkov:skip=CKV_AWS_109:Key policy resource "*" is the key itself
+  #checkov:skip=CKV_AWS_111:Key policy resource "*" is the key itself
+  #checkov:skip=CKV_AWS_356:Key policy resource "*" is the key itself
   # The account keeps full control, which lets IAM policies such as the execution role's grant use of the key.
   statement {
     sid       = "AccountAdministers"

@@ -2,6 +2,7 @@
 
 # Task Definitions
 resource "aws_ecs_task_definition" "frontend" {
+  #checkov:skip=CKV_AWS_336:Next.js writes its cache under .next at runtime; the API containers are read-only
   family                   = "${var.project_name}-${var.environment}-frontend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -152,6 +153,7 @@ resource "aws_ecs_task_definition" "course_service" {
 
 # ECS Services
 resource "aws_ecs_service" "frontend" {
+  #checkov:skip=CKV_AWS_333:Tasks run in the default VPC public subnets without a NAT gateway and need a public IP to pull images
   name            = "${var.project_name}-${var.environment}-frontend"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.frontend.arn
@@ -183,6 +185,7 @@ resource "aws_ecs_service" "frontend" {
 }
 
 resource "aws_ecs_service" "user_service" {
+  #checkov:skip=CKV_AWS_333:Tasks run in the default VPC public subnets without a NAT gateway and need a public IP to pull images
   name            = "${var.project_name}-${var.environment}-user-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.user_service.arn
@@ -218,6 +221,7 @@ resource "aws_ecs_service" "user_service" {
 }
 
 resource "aws_ecs_service" "course_service" {
+  #checkov:skip=CKV_AWS_333:Tasks run in the default VPC public subnets without a NAT gateway and need a public IP to pull images
   name            = "${var.project_name}-${var.environment}-course-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.course_service.arn

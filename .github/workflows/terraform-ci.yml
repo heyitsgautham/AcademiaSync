@@ -84,3 +84,33 @@ jobs:
           scan-ref: terraform/modules
           severity: HIGH,CRITICAL
           exit-code: '1'
+
+  checkov:
+    name: Checkov
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install Checkov
+        run: pip install checkov==3.3.30
+
+      # Fails on any finding that is not skipped inline with a reason.
+      - name: Scan with Checkov
+        run: checkov --config-file .checkov.yaml --output cli --output sarif --output-file-path console,checkov.sarif
+
+      - name: Upload Checkov report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: checkov-sarif
+          path: terraform/checkov.sarif
+          if-no-files-found: ignore

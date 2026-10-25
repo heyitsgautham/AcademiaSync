@@ -18,6 +18,10 @@ locals {
 # This is the public entry point for the web app, so it has to face the internet.
 #trivy:ignore:AWS-0053
 resource "aws_lb" "main" {
+  #checkov:skip=CKV_AWS_150:Deletion protection stays off so terraform destroy and the destroy workflow can remove the stack
+  #checkov:skip=CKV_AWS_91:No access log bucket yet; CloudWatch alarms cover 5xx responses and unhealthy targets
+  #checkov:skip=CKV2_AWS_20:No domain or ACM certificate yet, so there is no HTTPS listener to redirect to
+  #checkov:skip=CKV2_AWS_28:WAF costs more than this deployment justifies; revisit with a domain and real traffic
   name               = local.lb_names.alb
   internal           = false
   load_balancer_type = "application"
@@ -36,6 +40,7 @@ resource "aws_lb" "main" {
 
 # Target Groups
 resource "aws_lb_target_group" "frontend" {
+  #checkov:skip=CKV_AWS_378:Containers serve HTTP inside the VPC; TLS belongs on the listener once a certificate exists
   name        = local.lb_names.frontend
   port        = 3000
   protocol    = "HTTP"
@@ -59,6 +64,7 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_lb_target_group" "user_service" {
+  #checkov:skip=CKV_AWS_378:Containers serve HTTP inside the VPC; TLS belongs on the listener once a certificate exists
   name        = local.lb_names.user_service
   port        = 5000
   protocol    = "HTTP"
@@ -82,6 +88,7 @@ resource "aws_lb_target_group" "user_service" {
 }
 
 resource "aws_lb_target_group" "course_service" {
+  #checkov:skip=CKV_AWS_378:Containers serve HTTP inside the VPC; TLS belongs on the listener once a certificate exists
   name        = local.lb_names.course_service
   port        = 5001
   protocol    = "HTTP"
@@ -109,6 +116,8 @@ resource "aws_lb_target_group" "course_service" {
 # Add an HTTPS listener with a certificate before using this for real accounts.
 #trivy:ignore:AWS-0054
 resource "aws_lb_listener" "frontend" {
+  #checkov:skip=CKV_AWS_2:No domain or ACM certificate yet; README says to add an HTTPS listener before real users sign in
+  #checkov:skip=CKV_AWS_103:Plain HTTP listener has no TLS policy until a certificate exists
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"

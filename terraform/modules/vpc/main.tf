@@ -27,6 +27,7 @@ data "aws_subnets" "public" {
 
 # Security Group for ECS Tasks
 resource "aws_security_group" "ecs_tasks" {
+  #checkov:skip=CKV2_AWS_5:Attached to the load balancer and ECS services through the module outputs, which this check cannot follow
   name        = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   description = "Security group for ECS tasks"
   vpc_id      = data.aws_vpc.main.id
@@ -38,6 +39,7 @@ resource "aws_security_group" "ecs_tasks" {
 
 # Security Group for Load Balancer
 resource "aws_security_group" "alb" {
+  #checkov:skip=CKV2_AWS_5:Attached to the load balancer and ECS services through the module outputs, which this check cannot follow
   name        = "${var.project_name}-${var.environment}-alb-sg"
   description = "Security group for Application Load Balancer"
   vpc_id      = data.aws_vpc.main.id
@@ -60,6 +62,7 @@ locals {
 # The load balancer is the public entry point and listens on plain HTTP until the stack has a certificate.
 #trivy:ignore:AWS-0107
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  #checkov:skip=CKV_AWS_260:The load balancer is the public entry point and serves HTTP until a certificate exists
   security_group_id = aws_security_group.alb.id
   description       = "HTTP from the internet"
   ip_protocol       = "tcp"

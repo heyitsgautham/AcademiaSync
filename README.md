@@ -1,749 +1,327 @@
-<div align="center">
+# AcademiaSync
 
-# 🎓 AcademiaSync
+[![CI](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/ci.yml/badge.svg)](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/ci.yml)
+[![Terraform CI](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/terraform-ci.yml/badge.svg)](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/terraform-ci.yml)
 
-### Smart Learning Management System with OAuth & Role-Based Access Control
+AcademiaSync is a learning management system for three roles.
+Students enroll in courses and submit assignments.
+Teachers run courses, set assignments and grade submissions.
+Admins manage teachers, promote users and see platform-wide numbers.
 
-[![CI Status](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/ci.yml/badge.svg)](https://github.com/heyitsgautham/AcademiaSync/actions)
-[![Docker Build](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/heyitsgautham/AcademiaSync/actions)
-[![Terraform](https://github.com/heyitsgautham/AcademiaSync/actions/workflows/terraform-deploy.yml/badge.svg)](https://github.com/heyitsgautham/AcademiaSync/actions)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20-green?logo=node.js)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
-[![AWS](https://img.shields.io/badge/AWS-ECS%20Fargate-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+People sign in with Google.
+A Next.js frontend talks to two Express services, one for users and one for courses, which share a PostgreSQL database.
+The repo also holds the Docker Compose stack for local work and Terraform for an AWS ECS deployment.
 
-**A modern, scalable learning platform built with microservices architecture, featuring Google OAuth authentication, real-time analytics, and comprehensive course management.**
+## Contents
 
-[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [🏗️ Architecture](#️-architecture) • [📖 Documentation](#-documentation)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Repository layout](#repository-layout)
+- [Run it with Docker](#run-it-with-docker)
+- [Run the services without Docker](#run-the-services-without-docker)
+- [Tests and checks](#tests-and-checks)
+- [Configuration](#configuration)
+- [API](#api)
+- [Database](#database)
+- [Deployment](#deployment)
+- [Continuous integration](#continuous-integration)
 
-</div>
+## Features
 
----
+Students get a dashboard with progress per course, a course catalogue with one-click enrollment, an assignment list they can filter by course and status, and charts of their grades over time.
 
-## 📋 Table of Contents
+Teachers create and edit courses and assignments, see every enrolled student's submission for an assignment, grade one submission or a whole batch in one transaction, and get per-course analytics.
 
-- [Quick Start](#-quick-start)
-- [Features](#-features)
-- [Architecture](#️-architecture)
-- [Tech Stack](#️-tech-stack)
-- [Project Structure](#-project-structure)
-- [API Documentation](#-api-documentation)
-- [Database Schema](#️-database-schema)
-- [Deployment](#-deployment)
-- [CI/CD Pipeline](#-cicd-pipeline)
-- [Environment Configuration](#-environment-configuration)
-- [Documentation](#-documentation)
-- [Contributing](#-contributing)
+Admins list, create, edit and delete teachers, promote students to Teacher or Admin, drill into any student, teacher or course, and see ranked analytics behind an extra API key.
 
----
+Every page is behind Google sign-in, and the Next.js middleware sends each role to its own section.
 
-## 🚀 Quick Start
+## Architecture
 
-### Prerequisites
+```
+                 Browser
+                    |
+                    v
+        +-----------------------+        Google OAuth
+        |  frontend (Next.js)   | <----> (NextAuth.js)
+        |  :3000                |
+        |  pages + /api routes  |
+        +-----------+-----------+
+                    | server-side fetch with the user's JWT
+          +---------+----------+
+          v                    v
++-------------------+  +--------------------+
+| user-service      |  | course-service     |
+| Express, :5000    |  | Express, :5001     |
+| sign-in, tokens,  |  | courses, enrollment|
+| profiles, admin   |  | assignments,grading|
++---------+---------+  +----------+---------+
+          |                       |
+          +-----------+-----------+
+                      v
+             +-----------------+
+             | PostgreSQL 16   |
+             +-----------------+
+```
 
-- **Docker Desktop** - [Download & Install](https://www.docker.com/products/docker-desktop)
-- **Google OAuth Credentials** - [Setup Guide](#step-1-google-oauth-setup)
-- **Git** - For cloning the repository
+Sign-in works like this.
 
-### Installation
+1. NextAuth completes the Google OAuth flow in the frontend.
+2. The NextAuth sign-in callback posts the Google ID token to `POST /auth/google` on user-service.
+3. user-service verifies the token with Google, creates the user on first sign-in, and returns a 15-minute access JWT and a 7-day refresh JWT.
+4. The frontend keeps the access token in the NextAuth session, and its `/api` route handlers forward it as a Bearer token to both services.
+5. course-service verifies the same JWT with the shared `JWT_SECRET`, so it never calls user-service.
 
-#### Step 1: Google OAuth Setup
+Each service is laid out the same way.
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Navigate to **APIs & Services** → **Credentials**
-4. Click **Create Credentials** → **OAuth 2.0 Client ID**
-5. Configure OAuth consent screen
-6. Set application type to **Web application**
-7. Add authorized redirect URI:
+| Path | Role |
+|---|---|
+| `src/index.js` | Creates the pool, starts the server, handles SIGTERM |
+| `src/app.js` | `createApp(pool)` wires middleware, routes and error handlers |
+| `src/config/` | Database pool and Swagger spec |
+| `src/routes/` | One router factory per area, larger areas split into folders |
+| `src/middleware/` | JWT auth, role checks, zod validation, request logging, error handling |
+| `src/schemas/` | zod schemas for every request body |
+| `src/queries/` | SQL shared between routes |
+| `tests/` | Jest and Supertest suites against a real Postgres |
+
+Both services log one JSON line per request with pino, tag each request with an `X-Request-Id`, and never return database error text to clients.
+Both expose `GET /health`, which checks the database and returns 503 when it is unreachable.
+
+## Repository layout
+
+```
+backend/
+  user-service/        Express API for sign-in, tokens, profiles and admin
+  course-service/      Express API for courses, enrollment, assignments and grading
+  database/
+    init.sql           Schema, applied by the Postgres container on first start
+    seed/              Demo data, split into ordered steps
+    seed-demo-data.sql Loads every seed step with psql
+    check-seed.sql     Data consistency checks run in CI
+frontend/              Next.js 14 App Router app, NextAuth, shadcn/ui, Vitest tests
+terraform/             AWS VPC, ECR, ECS Fargate, ALB, CloudWatch and SNS modules
+deployment/            Scripts for the earlier Google Cloud Run and Supabase deployment
+scripts/               seed-demo.sh and smoke-test.sh
+docker-compose.yml     Local stack
+```
+
+## Run it with Docker
+
+You need Docker with Compose v2 and a Google OAuth client.
+
+1. In the [Google Cloud console](https://console.cloud.google.com/apis/credentials), create an OAuth client of type "Web application" and add `http://localhost:3000/api/auth/callback/google` as an authorized redirect URI.
+
+2. Create your settings file and fill in the values marked required.
+
+   ```bash
+   git clone https://github.com/heyitsgautham/AcademiaSync.git
+   cd AcademiaSync
+   cp .env.example .env
    ```
-   http://localhost:3000/api/auth/callback/google
+
+   Put your own Google account in `ADMIN_EMAILS` so you are an admin from your first sign-in.
+   Generate each secret with `openssl rand -base64 32`.
+
+3. Start the stack.
+
+   ```bash
+   docker compose up -d --build
+   ./scripts/smoke-test.sh
    ```
-8. Copy your **Client ID** and **Client Secret**
 
-#### Step 2: Clone & Configure
+   The smoke test waits until both APIs report a connected database and the frontend serves its login page.
 
-```bash
-# Clone the repository
-git clone https://github.com/heyitsgautham/AcademiaSync.git
-cd AcademiaSync
+4. Open http://localhost:3000 and sign in with Google.
 
-# Copy environment files
-cp .env.example .env
-cp frontend/.env.example frontend/.env.local
+Swagger UI for each service is at http://localhost:5000/api-docs and http://localhost:5001/api-docs.
 
-# Edit .env and frontend/.env.local with your Google OAuth credentials
-```
+To load demo data (133 users, 75 courses, about 480 enrollments, 300 assignments and 880 submissions), run `./scripts/seed-demo.sh`.
+It empties every table first.
 
-**Required Environment Variables:**
+`docker compose down` stops the stack, and `docker compose down -v` also deletes the database volume.
+
+## Run the services without Docker
+
+You need Node.js 22 (see `.nvmrc`) and a PostgreSQL 16 server.
 
 ```bash
-# .env (root)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=academiasync
-DB_PORT=5432
-USER_SERVICE_PORT=5000
-COURSE_SERVICE_PORT=5001
-JWT_SECRET=<your-jwt-secret>
-JWT_REFRESH_SECRET=<your-jwt-refresh-secret>
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-NEXTAUTH_SECRET=<generate-with-openssl-rand-base64-32>
-NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
-NEXT_PUBLIC_COURSE_SERVICE_URL=http://localhost:5001
-INTERNAL_BACKEND_URL=http://user-service:5000
-INTERNAL_COURSE_SERVICE_URL=http://course-service:5001
+createdb academiasync
+psql -d academiasync -f backend/database/init.sql
+
+cd backend/user-service
+cp .env.example .env      # edit DB_* and the secrets
+npm ci
+npm run dev               # http://localhost:5000
+
+cd ../course-service
+cp .env.example .env      # JWT_SECRET must match user-service
+npm ci
+npm run dev               # http://localhost:5001
+
+cd ../../frontend
+cp .env.example .env.local
+npm ci
+npm run dev               # http://localhost:3000
 ```
 
-> 💡 **Generate NEXTAUTH_SECRET**: Run `openssl rand -base64 32` in terminal
+## Tests and checks
 
-#### Step 3: Launch with Docker
+The backend suites run against a real Postgres database, so they exercise the actual SQL.
+Before each test they truncate the tables, so point them at a throwaway database.
+Jest applies `backend/database/init.sql` once per run and reads the `DB_*` variables, which default to `postgres:postgres@localhost:5432/academiasync_test`.
 
 ```bash
-# Start all services
-docker-compose up -d
+createdb academiasync_test
 
-# Check service health
-docker-compose ps
+cd backend/user-service
+npm ci
+npm test                  # 73 tests
+npm run test:coverage     # fails under 75% line coverage
+npm run lint
+npm run format:check
 
-# View logs
-docker-compose logs -f
+cd ../course-service
+npm ci
+npm test                  # 125 tests
+npm run test:coverage     # fails under 80% line coverage
+npm run lint
+npm run format:check
+
+cd ../../frontend
+npm ci
+npm test                  # Vitest and Testing Library
+npm run test:coverage
+npm run lint              # ESLint, at most 130 warnings
+npm run typecheck         # tsc --noEmit
+npm run build             # also type-checks and lints
 ```
 
-#### Step 4: Access the Application
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| 🌐 Frontend | [http://localhost:3000](http://localhost:3000) | Main application |
-| 🔧 User Service | [http://localhost:5000/health](http://localhost:5000/health) | Auth & user management |
-| 🔧 Course Service | [http://localhost:5001/health](http://localhost:5001/health) | Courses & assignments |
-| 📊 API Docs | [http://localhost:5000/api-docs](http://localhost:5000/api-docs) | Swagger documentation |
-
-#### Step 5: Create Admin Account
-
-After first login with Google:
+To check the schema and the demo data against a scratch database:
 
 ```bash
-# Access the database
-docker exec -it academiasync-db psql -U postgres -d academiasync
-
-# Promote your user to admin (replace with your email)
-UPDATE users SET role = 'Admin' WHERE email = 'your-email@gmail.com';
-\q
+psql -d scratch -v ON_ERROR_STOP=1 -f backend/database/init.sql
+psql -d scratch -v ON_ERROR_STOP=1 -f backend/database/seed-demo-data.sql
+psql -d scratch -v ON_ERROR_STOP=1 -f backend/database/check-seed.sql
 ```
 
-### Stopping the Application
+## Configuration
+
+`docker compose` reads the root `.env`, and `.env.example` documents every variable it uses.
+Each service also has its own `.env.example` for running it alone.
+
+| Variable | Used by | Purpose |
+|---|---|---|
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | compose | Database credentials, passed to both services as `DB_*` |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | both services | Database connection when `DATABASE_URL` is unset |
+| `DATABASE_URL` | both services | Full connection string, takes precedence, TLS is enabled for Supabase hosts |
+| `JWT_SECRET` | both services | Signs and verifies access tokens, must be the same in both |
+| `JWT_REFRESH_SECRET` | user-service | Signs refresh tokens |
+| `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY` | user-service | Token lifetimes, default `15m` and `7d` |
+| `GOOGLE_CLIENT_ID` | user-service, frontend | Audience for Google ID token checks |
+| `GOOGLE_CLIENT_SECRET` | frontend | OAuth client secret for NextAuth |
+| `NEXTAUTH_URL`, `NEXTAUTH_SECRET` | frontend | NextAuth base URL and session encryption key |
+| `NEXTAUTH_DEBUG` | frontend | `true` turns on NextAuth debug logs and `/debug-auth` in production builds |
+| `ADMIN_EMAILS` | user-service | Comma-separated Google accounts that become Admin when they sign in |
+| `ANALYTICS_API_KEY` | user-service, frontend | Extra key required by `GET /admin/analytics` |
+| `FRONTEND_URL`, `NEXTAUTH_URL` | both services | Allowed CORS origins |
+| `API_BASE_URL`, `USER_SERVICE_URL`, `COURSE_SERVICE_URL` | both services | Base URLs in hypermedia links and Swagger |
+| `INTERNAL_BACKEND_URL`, `INTERNAL_COURSE_SERVICE_URL` | frontend | Service URLs for server-side requests |
+| `NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_COURSE_SERVICE_URL` | frontend | Service URLs for browser requests, baked in at build time |
+| `PORT`, `NODE_ENV`, `LOG_LEVEL` | both services | Listen port, environment and pino log level |
+
+## API
+
+Every route except sign-in, refresh, logout, `/` and `/health` needs `Authorization: Bearer <access token>` or the `accessToken` cookie.
+Ids in paths must be positive integers, and request bodies are validated with zod, so bad input gets a 400 with a message.
+
+### user-service (port 5000)
+
+| Method | Path | Role |
+|---|---|---|
+| POST | `/auth/google` | Public, exchanges a Google ID token for JWTs |
+| POST | `/auth/refresh` | Refresh cookie |
+| POST | `/auth/logout` | Any |
+| GET, PUT | `/api/users/profile` | Any signed-in user |
+| GET | `/student/dashboard`, `/teacher/dashboard` | Student, Teacher |
+| GET | `/admin/stats`, `/admin/dashboard-analytics` | Admin |
+| GET | `/admin/analytics?apiKey=...` | Admin plus `ANALYTICS_API_KEY` |
+| GET, POST | `/admin/teachers` | Admin |
+| PUT, DELETE | `/admin/teachers/:id` | Admin |
+| GET | `/admin/students` | Admin |
+| POST | `/admin/promote-role` | Admin |
+| GET, PUT | `/admin/profile` | Admin |
+
+### course-service (port 5001)
+
+| Method | Path | Role |
+|---|---|---|
+| GET | `/api/student/available-courses`, `/api/student/courses` | Student |
+| POST | `/api/student/enroll` | Student |
+| GET | `/api/student/assignments`, `/api/student/assignments/:assignmentId` | Student |
+| POST | `/api/student/submit-assignment` | Student |
+| GET | `/api/student/dashboard`, `/api/student/analytics` | Student |
+| GET, POST | `/api/teacher/courses` | Teacher |
+| GET, PUT, DELETE | `/api/teacher/courses/:id` | Teacher, own courses only |
+| GET, POST | `/api/teacher/courses/:courseId/assignments` | Teacher |
+| GET, PUT, DELETE | `/api/teacher/assignments/:id` | Teacher |
+| GET | `/api/teacher/assignments/:assignmentId/submissions` | Teacher, paged, filterable and sortable |
+| PUT | `/api/teacher/submissions/:submissionId` | Teacher |
+| POST | `/api/teacher/assignments/:assignmentId/submissions/bulk-grade` | Teacher |
+| GET | `/api/teacher/assignments-with-status`, `/api/teacher/recent-submissions` | Teacher |
+| GET | `/api/teacher/students-by-course`, `/api/teacher/stats` | Teacher |
+| GET | `/api/teacher/analytics`, `/api/teacher/analytics/detailed` | Teacher |
+| GET | `/admin/courses`, `/admin/recent-activity` | Admin |
+| GET | `/admin/students/:studentId/courses`, `/admin/teachers/:teacherId/courses` | Admin |
+| GET | `/admin/courses/:courseId/students/grades` | Admin |
+
+## Database
+
+`backend/database/init.sql` creates six tables, and it is safe to run more than once.
+
+| Table | Holds |
+|---|---|
+| `users` | Every account, with role `Student`, `Teacher` or `Admin` |
+| `courses` | Courses, each owned by a teacher |
+| `enrollments` | Student to course links, unique per pair |
+| `assignments` | Assignments with an optional due date |
+| `submissions` | One submission per student and assignment, with grade and feedback |
+| `refresh_tokens` | Issued refresh tokens, deleted on logout or expiry |
+
+Deleting a user or course cascades to everything that depends on it.
+
+## Deployment
+
+The `terraform/` folder describes an AWS stack with a VPC, ECR repositories, an ECS Fargate cluster for the three containers behind an Application Load Balancer, CloudWatch alarms and an SNS topic for alerts.
+See [terraform/README.md](terraform/README.md) for the variables and steps.
+
+State is local by default.
+To share it, copy `terraform/backend.tf.example` to `terraform/backend.tf`, create the S3 bucket and DynamoDB lock table it names, and run `terraform init -migrate-state`.
+
+The load balancer listens on plain HTTP because the stack has no domain or certificate yet.
+Add an HTTPS listener with an ACM certificate before real users sign in.
+
+The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy only when started by hand from the Actions tab.
+
+`deployment/` holds the scripts for the earlier Google Cloud Run deployment with a Supabase database.
+
+## Continuous integration
 
-```bash
-# Stop all services
-docker-compose down
+`ci.yml` runs on every push and pull request to `main`.
 
-# Stop and remove volumes (reset database)
-docker-compose down -v
-```
+| Job | What it does |
+|---|---|
+| Backend (each service) | `npm ci`, ESLint, Prettier check, Jest with the coverage threshold against Postgres 16, `npm audit --audit-level=high` on production dependencies |
+| Frontend | `npm ci`, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, and a report-only audit |
+| Database | Applies `init.sql` twice, loads the demo seed and runs `check-seed.sql` |
+| Secret scan | gitleaks over the pushed commits |
 
----
+`terraform-ci.yml` runs `terraform fmt -check`, `terraform validate` and a Trivy scan that fails on high or critical findings, whenever `terraform/` changes.
 
-## ✨ Features
+`docker-build-push.yml` builds the three images and pushes them to ECR on pushes to `main` that touch their folders.
 
-### 🔐 Authentication & Authorization
-- **Google OAuth 2.0** integration via NextAuth.js
-- **JWT-based authentication** with access & refresh tokens
-- **Role-based access control** (Student, Teacher, Admin)
-- Secure **httpOnly cookies** for token storage
-- Automatic **session management** and token refresh
+Dependabot proposes npm updates weekly and Docker, Terraform and Actions updates monthly.
 
-### 👨‍🎓 Student Portal
-- **Dashboard** with personalized stats and progress tracking
-- **Course enrollment** and management
-- **Assignment submissions** with deadline tracking
-- **Analytics dashboard** with performance charts
-- **Grade tracking** across all courses
+## License
 
-### 👨‍🏫 Teacher Portal
-- **Course creation** and management
-- **Assignment creation** with due dates
-- **Student management** by course
-- **Submission grading** with feedback
-- **Analytics** for student performance tracking
-- **Recent activity** monitoring
-
-### 👨‍💼 Admin Portal
-- **User management** (Students & Teachers)
-- **Role promotion/demotion**
-- **Platform-wide analytics**
-- **Course oversight**
-- **System health monitoring**
-
-### 📊 Analytics & Reporting
-- **Interactive charts** using Recharts
-- **Student performance** metrics
-- **Course completion** rates
-- **Enrollment statistics**
-- **Age demographics** visualization
-
-### 🎨 User Experience
-- **Dark/Light theme** toggle with persistence
-- **Responsive design** for all devices
-- **Toast notifications** for user feedback
-- **Confirmation modals** for critical actions
-- **Loading states** and skeleton screens
-
----
-
-## 🏗️ Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           FRONTEND                                   │
-│                    Next.js 14 (App Router)                          │
-│            React + TypeScript + TailwindCSS + shadcn/ui             │
-│                        Port: 3000                                    │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                    ▼                       ▼
-┌─────────────────────────────┐   ┌─────────────────────────────┐
-│       USER SERVICE          │   │      COURSE SERVICE         │
-│   Express.js + Node.js      │   │   Express.js + Node.js      │
-│        Port: 5000           │   │        Port: 5001           │
-│                             │   │                             │
-│  • Authentication (OAuth)   │   │  • Course Management        │
-│  • User Management          │   │  • Assignment Management    │
-│  • Admin Operations         │   │  • Enrollment Management    │
-│  • JWT Token Management     │   │  • Submission Management    │
-│  • Profile Management       │   │  • Student/Teacher Routes   │
-└──────────────┬──────────────┘   └──────────────┬──────────────┘
-               │                                  │
-               └──────────────┬───────────────────┘
-                              │
-                              ▼
-               ┌─────────────────────────────┐
-               │        PostgreSQL 16        │
-               │         Port: 5432          │
-               │                             │
-               │  • Users & Roles            │
-               │  • Courses & Enrollments    │
-               │  • Assignments              │
-               │  • Submissions              │
-               │  • Refresh Tokens           │
-               └─────────────────────────────┘
-```
-
-### Authentication Flow
-
-```
-┌──────────┐     ┌──────────┐     ┌─────────────┐     ┌──────────────┐
-│  User    │────▶│ Frontend │────▶│  NextAuth   │────▶│    Google    │
-│          │     │  :3000   │     │  OAuth      │     │   OAuth 2.0  │
-└──────────┘     └──────────┘     └─────────────┘     └──────────────┘
-                                         │
-                                         ▼
-                              ┌─────────────────┐
-                              │  User Service   │
-                              │   POST /auth/   │
-                              │  google-signin  │
-                              └────────┬────────┘
-                                       │
-                                       ▼
-                              ┌─────────────────┐
-                              │   JWT Tokens    │
-                              │  (Access +      │
-                              │   Refresh)      │
-                              └─────────────────┘
-```
-
-### Docker Network
-
-All services communicate via the `academiasync-network` bridge network:
-
-| Container | Internal Hostname | External Port |
-|-----------|------------------|---------------|
-| Frontend | `frontend` | 3000 |
-| User Service | `user-service` | 5000 |
-| Course Service | `course-service` | 5001 |
-| PostgreSQL | `db` | 5432 |
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| ![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js) | React Framework (App Router) | 14.x |
-| ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript) | Type Safety | 5.0.x |
-| ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react) | UI Library | 18.x |
-| ![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css) | Styling | 3.4.x |
-| ![shadcn/ui](https://img.shields.io/badge/shadcn/ui-Latest-black) | UI Components | Latest |
-| ![React Query](https://img.shields.io/badge/React_Query-5.0-FF4154?logo=react-query) | Server State Management | 5.64.x |
-| ![NextAuth.js](https://img.shields.io/badge/NextAuth.js-4.0-black) | Authentication | 4.x |
-| ![Recharts](https://img.shields.io/badge/Recharts-2.0-8884d8) | Data Visualization | 2.x |
-| ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-7.0-EC5990?logo=react-hook-form) | Form Management | 7.x |
-| ![Yup](https://img.shields.io/badge/Yup-1.0-orange) | Schema Validation | 1.x |
-| ![next-themes](https://img.shields.io/badge/next--themes-0.3-black) | Theme Management | 0.3.x |
-
-### Backend
-
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js) | Runtime Environment | 20.x |
-| ![Express.js](https://img.shields.io/badge/Express-4.0-black?logo=express) | Web Framework | 4.x |
-| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql) | Database | 16.x |
-| ![JWT](https://img.shields.io/badge/JWT-9.0-black?logo=json-web-tokens) | Token Authentication | 9.x |
-| ![Google Auth](https://img.shields.io/badge/Google_Auth-9.0-4285F4?logo=google) | OAuth 2.0 | 9.x |
-| ![Morgan](https://img.shields.io/badge/Morgan-1.10-black) | HTTP Logging | 1.10.x |
-| ![Swagger](https://img.shields.io/badge/Swagger-5.0-85EA2D?logo=swagger) | API Documentation | 5.x |
-
-### DevOps & Infrastructure
-
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| ![Docker](https://img.shields.io/badge/Docker-24-2496ED?logo=docker) | Containerization | 24.x |
-| ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2.0-2496ED?logo=docker) | Orchestration | 2.x |
-| ![Terraform](https://img.shields.io/badge/Terraform-1.5-7B42BC?logo=terraform) | Infrastructure as Code | 1.5.x |
-| ![AWS ECS](https://img.shields.io/badge/AWS_ECS-Fargate-FF9900?logo=amazon-aws) | Container Orchestration | Latest |
-| ![AWS ECR](https://img.shields.io/badge/AWS_ECR-Registry-FF9900?logo=amazon-aws) | Container Registry | Latest |
-| ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions) | CI/CD Pipeline | Latest |
-| ![Jest](https://img.shields.io/badge/Jest-29-C21325?logo=jest) | Testing Framework | 29.x |
-
----
-
-## 📁 Project Structure
-
-```
-AcademiaSync/
-├── 📁 frontend/                      # Next.js Application
-│   ├── 📁 app/                       # App Router pages
-│   │   ├── layout.tsx                # Root layout with providers
-│   │   ├── page.tsx                  # Landing page
-│   │   ├── 📁 api/                   # API route handlers
-│   │   │   ├── 📁 auth/[...nextauth] # OAuth configuration
-│   │   │   ├── 📁 student/           # Student API routes
-│   │   │   ├── 📁 teacher/           # Teacher API routes
-│   │   │   └── 📁 admin/             # Admin API routes
-│   │   ├── 📁 student/               # Student dashboard pages
-│   │   ├── 📁 teacher/               # Teacher dashboard pages
-│   │   └── 📁 admin/                 # Admin dashboard pages
-│   ├── 📁 components/                # React components (60+)
-│   │   ├── 📁 ui/                    # shadcn/ui base components
-│   │   ├── student-*.tsx             # Student-specific components
-│   │   ├── teacher-*.tsx             # Teacher-specific components
-│   │   └── admin-*.tsx               # Admin-specific components
-│   ├── 📁 lib/                       # Utilities & API client
-│   ├── 📁 types/                     # TypeScript definitions
-│   ├── middleware.ts                 # Route protection
-│   └── Dockerfile                    # Multi-stage build
-│
-├── 📁 backend/
-│   ├── 📁 user-service/              # Auth & User Management
-│   │   ├── 📁 src/
-│   │   │   ├── 📁 routes/            # API endpoints
-│   │   │   │   ├── auth.js           # OAuth & JWT
-│   │   │   │   ├── admin.js          # Admin operations
-│   │   │   │   ├── dashboard.js      # Dashboard data
-│   │   │   │   └── users.js          # User CRUD
-│   │   │   ├── 📁 middleware/        # Auth & authorization
-│   │   │   └── 📁 utils/             # HATEOAS, logging
-│   │   ├── 📁 tests/                 # Jest test suites
-│   │   └── Dockerfile
-│   │
-│   ├── 📁 course-service/            # Courses & Assignments
-│   │   ├── 📁 src/
-│   │   │   ├── 📁 routes/
-│   │   │   │   ├── courses.js        # Course CRUD
-│   │   │   │   ├── assignments.js    # Assignment CRUD
-│   │   │   │   ├── student.js        # Student operations
-│   │   │   │   ├── teacher.js        # Teacher operations
-│   │   │   │   └── analytics.js      # Analytics data
-│   │   │   └── 📁 middleware/
-│   │   ├── 📁 tests/
-│   │   └── Dockerfile
-│   │
-│   └── 📁 database/
-│       ├── init.sql                  # Schema initialization
-│       └── seed-demo-data.sql        # Demo data
-│
-├── 📁 terraform/                     # AWS Infrastructure
-│   ├── main.tf                       # Root module
-│   ├── variables.tf                  # Variable definitions
-│   ├── outputs.tf                    # Output values
-│   ├── 📁 modules/
-│   │   ├── vpc/                      # VPC & networking
-│   │   ├── ecr/                      # Container registry
-│   │   ├── ecs/                      # ECS cluster & services
-│   │   ├── cloudwatch/               # Monitoring
-│   │   └── sns/                      # Notifications
-│   └── deploy.sh                     # Deployment script
-│
-├── 📁 .github/workflows/             # CI/CD Pipelines
-│   ├── ci.yml                        # Test suite
-│   ├── docker-build-push.yml         # Build & push to ECR
-│   └── terraform-deploy.yml          # Infrastructure deployment
-│
-├── 📁 deployment/                    # Deployment scripts
-│   ├── deploy.sh
-│   ├── init-db.sh
-│   └── setup-supabase.sql
-│
-├── 📁 docs/                          # Additional documentation
-│   ├── AWS_CONSOLE_GUIDE.md
-│   └── AWS_OAUTH_FIX_EXPLAINED.md
-│
-├── docker-compose.yml                # Local development
-├── .env.example                      # Environment template
-└── README.md                         # This file
-```
-
----
-
-## 📚 API Documentation
-
-### User Service (Port 5000)
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/auth/google-signin` | Google OAuth sign-in | Public |
-| `POST` | `/auth/refresh` | Refresh access token | Cookie |
-| `POST` | `/auth/logout` | Logout user | JWT |
-| `GET` | `/profile` | Get user profile | JWT |
-| `PUT` | `/profile` | Update profile | JWT |
-| `GET` | `/admin/teachers` | List all teachers | Admin |
-| `POST` | `/admin/teachers` | Create teacher | Admin |
-| `PUT` | `/admin/teachers/:id` | Update teacher | Admin |
-| `DELETE` | `/admin/teachers/:id` | Delete teacher | Admin |
-| `GET` | `/admin/students` | List all students | Admin |
-| `PUT` | `/admin/promote-role` | Change user role | Admin |
-| `GET` | `/dashboard/stats` | Dashboard statistics | JWT |
-| `GET` | `/health` | Service health check | Public |
-
-### Course Service (Port 5001)
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| **Courses** |
-| `GET` | `/courses` | List all courses | JWT |
-| `POST` | `/courses` | Create course | Teacher |
-| `PUT` | `/courses/:id` | Update course | Teacher |
-| `DELETE` | `/courses/:id` | Delete course | Teacher |
-| **Assignments** |
-| `GET` | `/assignments/course/:id` | Get course assignments | JWT |
-| `POST` | `/assignments` | Create assignment | Teacher |
-| `PUT` | `/assignments/:id` | Update assignment | Teacher |
-| `DELETE` | `/assignments/:id` | Delete assignment | Teacher |
-| **Student Routes** |
-| `GET` | `/student/courses` | Get enrolled courses | Student |
-| `POST` | `/student/enroll` | Enroll in course | Student |
-| `GET` | `/student/assignments` | Get assignments | Student |
-| `POST` | `/student/submit` | Submit assignment | Student |
-| **Teacher Routes** |
-| `GET` | `/teacher/courses` | Get teacher's courses | Teacher |
-| `GET` | `/teacher/students/:courseId` | Get course students | Teacher |
-| `GET` | `/teacher/submissions` | Get submissions | Teacher |
-| `PUT` | `/teacher/grade/:submissionId` | Grade submission | Teacher |
-| **Analytics** |
-| `GET` | `/analytics/student` | Student analytics | Student |
-| `GET` | `/analytics/teacher` | Teacher analytics | Teacher |
-| `GET` | `/analytics/admin` | Platform analytics | Admin |
-| `GET` | `/health` | Service health check | Public |
-
-### Swagger Documentation
-
-Access interactive API documentation at: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
-
----
-
-## 🗄️ Database Schema
-
-### Entity Relationship Diagram
-
-```
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│     users       │       │    courses      │       │   assignments   │
-├─────────────────┤       ├─────────────────┤       ├─────────────────┤
-│ id (PK)         │       │ id (PK)         │       │ id (PK)         │
-│ email           │◄──────│ teacher_id (FK) │       │ course_id (FK)  │──┐
-│ google_id       │       │ title           │◄──────│ title           │  │
-│ password_hash   │       │ description     │       │ description     │  │
-│ role            │       │ weeks           │       │ due_date        │  │
-│ first_name      │       │ created_at      │       │ created_at      │  │
-│ last_name       │       │ updated_at      │       │ updated_at      │  │
-│ age             │       └─────────────────┘       └─────────────────┘  │
-│ specialization  │                                          │           │
-│ profile_picture │       ┌─────────────────┐       ┌───────┴───────────┴──┐
-│ created_at      │       │   enrollments   │       │    submissions       │
-│ updated_at      │       ├─────────────────┤       ├──────────────────────┤
-└────────┬────────┘       │ id (PK)         │       │ id (PK)              │
-         │                │ student_id (FK) │──┐    │ assignment_id (FK)   │
-         │                │ course_id (FK)  │  │    │ student_id (FK)      │──┐
-         │                │ enrolled_at     │  │    │ submission_text      │  │
-         │                └─────────────────┘  │    │ submitted_at         │  │
-         │                        ▲            │    │ grade                │  │
-         │                        │            │    │ feedback             │  │
-         └────────────────────────┴────────────┴────┴──────────────────────┘
-                                                    │
-┌─────────────────┐                                 │
-│ refresh_tokens  │                                 │
-├─────────────────┤                                 │
-│ id (PK)         │                                 │
-│ user_id (FK)    │◄────────────────────────────────┘
-│ token           │
-│ expires_at      │
-│ created_at      │
-└─────────────────┘
-```
-
-### Tables Overview
-
-| Table | Description | Key Fields |
-|-------|-------------|------------|
-| `users` | All platform users | role: Student/Teacher/Admin |
-| `courses` | Course catalog | teacher_id links to creator |
-| `enrollments` | Student-course mapping | Unique constraint on student+course |
-| `assignments` | Course assignments | course_id links to parent course |
-| `submissions` | Student submissions | grade & feedback fields |
-| `refresh_tokens` | JWT refresh tokens | Auto-expires |
-
----
-
-## 🚀 Deployment
-
-### Local Development (Docker Compose)
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### AWS Production Deployment
-
-The application is deployable to **AWS ECS Fargate** using Terraform:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        AWS Cloud                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                         VPC                               │   │
-│  │  ┌─────────────────┐    ┌─────────────────┐             │   │
-│  │  │  Public Subnet  │    │  Public Subnet  │             │   │
-│  │  │     (AZ-1)      │    │     (AZ-2)      │             │   │
-│  │  └────────┬────────┘    └────────┬────────┘             │   │
-│  │           │                      │                        │   │
-│  │           └──────────┬───────────┘                        │   │
-│  │                      │                                    │   │
-│  │              ┌───────▼───────┐                           │   │
-│  │              │      ALB      │                           │   │
-│  │              │ (Load Balancer)│                          │   │
-│  │              └───────┬───────┘                           │   │
-│  │                      │                                    │   │
-│  │    ┌─────────────────┼─────────────────┐                 │   │
-│  │    │                 │                 │                 │   │
-│  │    ▼                 ▼                 ▼                 │   │
-│  │ ┌──────┐       ┌──────────┐     ┌───────────┐          │   │
-│  │ │ ECS  │       │   ECS    │     │    ECS    │          │   │
-│  │ │Front │       │  User    │     │  Course   │          │   │
-│  │ │ end  │       │ Service  │     │  Service  │          │   │
-│  │ └──────┘       └──────────┘     └───────────┘          │   │
-│  │                                                          │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │   ECR    │  │CloudWatch│  │   SNS    │  │ Secrets  │       │
-│  │ Registry │  │  Logs    │  │  Alerts  │  │ Manager  │       │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Deployment Commands
-
-```bash
-cd terraform
-
-# Initialize Terraform
-terraform init
-
-# Preview changes
-terraform plan
-
-# Deploy infrastructure
-terraform apply
-
-# Destroy infrastructure
-terraform destroy
-```
-
-See [terraform/README.md](terraform/README.md) for detailed deployment instructions.
-
----
-
-## 🔄 CI/CD Pipeline
-
-### GitHub Actions Workflows
-
-#### 1. CI Pipeline (`ci.yml`)
-- **Triggers**: Push to main/develop, Pull requests
-- **Jobs**: 
-  - Test User Service
-  - Test Course Service
-  - Build Frontend
-
-#### 2. Docker Build & Push (`docker-build-push.yml`)
-- **Triggers**: Changes to `app-deployment/**`
-- **Jobs**:
-  - Detect changed services
-  - Build Docker images
-  - Run security scans (Trivy)
-  - Push to AWS ECR
-
-#### 3. Terraform Deploy (`terraform-deploy.yml`)
-- **Triggers**: Changes to `terraform/**`
-- **Jobs**:
-  - Validate Terraform
-  - Plan infrastructure changes
-  - Apply changes (manual approval)
-
-### Pipeline Flow
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│    Push to   │────▶│   Run CI     │────▶│   Build &    │
-│    main      │     │   Tests      │     │   Push ECR   │
-└──────────────┘     └──────────────┘     └──────────────┘
-                                                  │
-                                                  ▼
-                     ┌──────────────┐     ┌──────────────┐
-                     │   Deploy     │◀────│  Terraform   │
-                     │   to ECS     │     │    Apply     │
-                     └──────────────┘     └──────────────┘
-```
-
----
-
-## ⚙️ Environment Configuration
-
-### Required Environment Variables
-
-#### Root `.env`
-
-```bash
-# Database
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=academiasync
-DB_PORT=5432
-
-# Services
-USER_SERVICE_PORT=5000
-COURSE_SERVICE_PORT=5001
-
-# JWT
-JWT_SECRET=<your-jwt-secret>
-JWT_REFRESH_SECRET=<your-jwt-refresh-secret>
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-
-# OAuth
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-
-# NextAuth
-NEXTAUTH_SECRET=<generate-with-openssl>
-NEXTAUTH_URL=http://localhost:3000
-
-# Service URLs (external)
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
-NEXT_PUBLIC_COURSE_SERVICE_URL=http://localhost:5001
-
-# Service URLs (internal Docker network)
-INTERNAL_BACKEND_URL=http://user-service:5000
-INTERNAL_COURSE_SERVICE_URL=http://course-service:5001
-```
-
-#### Production (AWS)
-
-For production deployment, store secrets in **AWS Secrets Manager** and reference them in terraform.tfvars:
-
-```hcl
-# terraform/terraform.tfvars
-nextauth_secret      = "aws-secrets-manager-arn"
-google_client_id     = "your-client-id"
-google_client_secret = "aws-secrets-manager-arn"
-jwt_secret           = "aws-secrets-manager-arn"
-database_url         = "postgresql://..."
-```
-
----
-
-## 📖 Documentation
-
-### Additional Resources
-
-| Document | Description |
-|----------|-------------|
-| [AWS Console Guide](docs/AWS_CONSOLE_GUIDE.md) | AWS setup walkthrough |
-| [AWS OAuth Fix](docs/AWS_OAUTH_FIX_EXPLAINED.md) | OAuth troubleshooting |
-| [Terraform README](terraform/README.md) | Infrastructure deployment |
-| [Copilot Instructions](.github/copilot-instructions.md) | Development conventions |
-
-### Key Architecture Decisions
-
-1. **Microservices Architecture**: Separation of user management and course management for independent scaling
-2. **JWT + OAuth**: Hybrid authentication for security and user convenience
-3. **Docker Compose for Dev**: Consistent local development environment
-4. **Terraform for Prod**: Infrastructure as Code for reproducible deployments
-5. **Next.js App Router**: Modern React patterns with server components
-6. **shadcn/ui**: Accessible, customizable UI components
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the [Copilot Instructions](.github/copilot-instructions.md) for coding conventions
-- Always use Docker for running services
-- Write tests for new features
-- Update documentation as needed
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-### 🎓 Built with ❤️ for Education
-
-**AcademiaSync** - Empowering Teachers, Inspiring Students
-
-[⬆ Back to Top](#-academiasync)
-
----
-
-Made with ☕ and 💻 | © 2025 AcademiaSync
-
-</div>
+The repository has no license file yet, so default copyright applies until one is added.

@@ -313,7 +313,8 @@ The `terraform/` folder describes an AWS stack with a VPC, ECR repositories, an 
 See [terraform/README.md](terraform/README.md) for the variables and steps.
 
 State is local by default.
-To share it, copy `terraform/backend.tf.example` to `terraform/backend.tf`, create the S3 bucket and DynamoDB lock table it names, and run `terraform init -migrate-state`.
+To share it, apply `terraform/bootstrap` once, which creates a versioned, KMS-encrypted S3 bucket that refuses plain HTTP and blocks public access, a KMS-encrypted DynamoDB lock table and the key itself.
+Then copy `terraform/backend.tf.example` to `terraform/backend.tf`, fill in the bootstrap outputs, and run `terraform init -migrate-state`.
 
 The load balancer listens on plain HTTP because the stack has no domain or certificate yet.
 Add an HTTPS listener with an ACM certificate before real users sign in.

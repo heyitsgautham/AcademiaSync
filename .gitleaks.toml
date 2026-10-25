@@ -1,0 +1,9 @@
+# gitleaks settings for CI and local scans: the default rules, minus fixture files.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Made-up values that Terraform tests pass to a mocked AWS provider"
+paths = [
+  '''^terraform/(bootstrap/)?tests/.*\.tftest\.hcl$''',
+]

@@ -4,3 +4,9 @@
 6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:47
 6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:50
 6b8a4dd83b7da1ae335b9b52b7e1d04be7ae37ad:terraform/DEPLOYMENT_SUMMARY.txt:generic-api-key:53
+
+# Placeholder values the destroy job wrote into terraform.tfvars in a0e00d1. They never signed anything;
+# the job now generates throwaway values with openssl at run time.
+a0e00d13454b89539ee2f87e8a8b85042ebb58f6:.github/workflows/terraform-deploy.yml:generic-api-key:488
+a0e00d13454b89539ee2f87e8a8b85042ebb58f6:.github/workflows/terraform-deploy.yml:generic-api-key:491
+a0e00d13454b89539ee2f87e8a8b85042ebb58f6:.github/workflows/terraform-deploy.yml:generic-api-key:492

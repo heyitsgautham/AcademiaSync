@@ -1,0 +1,19 @@
+{
+    "name": "academiasync",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Learning management system: a Next.js frontend, two Express services and PostgreSQL",
+    "repository": "github:heyitsgautham/AcademiaSync",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "setup": "npm --prefix backend/user-service ci && npm --prefix backend/course-service ci && npm --prefix frontend ci",
+        "test": "npm --prefix backend/user-service test && npm --prefix backend/course-service test && npm --prefix frontend test",
+        "test:coverage": "npm --prefix backend/user-service run test:coverage && npm --prefix backend/course-service run test:coverage && npm --prefix frontend run test:coverage",
+        "lint": "npm --prefix backend/user-service run lint && npm --prefix backend/course-service run lint && npm --prefix frontend run lint",
+        "format:check": "npm --prefix backend/user-service run format:check && npm --prefix backend/course-service run format:check",
+        "typecheck": "npm --prefix frontend run typecheck",
+        "build": "npm --prefix frontend run build"
+    }
+}

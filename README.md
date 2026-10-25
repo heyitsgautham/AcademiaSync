@@ -104,6 +104,8 @@ terraform/             AWS VPC, ECR, ECS Fargate, ALB, CloudWatch and SNS module
 deployment/            Scripts for the earlier Google Cloud Run and Supabase deployment
 scripts/               seed-demo.sh and smoke-test.sh
 docker-compose.yml     Local stack
+package.json           Root scripts that install, test, lint and type-check every package
+.prettierrc.json       Formatting rules shared by the backend services
 ```
 
 ## Run it with Docker
@@ -171,9 +173,21 @@ The backend suites run against a real Postgres database, so they exercise the ac
 Before each test they truncate the tables, so point them at a throwaway database.
 Jest applies `backend/database/init.sql` once per run and reads the `DB_*` variables, which default to `postgres:postgres@localhost:5432/academiasync_test`.
 
-```bash
-createdb academiasync_test
+The root `package.json` runs each check across all three packages.
 
+```bash
+npm run setup             # npm ci in user-service, course-service and frontend
+createdb academiasync_test
+npm test                  # every suite: 85 + 125 backend tests, then the frontend
+npm run test:coverage     # the same with each package's coverage threshold
+npm run lint
+npm run format:check      # Prettier, backend services
+npm run typecheck         # tsc --noEmit, frontend
+```
+
+To work on one package, run the same scripts inside its folder.
+
+```bash
 cd backend/user-service
 npm ci
 npm test                  # 85 tests

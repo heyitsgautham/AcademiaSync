@@ -12,10 +12,8 @@ Docker is only needed to run the full stack.
 git clone https://github.com/heyitsgautham/AcademiaSync.git
 cd AcademiaSync
 createdb academiasync_test
-
-(cd backend/user-service && npm ci)
-(cd backend/course-service && npm ci)
-(cd frontend && npm ci)
+npm run setup    # npm ci in backend/user-service, backend/course-service and frontend
+npm test         # every test suite
 ```
 
 The backend tests connect with the `DB_*` variables and default to `postgres:postgres@localhost:5432/academiasync_test`.
@@ -40,6 +38,7 @@ Add any new variable to the matching `.env.example` and to the configuration tab
 ## Check it
 
 Run the same checks CI runs, in the folder you changed.
+From the repo root, `npm test`, `npm run test:coverage`, `npm run lint`, `npm run format:check` and `npm run typecheck` run them across every package.
 
 | Folder | Commands |
 |---|---|
@@ -48,7 +47,7 @@ Run the same checks CI runs, in the folder you changed.
 | `backend/database` | `psql -d scratch -f init.sql`, then `seed-demo-data.sql` and `check-seed.sql` with `-v ON_ERROR_STOP=1` |
 | `terraform` | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate` |
 
-`npm run format` fixes formatting in the backend services.
+`npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json`.
 The backend coverage thresholds live in each `jest.config.js`, and a run below them fails.
 The frontend lint script fails above 130 warnings, and 125 already exist, mostly `any` types, so type new code fully.
 

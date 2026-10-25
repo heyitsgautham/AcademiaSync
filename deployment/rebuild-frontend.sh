@@ -7,13 +7,8 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Config
-GCP_PROJECT_ID=smart-learning-application
-GCP_REGION=asia-south1
-ARTIFACT_REGISTRY_REPO=academiasync-repo
-REGISTRY_URL="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}"
-
-FRONTEND_SERVICE_NAME=academiasync-frontend
+# shellcheck source=deployment/config.sh
+. "$(dirname "${BASH_SOURCE[0]}")/config.sh"
 
 print_step() {
     echo -e "\n${BLUE}▶ $1${NC}"
@@ -27,8 +22,8 @@ echo "🔄 Rebuilding Frontend with Production URLs"
 
 # Get current service URLs
 print_step "Fetching service URLs from Cloud Run"
-USER_SERVICE_URL=$(gcloud run services describe academiasync-user-service --region=$GCP_REGION --format='value(status.url)')
-COURSE_SERVICE_URL=$(gcloud run services describe academiasync-course-service --region=$GCP_REGION --format='value(status.url)')
+USER_SERVICE_URL=$(gcloud run services describe $USER_SERVICE_NAME --region=$GCP_REGION --format='value(status.url)')
+COURSE_SERVICE_URL=$(gcloud run services describe $COURSE_SERVICE_NAME --region=$GCP_REGION --format='value(status.url)')
 
 print_success "User service: $USER_SERVICE_URL"
 print_success "Course service: $COURSE_SERVICE_URL"

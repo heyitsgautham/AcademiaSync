@@ -7,82 +7,11 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Config
-GCP_PROJECT_ID=smart-learning-application
-GCP_REGION=asia-south1
-ARTIFACT_REGISTRY_REPO=academiasync-repo
-
-USER_SERVICE_NAME=academiasync-user-service
-COURSE_SERVICE_NAME=academiasync-course-service
-FRONTEND_SERVICE_NAME=academiasync-frontend
-
-# Load secrets from deployment/.env
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="${SCRIPT_DIR}/.env"
-
-if [ ! -f "$ENV_FILE" ]; then
-    echo -e "${RED}❌ deployment/.env file not found!${NC}"
-    echo ""
-    echo "Create deployment/.env with:"
-    echo "  SUPABASE_DB_PASSWORD=your-password"
-    echo "  JWT_SECRET=your-jwt-secret"
-    echo "  JWT_REFRESH_SECRET=your-jwt-refresh-secret"
-    echo "  GOOGLE_CLIENT_ID=your-google-client-id"
-    echo "  GOOGLE_CLIENT_SECRET=your-google-client-secret"
-    echo "  NEXTAUTH_SECRET=your-nextauth-secret"
-    echo "  ANALYTICS_API_KEY=your-analytics-key"
-    echo ""
-    echo "Get Supabase password from: https://supabase.com/dashboard/project/bdjvbfrrohqykxuushok/settings/database"
-    exit 1
-fi
-
-source "$ENV_FILE"
-
-# Database (Supabase) - hardcoded non-sensitive config
-DB_HOST=db.bdjvbfrrohqykxuushok.supabase.co
-DB_PORT=5432
-DB_NAME=postgres
-DB_USER=postgres
-
-# Get Supabase password from .env
-DB_PASSWORD="${SUPABASE_DB_PASSWORD:-${DB_PASSWORD:-}}"
-
-if [ -z "$DB_PASSWORD" ]; then
-    echo -e "${RED}❌ Set SUPABASE_DB_PASSWORD in deployment/.env file!${NC}"
-    echo "Get it from: https://supabase.com/dashboard/project/bdjvbfrrohqykxuushok/settings/database"
-    exit 1
-fi
-
-# Validate required secrets
-if [ -z "$JWT_SECRET" ]; then
-    echo -e "${RED}❌ JWT_SECRET not set in deployment/.env${NC}"
-    exit 1
-fi
-
-if [ -z "$JWT_REFRESH_SECRET" ]; then
-    echo -e "${RED}❌ JWT_REFRESH_SECRET not set in deployment/.env${NC}"
-    exit 1
-fi
-
-if [ -z "$GOOGLE_CLIENT_ID" ]; then
-    echo -e "${RED}❌ GOOGLE_CLIENT_ID not set in deployment/.env${NC}"
-    exit 1
-fi
-
-if [ -z "$GOOGLE_CLIENT_SECRET" ]; then
-    echo -e "${RED}❌ GOOGLE_CLIENT_SECRET not set in deployment/.env${NC}"
-    exit 1
-fi
-
-if [ -z "$NEXTAUTH_SECRET" ]; then
-    echo -e "${RED}❌ NEXTAUTH_SECRET not set in deployment/.env${NC}"
-    exit 1
-fi
-
-if [ -z "$ANALYTICS_API_KEY" ]; then
-    echo -e "${RED}❌ ANALYTICS_API_KEY not set in deployment/.env${NC}"
-    exit 1
-fi
+# Project settings and secrets come from deployment/.env
+# shellcheck source=deployment/config.sh
+. "$(dirname "${BASH_SOURCE[0]}")/config.sh"
+require_vars SUPABASE_DB_HOST SUPABASE_DB_PASSWORD JWT_SECRET JWT_REFRESH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET \
+    NEXTAUTH_SECRET ANALYTICS_API_KEY
 
 # Set defaults for JWT expiry if not provided
 JWT_ACCESS_EXPIRY="${JWT_ACCESS_EXPIRY:-15m}"

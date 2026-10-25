@@ -1,42 +1,20 @@
 #!/bin/bash
-set -e
+# Creates the schema on the Supabase database named in deployment/.env,
+# then turns on row level security and makes ADMIN_EMAIL an Admin.
+# Run it from anywhere: ./deployment/init-db.sh
+set -euo pipefail
 
-# Database Config
-DB_HOST="db.bdjvbfrrohqykxuushok.supabase.co"
-DB_PORT="5432"
-DB_NAME="postgres"
-DB_USER="postgres"
-# Try to load from .env
-if [ -f ".env" ]; then
-    source .env
-    DB_PASSWORD="${SUPABASE_DB_PASSWORD:-${DB_PASSWORD:-}}"
-fi
+# shellcheck source=deployment/config.sh
+. "$(dirname "${BASH_SOURCE[0]}")/config.sh"
+require_vars SUPABASE_DB_HOST SUPABASE_DB_PASSWORD ADMIN_EMAIL
 
-if [ -z "$DB_PASSWORD" ]; then
-    echo "❌ Set SUPABASE_DB_PASSWORD in .env file!"
-    echo "Get it from: https://supabase.com/dashboard/project/bdjvbfrrohqykxuushok/settings/database"
-    exit 1
-fi
+export PGPASSWORD="$DB_PASSWORD"
+PSQL=(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1)
 
-echo "🔧 Initializing Supabase Database"
+echo "Applying backend/database/init.sql to ${DB_HOST}"
+"${PSQL[@]}" -f "${REPO_ROOT}/backend/database/init.sql"
 
-SQL_FILE="deployment/setup-supabase.sql"
+echo "Enabling row level security and granting Admin to ${ADMIN_EMAIL}"
+"${PSQL[@]}" -v admin_email="$ADMIN_EMAIL" -f "${DEPLOY_DIR}/setup-supabase.sql"
 
-if [ ! -f "$SQL_FILE" ]; then
-    echo "❌ SQL file not found: $SQL_FILE"
-    exit 1
-fi
-
-# Execute SQL using psql
-PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$SQL_FILE"
-
-if [ $? -eq 0 ]; then
-    echo ""
-    echo "✅ Database initialized!"
-    echo "✅ Admin user set: heyitsgautham@gmail.com"
-else
-    echo ""
-    echo "❌ Failed! Install psql or run manually:"
-    echo "   https://supabase.com/dashboard/project/bdjvbfrrohqykxuushok/editor"
-fi
-
+echo "Database initialized"

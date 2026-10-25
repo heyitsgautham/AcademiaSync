@@ -144,3 +144,43 @@ run "container_insights_can_be_turned_off" {
     error_message = "container_insights = false should disable Container Insights."
   }
 }
+
+run "prod_load_balancer_names_are_unchanged" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  assert {
+    condition = [aws_lb.main.name, aws_lb_target_group.frontend.name, aws_lb_target_group.user_service.name, aws_lb_target_group.course_service.name] == [
+      "academiasync-prod-alb", "academiasync-prod-frontend-tg", "academiasync-prod-user-svc-tg", "academiasync-prod-course-svc-tg",
+    ]
+    error_message = "Renaming the prod load balancer or a target group would replace it."
+  }
+}
+
+run "staging_names_fit_the_32_character_limit" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  variables {
+    environment = "staging"
+  }
+
+  assert {
+    condition = alltrue([
+      for name in [aws_lb.main.name, aws_lb_target_group.frontend.name, aws_lb_target_group.user_service.name, aws_lb_target_group.course_service.name] :
+      length(name) <= 32 && !endswith(name, "-")
+    ])
+    error_message = "Load balancer and target group names must be at most 32 characters and must not end in a hyphen."
+  }
+
+  assert {
+    condition     = aws_lb_target_group.course_service.name == "academiasync-staging-course-svc"
+    error_message = "The course-service target group name should be cut to 32 characters without the trailing hyphen."
+  }
+}

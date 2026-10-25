@@ -1,11 +1,24 @@
 # Load balancer in front of the frontend service.
 # Resources keep their original addresses, so moving them between files changes no state.
 
+# Load balancer and target group names are capped at 32 characters. The prod names fit,
+# but "academiasync-staging-course-svc-tg" is 33, so longer names are cut to 32 and lose a trailing hyphen.
+locals {
+  lb_names = {
+    for key, suffix in {
+      alb            = "alb"
+      frontend       = "frontend-tg"
+      user_service   = "user-svc-tg"
+      course_service = "course-svc-tg"
+    } : key => trimsuffix(substr("${var.project_name}-${var.environment}-${suffix}", 0, 32), "-")
+  }
+}
+
 # Application Load Balancer
 # This is the public entry point for the web app, so it has to face the internet.
 #trivy:ignore:AWS-0053
 resource "aws_lb" "main" {
-  name               = "${var.project_name}-${var.environment}-alb"
+  name               = local.lb_names.alb
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_security_group_id]
@@ -23,7 +36,7 @@ resource "aws_lb" "main" {
 
 # Target Groups
 resource "aws_lb_target_group" "frontend" {
-  name        = "${var.project_name}-${var.environment}-frontend-tg"
+  name        = local.lb_names.frontend
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -46,7 +59,7 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_lb_target_group" "user_service" {
-  name        = "${var.project_name}-${var.environment}-user-svc-tg"
+  name        = local.lb_names.user_service
   port        = 5000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -69,7 +82,7 @@ resource "aws_lb_target_group" "user_service" {
 }
 
 resource "aws_lb_target_group" "course_service" {
-  name        = "${var.project_name}-${var.environment}-course-svc-tg"
+  name        = local.lb_names.course_service
   port        = 5001
   protocol    = "HTTP"
   vpc_id      = var.vpc_id

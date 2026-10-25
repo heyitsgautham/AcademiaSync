@@ -192,9 +192,12 @@ terraform destroy
    - Use IAM roles with least privilege
 
 2. **Network Security**:
-   - ALB security group allows HTTP (80) and HTTPS (443)
-   - ECS tasks only accept traffic from ALB
-   - All outbound traffic allowed for pulling images
+   - Every security group rule is a resource in `modules/vpc/main.tf`
+   - The ALB accepts HTTP on port 80 from anywhere and only talks to the tasks on 3000, 5000 and 5001
+   - ECS tasks accept those ports from the ALB, and 5000 and 5001 from each other for the frontend's server-side calls
+   - Tasks reach out only on 443 (ECR, CloudWatch Logs, SSM, Google) and on `database_port` (default 5432)
+   - Groups created before the rules moved into code still carry their hand-made rules.
+     Delete those rules, or import each one with `terraform import 'module.vpc.aws_vpc_security_group_ingress_rule.alb_http' sgr-...`, before the next apply, or AWS rejects the duplicates.
 
 3. **Container Security**:
    - ECR image scanning enabled on push

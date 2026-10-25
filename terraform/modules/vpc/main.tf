@@ -34,10 +34,6 @@ resource "aws_security_group" "ecs_tasks" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   }
-
-  lifecycle {
-    ignore_changes = [ingress, egress]
-  }
 }
 
 # Security Group for Load Balancer
@@ -49,54 +45,93 @@ resource "aws_security_group" "alb" {
   tags = {
     Name = "${var.project_name}-${var.environment}-alb-sg"
   }
-
-  lifecycle {
-    ignore_changes = [ingress, egress]
-  }
 }
 
-# Ingress rule for ALB (allow HTTP from anywhere)
-# NOTE: Security Group rules are managed on the imported Security Groups themselves
-# These rule resources are commented out to prevent "duplicate rule" errors
-# The imported Security Groups already have all necessary rules configured
+# Every rule lives in code, one resource per rule, so a plan shows any drift.
+# Groups created before this change carry hand-made rules; see terraform/README.md before applying.
 
-# resource "aws_security_group_rule" "alb_http" {
-#   type              = "ingress"
-#   from_port         = 80
-#   to_port           = 80
-#   protocol          = "tcp"
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   security_group_id = aws_security_group.alb.id
-#   description       = "Allow HTTP traffic"
-# }
+locals {
+  # frontend, user-service, course-service
+  container_ports = toset(["3000", "5000", "5001"])
+  # Ports the frontend calls through Cloud Map
+  backend_ports = toset(["5000", "5001"])
+}
 
-# resource "aws_security_group_rule" "alb_https" {
-#   type              = "ingress"
-#   from_port         = 443
-#   to_port           = 443
-#   protocol          = "tcp"
-#   cidr_blocks       = ["0.0.0.0/0"]
-#   security_group_id = aws_security_group.alb.id
-#   description       = "Allow HTTPS traffic"
-# }
+# The load balancer is the public entry point and listens on plain HTTP until the stack has a certificate.
+#trivy:ignore:AWS-0107
+resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTP from the internet"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  cidr_ipv4         = "0.0.0.0/0"
+}
 
-# resource "aws_security_group_rule" "ecs_from_alb" {
-#   type                     = "ingress"
-#   from_port                = 0
-#   to_port                  = 65535
-#   protocol                 = "tcp"
-#   source_security_group_id = aws_security_group.alb.id
-#   security_group_id        = aws_security_group.ecs_tasks.id
-#   description              = "Allow traffic from ALB"
-# }
+# The load balancer forwards to the frontend and health-checks all three target groups.
+resource "aws_vpc_security_group_egress_rule" "alb_to_tasks" {
+  for_each = local.container_ports
 
-# resource "aws_security_group_rule" "ecs_self_reference" {
-#   type                     = "ingress"
-#   from_port                = 0
-#   to_port                  = 65535
-#   protocol                 = "tcp"
-#   source_security_group_id = aws_security_group.ecs_tasks.id
-#   security_group_id        = aws_security_group.ecs_tasks.id
-#   description              = "Allow ECS tasks to communicate with each other"
-# }
+  security_group_id            = aws_security_group.alb.id
+  description                  = "Forward and health-check port ${each.value} on the ECS tasks"
+  ip_protocol                  = "tcp"
+  from_port                    = tonumber(each.value)
+  to_port                      = tonumber(each.value)
+  referenced_security_group_id = aws_security_group.ecs_tasks.id
+}
 
+resource "aws_vpc_security_group_ingress_rule" "tasks_from_alb" {
+  for_each = local.container_ports
+
+  security_group_id            = aws_security_group.ecs_tasks.id
+  description                  = "Port ${each.value} from the load balancer"
+  ip_protocol                  = "tcp"
+  from_port                    = tonumber(each.value)
+  to_port                      = tonumber(each.value)
+  referenced_security_group_id = aws_security_group.alb.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "tasks_from_tasks" {
+  for_each = local.backend_ports
+
+  security_group_id            = aws_security_group.ecs_tasks.id
+  description                  = "Frontend server calls to port ${each.value} over Cloud Map"
+  ip_protocol                  = "tcp"
+  from_port                    = tonumber(each.value)
+  to_port                      = tonumber(each.value)
+  referenced_security_group_id = aws_security_group.ecs_tasks.id
+}
+
+resource "aws_vpc_security_group_egress_rule" "tasks_to_tasks" {
+  for_each = local.backend_ports
+
+  security_group_id            = aws_security_group.ecs_tasks.id
+  description                  = "Frontend server calls to port ${each.value} over Cloud Map"
+  ip_protocol                  = "tcp"
+  from_port                    = tonumber(each.value)
+  to_port                      = tonumber(each.value)
+  referenced_security_group_id = aws_security_group.ecs_tasks.id
+}
+
+# Tasks pull images from ECR and verify Google sign-in tokens over HTTPS. The tasks run in
+# public subnets without a NAT gateway or VPC endpoints, so those calls go to public addresses.
+#trivy:ignore:AWS-0104
+resource "aws_vpc_security_group_egress_rule" "tasks_https" {
+  security_group_id = aws_security_group.ecs_tasks.id
+  description       = "HTTPS to ECR, CloudWatch Logs, SSM and Google"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+# The database is hosted outside this VPC (Supabase or another managed Postgres).
+#trivy:ignore:AWS-0104
+resource "aws_vpc_security_group_egress_rule" "tasks_database" {
+  security_group_id = aws_security_group.ecs_tasks.id
+  description       = "PostgreSQL to the hosted database"
+  ip_protocol       = "tcp"
+  from_port         = var.database_port
+  to_port           = var.database_port
+  cidr_ipv4         = "0.0.0.0/0"
+}

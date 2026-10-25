@@ -16,6 +16,12 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "database_port" {
+  description = "TCP port of the hosted PostgreSQL database, 6543 for the Supabase pooler"
+  type        = number
+  default     = 5432
+}
+
 # ECR Configuration
 variable "ecr_repositories" {
   description = "List of ECR repository names"

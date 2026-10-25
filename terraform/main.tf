@@ -27,8 +27,9 @@ provider "aws" {
 module "vpc" {
   source = "./modules/vpc"
 
-  project_name = var.project_name
-  environment  = var.environment
+  project_name  = var.project_name
+  environment   = var.environment
+  database_port = var.database_port
 }
 
 # ECR Module - Creates Docker image repositories

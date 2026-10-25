@@ -38,3 +38,6 @@ BEGIN
         END LOOP;
     END LOOP;
 END $$;
+
+-- Demo assignments were never edited after they were set.
+UPDATE assignments SET updated_at = created_at;

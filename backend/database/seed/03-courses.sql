@@ -130,3 +130,7 @@ VALUES
 ('Computer Vision Basics', 'Image processing fundamentals', 35, 14, NOW() - INTERVAL '40 days'),
 ('Object Detection and Recognition', 'CNN-based detection systems', 35, 16, NOW() - INTERVAL '10 days'),
 ('Video Analysis', 'Processing and analyzing video data', 35, 18, NOW() - INTERVAL '1 day');
+
+-- Demo courses were never edited. Without this, updated_at defaults to the moment the seed ran,
+-- and the admin activity feed shows every course as "Updated" just now.
+UPDATE courses SET updated_at = created_at;

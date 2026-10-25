@@ -41,5 +41,12 @@ BEGIN
     SELECT COUNT(*) INTO bad FROM courses c WHERE NOT EXISTS (SELECT 1 FROM assignments a WHERE a.course_id = c.id);
     IF bad > 0 THEN RAISE EXCEPTION '% course(s) without assignments', bad; END IF;
 
+    -- Demo rows were never edited, so nothing should look updated after it was created
+    SELECT (SELECT COUNT(*) FROM users WHERE updated_at <> created_at)
+         + (SELECT COUNT(*) FROM courses WHERE updated_at <> created_at)
+         + (SELECT COUNT(*) FROM assignments WHERE updated_at <> created_at)
+      INTO bad;
+    IF bad > 0 THEN RAISE EXCEPTION '% seeded row(s) look edited after creation', bad; END IF;
+
     RAISE NOTICE 'seed checks passed';
 END $$;

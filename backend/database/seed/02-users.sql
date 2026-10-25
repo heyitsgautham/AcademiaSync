@@ -158,3 +158,7 @@ VALUES ('student.alice.brown@student.edu', 'Student', 'Alice', 'Brown', 20, NOW(
     ('student.phoebe.barnes@student.edu', 'Student', 'Phoebe', 'Barnes', 23, NOW() - INTERVAL '4 days'),
     ('student.quinn.ross@student.edu', 'Student', 'Quinn', 'Ross', 19, NOW() - INTERVAL '2 days'),
     ('student.rose.henderson@student.edu', 'Student', 'Rose', 'Henderson', 22, NOW() - INTERVAL '1 day');
+
+-- Demo rows were never edited after creation. Without this, updated_at defaults to the moment
+-- the seed ran, and the admin activity feed lists every user as just updated.
+UPDATE users SET updated_at = created_at;

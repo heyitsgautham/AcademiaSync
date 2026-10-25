@@ -229,8 +229,8 @@ Each service also has its own `.env.example` for running it alone.
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | compose | Database credentials, passed to both services as `DB_*` |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | both services | Database connection when `DATABASE_URL` is unset |
 | `DATABASE_URL` | both services | Full connection string, takes precedence, TLS is enabled for Supabase hosts |
-| `JWT_SECRET` | both services | Signs and verifies access tokens, must be the same in both |
-| `JWT_REFRESH_SECRET` | user-service | Signs refresh tokens |
+| `JWT_SECRET` | both services | Signs and verifies access tokens, must be the same in both, and a service will not start without it |
+| `JWT_REFRESH_SECRET` | user-service | Signs refresh tokens, required |
 | `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY` | user-service | Token lifetimes, default `15m` and `7d` |
 | `GOOGLE_CLIENT_ID` | user-service, frontend | Audience for Google ID token checks |
 | `GOOGLE_CLIENT_SECRET` | frontend | OAuth client secret for NextAuth |

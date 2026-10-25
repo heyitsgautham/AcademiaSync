@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const { requireSecret } = require('../config/secrets');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+const JWT_SECRET = requireSecret('JWT_SECRET');
 
 /**
  * Verify an access token

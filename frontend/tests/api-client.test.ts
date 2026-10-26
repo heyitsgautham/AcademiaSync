@@ -65,4 +65,24 @@ describe("courseApi", () => {
     await expect(courseApi.deleteCourse(4)).resolves.toEqual({})
     expect(fetchMock.mock.calls[0][1].method).toBe("DELETE")
   })
+
+  it.each([
+    ["getCourse", () => courseApi.getCourse(3), "GET", "/api/teacher/courses/3", undefined],
+    ["createCourse", () => courseApi.createCourse({ title: "T", description: "D", weeks: 8 }), "POST", "/api/teacher/courses", { title: "T", description: "D", weeks: 8 }],
+    ["updateCourse", () => courseApi.updateCourse(3, { title: "T", description: "D" }), "PUT", "/api/teacher/courses/3", { title: "T", description: "D" }],
+    ["getAssignments", () => courseApi.getAssignments(3), "GET", "/api/teacher/courses/3/assignments", undefined],
+    ["getAssignment", () => courseApi.getAssignment(9), "GET", "/api/teacher/assignments/9", undefined],
+    ["createAssignment", () => courseApi.createAssignment(3, { title: "A", description: "D", due_date: "2026-11-01" }), "POST", "/api/teacher/courses/3/assignments", { title: "A", description: "D", due_date: "2026-11-01" }],
+    ["updateAssignment", () => courseApi.updateAssignment(9, { title: "A", description: "D" }), "PUT", "/api/teacher/assignments/9", { title: "A", description: "D" }],
+    ["deleteAssignment", () => courseApi.deleteAssignment(9), "DELETE", "/api/teacher/assignments/9", undefined],
+  ] as const)("%s calls %s %s", async (_name, run, method, path, body) => {
+    fetchMock.mockResolvedValue(jsonResponse(200, {}))
+
+    await run()
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`http://localhost:5001${path}`)
+    expect(init.method ?? "GET").toBe(method)
+    expect(init.body === undefined ? undefined : JSON.parse(init.body)).toEqual(body)
+  })
 })

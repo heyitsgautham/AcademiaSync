@@ -48,7 +48,8 @@ From the repo root, `npm test`, `npm run test:coverage`, `npm run lint`, `npm ru
 | `terraform` | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test` (Terraform 1.7 or later), `tflint --init && tflint --recursive`, `checkov --config-file .checkov.yaml` |
 
 `npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json`.
-The backend coverage thresholds live in each `jest.config.js`, and a run below them fails.
+The backend coverage thresholds live in each `jest.config.js`, the frontend ones in `vitest.config.mts`, and a run below them fails.
+A new `/api` route handler needs a row in `frontend/tests/api-routes.test.ts`, which fails until it has one.
 The frontend lint script fails on any warning, and `any` is an error, so type new code fully; shared API shapes live in `frontend/types/api.ts`.
 
 ## Open a pull request

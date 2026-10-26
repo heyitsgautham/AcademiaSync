@@ -14,7 +14,21 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "lcov"],
-      include: ["lib/**", "hooks/**", "components/admin-*.tsx", "proxy.ts"],
+      // The logic layer: route handlers, auth and API helpers, hooks, and the components with tests
+      include: [
+        "app/api/**/route.ts",
+        "lib/**",
+        "hooks/**",
+        "proxy.ts",
+        "components/admin-students-table.tsx",
+        "components/admin-teachers-table.tsx",
+        "components/admin-student-modal.tsx",
+        "components/teacher-assignments-by-course.tsx",
+        "components/wrapped-axis-tick.tsx",
+      ],
+      exclude: ["app/api/auth/**"],
+      // CI fails below these; raise them as coverage grows
+      thresholds: { lines: 85, statements: 85, functions: 75, branches: 75 },
     },
   },
 })

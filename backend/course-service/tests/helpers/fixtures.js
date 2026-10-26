@@ -36,8 +36,8 @@ const createFixtures = (pool) => {
     const createCourse = async (teacherId, overrides = {}) => {
         const n = next();
         const { rows } = await pool.query(
-            `INSERT INTO courses (title, description, teacher_id, weeks, created_at)
-             VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_TIMESTAMP)) RETURNING *`,
+            `INSERT INTO courses (title, description, teacher_id, weeks, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_TIMESTAMP), COALESCE($5, CURRENT_TIMESTAMP)) RETURNING *`,
             [
                 overrides.title || `Course ${n}`,
                 overrides.description || `Description ${n}`,

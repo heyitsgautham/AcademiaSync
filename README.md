@@ -82,7 +82,7 @@ Each service is laid out the same way.
 | `src/routes/` | One router factory per area, larger areas split into folders |
 | `src/middleware/` | JWT auth, role checks, zod validation, request logging, error handling |
 | `src/schemas/` | zod schemas for every request body |
-| `src/queries/` | SQL shared between routes |
+| `src/queries/` | SQL kept out of the routes, such as the admin reports and shared grade queries, tested against Postgres |
 | `tests/` | Jest and Supertest suites against a real Postgres |
 
 Both services log one JSON line per request with pino, tag each request with an `X-Request-Id`, and never return database error text to clients.

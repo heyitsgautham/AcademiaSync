@@ -52,6 +52,52 @@ const promoteRoleBody = z
         message: 'Specialization is required for Teacher role',
     });
 
+const STUDENT_FIELDS = 'First name, last name and email are required';
+const studentAge = z.preprocess(
+    (value) => toNumber(emptyToNull(value)),
+    z
+        .number({ error: 'Age must be a number' })
+        .int('Age must be a whole number')
+        .min(10, 'Age must be between 10 and 100')
+        .max(100, 'Age must be between 10 and 100')
+        .nullable()
+        .optional()
+);
+const studentFields = {
+    firstName: text(STUDENT_FIELDS, 100),
+    lastName: text(STUDENT_FIELDS, 100),
+    email: text(STUDENT_FIELDS).email('Email must be a valid address'),
+    age: studentAge,
+};
+const createStudentBody = z.object({
+    ...studentFields,
+    password: z
+        .string(typeError('Password is required for new students', 'Password must be text'))
+        .min(6, 'Password must be at least 6 characters')
+        .max(72, 'Password must be at most 72 characters'),
+});
+const updateStudentBody = z.object(studentFields);
+
+const CHANGE_ROLE_FIELDS = 'User ID and new role are required';
+const changeRoleBody = z
+    .object({
+        userId: z.preprocess(
+            toNumber,
+            z
+                .number(typeError(CHANGE_ROLE_FIELDS, 'userId must be a positive integer'))
+                .int('userId must be a positive integer')
+                .positive('userId must be a positive integer')
+                .max(2147483647, 'userId is too large')
+        ),
+        newRole: z
+            .string(typeError(CHANGE_ROLE_FIELDS, CHANGE_ROLE_FIELDS))
+            .refine((role) => ['Student', 'Teacher', 'Admin'].includes(role), 'Role must be Student, Teacher or Admin'),
+        specialization: optionalText(),
+    })
+    .refine((body) => body.newRole !== 'Teacher' || body.specialization, {
+        message: 'Specialization is required for Teacher role',
+    });
+
 const adminProfileBody = z.object({
     first_name: text('First name is required', 100),
     last_name: optionalText(100),
@@ -78,6 +124,9 @@ module.exports = {
     createTeacherBody,
     updateTeacherBody,
     promoteRoleBody,
+    createStudentBody,
+    updateStudentBody,
+    changeRoleBody,
     adminProfileBody,
     userProfileBody,
 };

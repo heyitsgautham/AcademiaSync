@@ -2,6 +2,7 @@ const express = require('express');
 const { validateIdParams } = require('../../middleware/validate');
 const registerReportRoutes = require('./reports');
 const registerPeopleRoutes = require('./people');
+const registerStudentRoutes = require('./students');
 const registerProfileRoutes = require('./profile');
 
 /**
@@ -15,6 +16,7 @@ module.exports = (pool) => {
 
     registerReportRoutes(router, pool);
     registerPeopleRoutes(router, pool);
+    registerStudentRoutes(router, pool);
     registerProfileRoutes(router, pool);
 
     return router;

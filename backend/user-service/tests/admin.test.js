@@ -176,10 +176,20 @@ describe('admin routes', () => {
             const res = await request(app)
                 .post('/admin/promote-role')
                 .set(authHeader(admin))
-                .send({ userId: teacher.id, newRole: 'Admin' });
+                .send({ userId: student.id, newRole: 'Admin' });
 
             expect(res.status).toBe(200);
             expect(res.body.user.role).toBe('Admin');
+        });
+
+        it('keeps a teacher who still owns courses, so no course is left without a teacher', async () => {
+            const res = await request(app)
+                .post('/admin/promote-role')
+                .set(authHeader(admin))
+                .send({ userId: teacher.id, newRole: 'Admin' });
+
+            expect(res.status).toBe(409);
+            expect(res.body.error).toMatch(/still owns 1 course/);
         });
 
         it.each([

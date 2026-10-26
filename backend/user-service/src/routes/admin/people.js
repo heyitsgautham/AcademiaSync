@@ -1,11 +1,12 @@
 const bcrypt = require('bcryptjs');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { validateBody } = require('../../middleware/validate');
-const { createTeacherBody, updateTeacherBody, promoteRoleBody } = require('../../schemas');
+const { createTeacherBody, updateTeacherBody, promoteRoleBody, changeRoleBody } = require('../../schemas');
+const { changeUserRole } = require('./roles');
 const { addAdminLinks, addTeacherLinks } = require('../../utils/hateoas');
 
 /**
- * Teacher accounts, the student list and role promotion.
+ * Teacher accounts and role changes.
  * @param {Router} router - Admin router
  * @param {Pool} pool - PostgreSQL connection pool
  */
@@ -149,48 +150,6 @@ module.exports = (router, pool) => {
     });
 
     /**
-     * GET /admin/students
-     * Get all students with enrollment count
-     */
-    router.get('/students', authenticate, authorize('Admin'), async (req, res) => {
-        try {
-            const result = await pool.query(`
-            SELECT 
-                u.id,
-                u.first_name as "firstName",
-                u.last_name as "lastName",
-                u.email,
-                u.profile_picture,
-                u.age,
-                COUNT(DISTINCT e.id) as enrolled_courses,
-                AVG(s.grade) as avg_score
-            FROM users u
-            LEFT JOIN enrollments e ON u.id = e.student_id
-            LEFT JOIN submissions s ON u.id = s.student_id AND s.grade IS NOT NULL
-            WHERE u.role = 'Student'
-            GROUP BY u.id, u.first_name, u.last_name, u.email, u.profile_picture, u.age
-            ORDER BY u.last_name, u.first_name
-        `);
-
-            const students = result.rows.map((row) => ({
-                id: row.id,
-                firstName: row.firstName,
-                lastName: row.lastName,
-                email: row.email,
-                profilePicture: row.profile_picture,
-                age: row.age,
-                enrolledCourses: parseInt(row.enrolled_courses),
-                avgScore: row.avg_score ? parseFloat(row.avg_score).toFixed(2) : null,
-            }));
-
-            res.json(students);
-        } catch (error) {
-            req.log.error({ err: error }, 'Error fetching students');
-            res.status(500).json({ error: 'Failed to fetch students' });
-        }
-    });
-
-    /**
      * POST /admin/promote-role
      * Promote a user to Teacher or Admin role
      */
@@ -198,44 +157,36 @@ module.exports = (router, pool) => {
         try {
             const { userId, newRole, specialization } = req.body;
 
-            // Check if user exists
-            const existingUser = await pool.query('SELECT id, role FROM users WHERE id = $1', [userId]);
-
-            if (existingUser.rows.length === 0) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            // Update user role
-            let updateQuery;
-            let updateParams;
-
-            if (newRole === 'Teacher') {
-                updateQuery = `
-                UPDATE users 
-                SET role = $1, specialization = $2, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $3
-                RETURNING id, email, first_name as "firstName", last_name as "lastName", role, specialization
-            `;
-                updateParams = [newRole, specialization, userId];
-            } else {
-                updateQuery = `
-                UPDATE users 
-                SET role = $1, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $2
-                RETURNING id, email, first_name as "firstName", last_name as "lastName", role
-            `;
-                updateParams = [newRole, userId];
-            }
-
-            const result = await pool.query(updateQuery, updateParams);
+            const result = await changeUserRole(pool, { userId, newRole, specialization, actorId: req.user.id });
+            if (result.error) return res.status(result.status).json({ error: result.error });
 
             res.json({
                 message: `User promoted to ${newRole} successfully`,
-                user: result.rows[0],
+                user: result.user,
             });
         } catch (error) {
             req.log.error({ err: error }, 'Error promoting user');
             res.status(500).json({ error: 'Failed to promote user' });
+        }
+    });
+
+    /**
+     * POST /admin/change-role
+     * Move a user to any role, including back to Student
+     */
+    router.post('/change-role', authenticate, authorize('Admin'), validateBody(changeRoleBody), async (req, res) => {
+        try {
+            const { userId, newRole, specialization } = req.body;
+            const result = await changeUserRole(pool, { userId, newRole, specialization, actorId: req.user.id });
+            if (result.error) return res.status(result.status).json({ error: result.error });
+
+            res.json({
+                message: `Role changed to ${newRole} successfully`,
+                user: result.user,
+            });
+        } catch (error) {
+            req.log.error({ err: error }, 'Error changing role');
+            res.status(500).json({ error: 'Failed to change role' });
         }
     });
 };

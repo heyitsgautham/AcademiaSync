@@ -32,7 +32,7 @@ Students get a dashboard with progress per course, a course catalogue with one-c
 
 Teachers create and edit courses and assignments, see every enrolled student's submission for an assignment, grade one submission or a whole batch in one transaction, and get per-course analytics.
 
-Admins list, create, edit and delete teachers, promote students to Teacher or Admin, drill into any student, teacher or course, and see ranked analytics behind an extra API key.
+Admins list, create, edit and delete teachers and students, change anyone's role, drill into any student, teacher or course, and see ranked analytics behind an extra API key.
 
 Every page is behind Google sign-in, and the Next.js middleware sends each role to its own section.
 
@@ -270,8 +270,10 @@ Ids in paths must be positive integers, and request bodies are validated with zo
 | GET | `/admin/analytics?apiKey=...` | Admin plus `ANALYTICS_API_KEY` |
 | GET, POST | `/admin/teachers` | Admin |
 | PUT, DELETE | `/admin/teachers/:id` | Admin |
-| GET | `/admin/students` | Admin |
-| POST | `/admin/promote-role` | Admin |
+| GET, POST | `/admin/students` | Admin |
+| PUT, DELETE | `/admin/students/:id` | Admin |
+| POST | `/admin/promote-role` | Admin, to Teacher or Admin |
+| POST | `/admin/change-role` | Admin, to Student, Teacher or Admin; never the caller's own role or a teacher who still owns courses |
 | GET, PUT | `/admin/profile` | Admin |
 
 ### course-service (port 5001)

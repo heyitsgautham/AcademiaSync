@@ -35,7 +35,14 @@ export function AdminStudentModal({ open, onOpenChange, student, onSuccess, mode
         firstName: yup.string().required("First name is required").min(2, "First name must be at least 2 characters"),
         lastName: yup.string().required("Last name is required").min(2, "Last name must be at least 2 characters"),
         email: yup.string().required("Email is required").email("Please enter a valid email address"),
-        age: yup.number().positive("Age must be positive").integer("Age must be an integer").optional(),
+        // An empty number input arrives as NaN, which means "no age"
+        age: yup
+            .number()
+            .transform((value) => (Number.isNaN(value) ? undefined : value))
+            .integer("Age must be a whole number")
+            .min(10, "Age must be between 10 and 100")
+            .max(100, "Age must be between 10 and 100")
+            .optional(),
         password: yup.string().when([], {
             is: () => mode === "create",
             then: (schema) => schema.required("Password is required for new students").min(6, "Password must be at least 6 characters"),
@@ -85,7 +92,7 @@ export function AdminStudentModal({ open, onOpenChange, student, onSuccess, mode
             const url = mode === "create" ? "/api/admin/students" : `/api/admin/students/${student?.id}`
             const method = mode === "create" ? "POST" : "PUT"
 
-            const body: any = {
+            const body: { firstName: string; lastName: string; email: string; age: number | null; password?: string } = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,

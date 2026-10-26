@@ -52,6 +52,8 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => courseApi.deleteAssignment(id),
     onSuccess: () => {
+      // The assignments page lists ["assignments-with-status", filter]; refresh every filter
+      queryClient.invalidateQueries({ queryKey: ["assignments-with-status"] })
       queryClient.invalidateQueries({ queryKey: ["all-assignments"] })
       queryClient.invalidateQueries({ queryKey: ["student-assignments"] })
       toast({
@@ -137,10 +139,10 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
                           </div>
                         )}
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => onEdit(assignment)}>
+                          <Button variant="ghost" size="icon" aria-label="Edit assignment" onClick={() => onEdit(assignment)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(assignment)}>
+                          <Button variant="ghost" size="icon" aria-label="Delete assignment" onClick={() => handleDeleteClick(assignment)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>

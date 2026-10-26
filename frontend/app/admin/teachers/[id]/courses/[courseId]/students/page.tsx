@@ -43,7 +43,8 @@ export default function AdminTeacherCourseStudentsPage() {
     const params = useParams()
     const router = useRouter()
     const [sidebarOpen, setSidebarOpen] = useState(false)
-    const teacherId = params.teacherId as string
+    // The folder is [id], so the teacher id arrives as params.id
+    const teacherId = params.id as string
     const courseId = params.courseId as string
 
     const { data: courseData, isLoading } = useQuery<CourseStudentsData>({

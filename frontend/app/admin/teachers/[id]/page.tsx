@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchJson } from "@/lib/http"
+import { RecordError } from "@/components/record-error"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -42,7 +43,7 @@ export default function AdminTeacherDetailPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const teacherId = params.id as string
 
-    const { data: teacherData, isLoading } = useQuery<TeacherData>({
+    const { data: teacherData, isLoading, error } = useQuery<TeacherData>({
         queryKey: ["admin-teacher-detail", teacherId],
         queryFn: () => fetchJson(`/api/admin/teachers/${teacherId}/courses`, "Failed to fetch teacher data"),
     })
@@ -94,6 +95,10 @@ export default function AdminTeacherDetailPage() {
                     {/* Content */}
                     <main className="flex-1 overflow-y-auto p-6">
                         <div className="mx-auto max-w-7xl space-y-6">
+                            {error ? (
+                                <RecordError noun="teacher" error={error} backHref="/admin/teachers" backLabel="Back to Teachers" />
+                            ) : (
+                            <>
                             {/* Teacher Header */}
                             {isLoading ? (
                                 <Card>
@@ -222,6 +227,8 @@ export default function AdminTeacherDetailPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                            </>
+                            )}
                         </div>
                     </main>
                 </div>

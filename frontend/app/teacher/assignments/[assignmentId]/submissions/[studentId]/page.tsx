@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { fetchJson } from "@/lib/http"
+import { RecordError } from "@/components/record-error"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -48,7 +49,7 @@ export default function SubmissionDetailPage() {
     const assignmentId = params.assignmentId as string
     const studentId = params.studentId as string
 
-    const { data, isLoading } = useQuery<AssignmentSubmissions>({
+    const { data, isLoading, error } = useQuery<AssignmentSubmissions>({
         queryKey: ["assignment-submissions", assignmentId],
         queryFn: () => fetchJson(`/api/teacher/assignments/${assignmentId}/submissions`, "Failed to fetch submissions"),
     })
@@ -170,7 +171,7 @@ export default function SubmissionDetailPage() {
                             <div className="flex-1">
                                 <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Submission Details</h1>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    {assignment?.title || "Loading..."}
+                                    {isLoading ? "Loading..." : assignment?.title}
                                 </p>
                             </div>
                         </div>
@@ -181,6 +182,8 @@ export default function SubmissionDetailPage() {
                                 <Skeleton className="h-64 rounded-lg" />
                                 <Skeleton className="h-48 rounded-lg" />
                             </div>
+                        ) : error ? (
+                            <RecordError noun="assignment" error={error} backHref="/teacher/assignments" backLabel="Back to Assignments" />
                         ) : !submission ? (
                             <Card>
                                 <CardContent className="flex items-center justify-center py-12">

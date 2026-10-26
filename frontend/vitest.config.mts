@@ -25,6 +25,7 @@ export default defineConfig({
         "components/admin-student-modal.tsx",
         "components/teacher-assignments-by-course.tsx",
         "components/wrapped-axis-tick.tsx",
+        "components/record-error.tsx",
       ],
       exclude: ["app/api/auth/**"],
       // CI fails below these; raise them as coverage grows

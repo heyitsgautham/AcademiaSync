@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchJson } from "@/lib/http"
+import { RecordError } from "@/components/record-error"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -47,7 +48,7 @@ export default function AdminTeacherCourseStudentsPage() {
     const teacherId = params.id as string
     const courseId = params.courseId as string
 
-    const { data: courseData, isLoading } = useQuery<CourseStudentsData>({
+    const { data: courseData, isLoading, error } = useQuery<CourseStudentsData>({
         queryKey: ["admin-teacher-course-students", teacherId, courseId],
         queryFn: () => fetchJson(`/api/admin/teachers/${teacherId}/courses/${courseId}/students`, "Failed to fetch course students"),
     })
@@ -93,6 +94,10 @@ export default function AdminTeacherCourseStudentsPage() {
                     {/* Content */}
                     <main className="flex-1 overflow-y-auto p-6">
                         <div className="mx-auto max-w-7xl space-y-6">
+                            {error ? (
+                                <RecordError noun="course" error={error} backHref={`/admin/teachers/${teacherId}`} backLabel="Back to Teacher" />
+                            ) : (
+                            <>
                             {/* Course Header */}
                             {isLoading ? (
                                 <Card>
@@ -200,6 +205,8 @@ export default function AdminTeacherCourseStudentsPage() {
                                     )}
                                 </CardContent>
                             </Card>
+                            </>
+                            )}
                         </div>
                     </main>
                 </div>

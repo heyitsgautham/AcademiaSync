@@ -87,6 +87,8 @@ Each service is laid out the same way.
 
 Both services log one JSON line per request with pino, tag each request with an `X-Request-Id`, and never return database error text to clients.
 Both expose `GET /health`, which checks the database and returns 503 when it is unreachable.
+Both expose `GET /metrics` in Prometheus format: Node.js process metrics, a request duration histogram labelled by method, route pattern and status code, and the Postgres pool's total, idle and waiting connections.
+`docker compose --profile monitoring up -d` adds a Prometheus server on http://localhost:9090 that scrapes both services.
 
 ## Repository layout
 
@@ -103,7 +105,8 @@ frontend/              Next.js 14 App Router app, NextAuth, shadcn/ui, Vitest te
 terraform/             AWS VPC, ECR, ECS Fargate, ALB, CloudWatch and SNS modules
 deployment/            Scripts for the earlier Google Cloud Run and Supabase deployment
 scripts/               seed-demo.sh and smoke-test.sh
-docker-compose.yml     Local stack
+docker-compose.yml     Local stack, with Prometheus behind the monitoring profile
+monitoring/            Prometheus scrape config
 package.json           Root scripts that install, test, lint and type-check every package
 .prettierrc.json       Formatting rules shared by the backend services
 ```
@@ -246,10 +249,12 @@ Each service also has its own `.env.example` for running it alone.
 | `INTERNAL_BACKEND_URL`, `INTERNAL_COURSE_SERVICE_URL` | frontend | Service URLs for server-side requests |
 | `NEXT_PUBLIC_BACKEND_URL`, `NEXT_PUBLIC_COURSE_SERVICE_URL` | frontend | Service URLs for browser requests, baked in at build time |
 | `PORT`, `NODE_ENV`, `LOG_LEVEL` | both services | Listen port, environment and pino log level |
+| `METRICS_TOKEN` | both services | When set, `GET /metrics` requires it as a bearer token |
+| `PROMETHEUS_PORT` | compose | Host port for Prometheus in the `monitoring` profile, default 9090 |
 
 ## API
 
-Every route except sign-in, refresh, logout, `/` and `/health` needs `Authorization: Bearer <access token>` or the `accessToken` cookie.
+Every route except sign-in, refresh, logout, `/`, `/health` and `/metrics` needs `Authorization: Bearer <access token>` or the `accessToken` cookie.
 Ids in paths must be positive integers, and request bodies are validated with zod, so bad input gets a 400 with a message.
 
 ### user-service (port 5000)

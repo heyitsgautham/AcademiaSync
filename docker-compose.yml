@@ -119,6 +119,23 @@ services:
       - academiasync-network
     restart: unless-stopped
 
+  # Optional: docker compose --profile monitoring up -d
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: academiasync-prometheus
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      course-service:
+        condition: service_healthy
+    networks:
+      - academiasync-network
+
 volumes:
   postgres_data:
 

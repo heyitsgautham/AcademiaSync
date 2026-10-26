@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const { requestLogger } = require('./middleware/request-logger');
+const { createMetrics } = require('./middleware/metrics');
 const { notFoundHandler, errorHandler } = require('./middleware/errors');
 
 /**
@@ -34,7 +35,9 @@ const createApp = (pool) => {
             credentials: true,
         })
     );
+    const metrics = createMetrics({ service: 'user-service', pool, token: process.env.METRICS_TOKEN });
     app.use(requestLogger);
+    app.use(metrics.middleware);
     app.use(express.json());
     app.use(cookieParser());
 
@@ -59,6 +62,9 @@ const createApp = (pool) => {
             });
         }
     });
+
+    // Prometheus scrape endpoint; set METRICS_TOKEN to require a bearer token
+    app.get('/metrics', metrics.handler);
 
     // Root endpoint
     app.get('/', (req, res) => {

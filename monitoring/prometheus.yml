@@ -1,0 +1,13 @@
+# Scrapes both API services inside the compose network.
+# Start it with: docker compose --profile monitoring up -d, then open http://localhost:9090
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: user-service
+    static_configs:
+      - targets: ['user-service:5000']
+
+  - job_name: course-service
+    static_configs:
+      - targets: ['course-service:5001']

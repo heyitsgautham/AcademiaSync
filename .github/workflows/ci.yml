@@ -175,10 +175,74 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  docker:
+    name: Docker image (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: user-service
+            dockerfile: backend/user-service/Dockerfile
+            port: 5000
+            check: /health
+          - image: course-service
+            dockerfile: backend/course-service/Dockerfile
+            port: 5001
+            check: /health
+          - image: frontend
+            dockerfile: frontend/Dockerfile
+            port: 3000
+            check: /login
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: academiasync
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Every image builds from the repo root so it installs from the workspaces lockfile
+      - name: Build image
+        run: docker build --file ${{ matrix.dockerfile }} --tag academiasync-${{ matrix.image }}:ci .
+
+      - name: Start container
+        run: |
+          docker run --detach --name app --network host \
+            -e PORT=${{ matrix.port }} \
+            -e DB_HOST=localhost -e DB_PORT=5432 -e DB_NAME=academiasync -e DB_USER=postgres -e DB_PASSWORD=postgres \
+            -e JWT_SECRET=ci-only-jwt-secret -e JWT_REFRESH_SECRET=ci-only-refresh-secret \
+            -e NEXTAUTH_SECRET=ci-only-nextauth-secret -e NEXTAUTH_URL=http://localhost:3000 \
+            academiasync-${{ matrix.image }}:ci
+
+      - name: Smoke test
+        run: |
+          for attempt in $(seq 30); do
+            if curl -fsS "http://localhost:${{ matrix.port }}${{ matrix.check }}" > /dev/null; then
+              echo "ok ${{ matrix.image }} answered ${{ matrix.check }}"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs app
+          exit 1
+
   status-check:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [backend, frontend, database, secret-scan]
+    needs: [backend, frontend, database, docker, secret-scan]
     if: always()
     steps:
       - name: Check CI status
@@ -186,7 +250,8 @@ jobs:
           echo "Backend: ${{ needs.backend.result }}"
           echo "Frontend: ${{ needs.frontend.result }}"
           echo "Database: ${{ needs.database.result }}"
+          echo "Docker images: ${{ needs.docker.result }}"
           echo "Secret scan: ${{ needs.secret-scan.result }}"
-          for result in "${{ needs.backend.result }}" "${{ needs.frontend.result }}" "${{ needs.database.result }}" "${{ needs.secret-scan.result }}"; do
+          for result in "${{ needs.backend.result }}" "${{ needs.frontend.result }}" "${{ needs.database.result }}" "${{ needs.docker.result }}" "${{ needs.secret-scan.result }}"; do
             [ "$result" = "success" ] || exit 1
           done

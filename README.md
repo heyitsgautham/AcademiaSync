@@ -340,6 +340,7 @@ The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy o
 | Backend (each service) | `npm ci` at the root, ESLint, Prettier check, Jest with the coverage threshold against Postgres 16, `npm audit --workspace <service> --omit=dev --audit-level=high` |
 | Frontend | `npm ci` at the root, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, `npm audit --workspace frontend --omit=dev --audit-level=high` |
 | Database | Applies `init.sql` twice, loads the demo seed and runs `check-seed.sql` |
+| Docker image (each image) | Builds the user-service, course-service and frontend images from the repo root, starts each one and waits for `/health` or `/login` to answer |
 | Secret scan | gitleaks over the pushed commits |
 
 `terraform-ci.yml` runs `terraform fmt -check`, `terraform validate`, `terraform test` against a mocked AWS provider, TFLint with the AWS ruleset, Checkov, and a Trivy scan that fails on high or critical findings, whenever `terraform/` changes.

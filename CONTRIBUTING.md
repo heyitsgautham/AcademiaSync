@@ -47,7 +47,8 @@ From the repo root, `npm test`, `npm run test:coverage`, `npm run lint`, `npm ru
 | `backend/database` | `psql -d scratch -f init.sql`, then `seed-demo-data.sql` and `check-seed.sql` with `-v ON_ERROR_STOP=1` |
 | `terraform` | `terraform fmt -check -recursive`, `terraform init -backend=false`, `terraform validate`, `terraform test` (Terraform 1.7 or later), `tflint --init && tflint --recursive`, `checkov --config-file .checkov.yaml` |
 
-`npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json`.
+`npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json` and the lint rules in the root `eslint.config.base.cjs`.
+The frontend lints with its own `frontend/eslint.config.mjs`, built on the Next.js config.
 The backend coverage thresholds live in each `jest.config.js`, the frontend ones in `vitest.config.mts`, and a run below them fails.
 A new `/api` route handler needs a row in `frontend/tests/api-routes.test.ts`, which fails until it has one.
 The frontend lint script fails on any warning, and `any` is an error, so type new code fully; shared API shapes live in `frontend/types/api.ts`.

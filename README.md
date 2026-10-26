@@ -109,6 +109,7 @@ docker-compose.yml     Local stack, with Prometheus behind the monitoring profil
 monitoring/            Prometheus scrape config
 package.json           Root scripts that install, test, lint and type-check every package
 .prettierrc.json       Formatting rules shared by the backend services
+eslint.config.base.cjs Lint rules shared by the backend services
 ```
 
 ## Run it with Docker

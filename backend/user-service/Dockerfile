@@ -4,7 +4,7 @@
 # ================================
 # Stage 1: Dependencies
 # ================================
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 
 # npm ci checks the lockfile against every workspace manifest, so all three are copied
@@ -22,7 +22,7 @@ RUN npm ci --workspace backend/user-service --omit=dev --no-audit --no-fund && \
 # ================================
 # Stage 2: Production Runner
 # ================================
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 # Set environment to production

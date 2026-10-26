@@ -1,7 +1,28 @@
-import { AuthOptions, Session } from "next-auth";
+import { Account, AuthOptions, Session } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
-import { Account } from "next-auth";
+import { BackendUser, exchangeGoogleToken, SIGN_IN_ERROR_PARAM } from "@/lib/backend-auth";
+
+/** The Google account NextAuth hands from signIn to jwt, carrying what user-service returned. */
+type BackendAccount = Account & {
+    userData: BackendUser
+    userRole: string
+    backendAccessToken: string | null
+}
+
+const isBackendAccount = (account: Account): account is BackendAccount =>
+    "userData" in account && "userRole" in account
+
+/** GET /api/users/profile on user-service. */
+interface ProfileResponse {
+    id: number
+    email: string
+    role: string
+    first_name: string
+    last_name: string | null
+    age: number | null
+    specialization: string | null
+}
 
 // Use Docker service name for server-side requests (NextAuth callbacks run on server)
 // This is because the frontend container needs to communicate with user-service container
@@ -52,96 +73,48 @@ export const authOptions: AuthOptions = {
     },
     callbacks: {
         async signIn({ account }: { account: Account | null }) {
-            if (account?.provider === "google" && account.id_token) {
-                try {
-                    console.log(`[NextAuth] Attempting to authenticate with backend: ${BACKEND_URL}/auth/google`);
+            if (account?.provider !== "google" || !account.id_token) return true
 
-                    // Send Google ID token to backend
-                    const response = await fetch(`${BACKEND_URL}/auth/google`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            idToken: account.id_token,
-                        }),
-                        credentials: "include",
-                    });
-
-                    console.log(`[NextAuth] Backend response status: ${response.status} ${response.statusText}`);
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log(`[NextAuth] Authentication successful for user:`, data.user?.email);
-
-                        // Extract access token from Set-Cookie header
-                        const setCookieHeader = response.headers.get('set-cookie');
-                        let backendAccessToken = null;
-
-                        if (setCookieHeader) {
-                            const accessTokenMatch = setCookieHeader.match(/accessToken=([^;]+)/);
-                            if (accessTokenMatch) {
-                                backendAccessToken = accessTokenMatch[1];
-                            }
-                        }
-
-                        // Store user data and backend token in account for use in jwt callback
-                        (account as any).userData = data.user;
-                        (account as any).userRole = data.role;
-                        (account as any).backendAccessToken = backendAccessToken;
-                        return true;
-                    }
-                    // ============================================================================
-                    // RATE LIMITING CHECK DISABLED - COMMENTED OUT
-                    // ============================================================================
-                    // The backend no longer returns 429 errors, so this check is disabled
-                    // ============================================================================
-                    // else if (response.status === 429) {
-                    //     // Rate limit exceeded
-                    //     const errorData = await response.json();
-                    //     console.error("Rate limit exceeded:", errorData.message);
-                    //     // Store error in account for display (NextAuth limitations prevent showing custom error)
-                    //     (account as any).error = errorData.message;
-                    //     return false;
-                    // } 
-                    else {
-                        const errorText = await response.text();
-                        console.error(`[NextAuth] Backend authentication failed with status ${response.status}:`, errorText);
-                        console.error(`[NextAuth] Please check backend logs at: /ecs/academiasync-prod/user-service`);
-                    }
-                } catch (error) {
-                    console.error("[NextAuth] Error authenticating with backend:", error);
-                    console.error(`[NextAuth] Backend URL: ${BACKEND_URL}/auth/google`);
-                    console.error("[NextAuth] This could be a network connectivity issue");
-                }
-                console.error("[NextAuth] SignIn callback returning false - user will be redirected to login page");
-                return false;
+            const result = await exchangeGoogleToken(BACKEND_URL, account.id_token)
+            if (result.ok) {
+                // NextAuth passes this same account object to the jwt callback next.
+                const backendAccount = account as BackendAccount
+                backendAccount.userData = result.user
+                backendAccount.userRole = result.role
+                backendAccount.backendAccessToken = result.accessToken
+                return true
             }
-            return true;
+
+            console.error(
+                `[NextAuth] Sign-in with ${BACKEND_URL}/auth/google failed: ${result.reason}`,
+                result.status ?? "",
+            )
+            // A URL sends the user back to the login page with a reason it can explain.
+            return `/login?error=${SIGN_IN_ERROR_PARAM[result.reason]}`
         },
         async jwt({ token, account }: { token: JWT; account: Account | null }) {
             // Persist user data, role, and backend token to the JWT token
-            if (account && 'userData' in account && 'userRole' in account) {
-                token.user = (account as any).userData;
-                token.role = (account as any).userRole;
-                token.backendAccessToken = (account as any).backendAccessToken;
+            if (account && isBackendAccount(account)) {
+                token.user = account.userData
+                token.role = account.userRole
+                token.backendAccessToken = account.backendAccessToken
             }
-            return token;
+            return token
         },
         async session({ session, token }: { session: Session; token: JWT }) {
             // Add user data, role, and backend token to the session
             if (token.user) {
-                session.user = token.user;
+                session.user = { ...token.user }
                 // Map profilePicture to image for NextAuth compatibility
-                if ((token.user as any).profilePicture) {
-                    (session.user as any).image = (token.user as any).profilePicture;
+                if (token.user.profilePicture) {
+                    session.user.image = token.user.profilePicture
                 }
             }
             if (token.role) {
-                session.role = token.role;
+                session.role = token.role
             }
             if (token.backendAccessToken) {
-                (session as any).backendAccessToken = token.backendAccessToken;
+                session.backendAccessToken = token.backendAccessToken
 
                 // Fetch fresh user data from backend to get updated profile info
                 try {
@@ -149,27 +122,27 @@ export const authOptions: AuthOptions = {
                         headers: {
                             Authorization: `Bearer ${token.backendAccessToken}`,
                         },
-                    });
+                    })
 
                     if (response.ok) {
-                        const freshUserData = await response.json();
+                        const fresh = (await response.json()) as ProfileResponse
                         // Update session with fresh data, mapping snake_case to camelCase
                         session.user = {
                             ...session.user,
-                            name: freshUserData.first_name && freshUserData.last_name
-                                ? `${freshUserData.first_name} ${freshUserData.last_name}`
-                                : freshUserData.first_name,
-                            firstName: freshUserData.first_name,
-                            lastName: freshUserData.last_name,
-                            ...freshUserData
-                        };
+                            name: fresh.first_name && fresh.last_name
+                                ? `${fresh.first_name} ${fresh.last_name}`
+                                : fresh.first_name,
+                            firstName: fresh.first_name,
+                            lastName: fresh.last_name,
+                            ...fresh,
+                        }
                     }
                 } catch (error) {
-                    console.error("Error fetching fresh user data:", error);
+                    console.error("Error fetching fresh user data:", error)
                     // Continue with cached data if fetch fails
                 }
             }
-            return session;
+            return session
         },
     },
     pages: {

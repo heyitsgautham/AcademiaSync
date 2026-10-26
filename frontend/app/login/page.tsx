@@ -8,38 +8,21 @@ import { motion } from "framer-motion"
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
+import { signInErrorMessage } from "@/lib/sign-in-errors"
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Rate limiting removed - retryAfter state commented out
-  // const [retryAfter, setRetryAfter] = useState<number | null>(null)
 
-  // Check for error from NextAuth redirect
+  // NextAuth and the signIn callback send failures back here as ?error=<code>
   useEffect(() => {
-    const errorParam = searchParams.get("error")
-    if (errorParam) {
-      // ============================================================================
-      // RATE LIMITING ERROR HANDLING DISABLED - COMMENTED OUT
-      // ============================================================================
-      // Rate limiting has been disabled, so we no longer check for AccessDenied
-      // ============================================================================
-      // if (errorParam === "AccessDenied") {
-      //   setError("🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
-      //   setRetryAfter(600)
-      // } else {
-      //   setError("Authentication failed. Please try again.")
-      // }
-      setError("Authentication failed. Please try again.")
-    }
+    setError(signInErrorMessage(searchParams.get("error")))
   }, [searchParams])
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     setError(null)
-    // Rate limiting removed - retryAfter state management commented out
-    // setRetryAfter(null)
 
     try {
       const result = await signIn("google", {
@@ -51,22 +34,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Login failed. Please try again.")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error)
-
-      // ============================================================================
-      // RATE LIMITING ERROR HANDLING DISABLED - COMMENTED OUT
-      // ============================================================================
-      // Rate limiting has been disabled, so we no longer check for 429 errors
-      // ============================================================================
-      // // Check if it's a rate limit error
-      // if (error?.status === 429 || error?.response?.status === 429) {
-      //   const errorData = error?.response?.data || error?.data
-      //   setError(errorData?.message || "🐼 Whoa there, eager beaver! You've tried logging in too many times. Take a breather and try again in 10 minutes! ☕")
-      //   setRetryAfter(errorData?.retryAfter || 600)
-      // } else {
-      //   setError("An error occurred during login. Please try again.")
-      // }
       setError("An error occurred during login. Please try again.")
     } finally {
       setIsLoading(false)
@@ -81,7 +50,7 @@ export default function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        {/* Rate Limit Error Display - Above AcademiaSync Logo */}
+        {/* Sign-in error, above the logo */}
         {error && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -95,12 +64,6 @@ export default function LoginPage() {
               <p className="text-destructive text-lg leading-relaxed">
                 {error}
               </p>
-              {/* Rate limiting removed - retry message commented out */}
-              {/* {retryAfter && (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Please wait {Math.ceil(retryAfter / 60)} minutes before trying again.
-                </p>
-              )} */}
             </div>
           </motion.div>
         )}

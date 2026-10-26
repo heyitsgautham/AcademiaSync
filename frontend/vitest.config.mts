@@ -14,7 +14,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "lcov"],
-      include: ["lib/**", "hooks/**", "components/admin-*.tsx", "middleware.ts"],
+      include: ["lib/**", "hooks/**", "components/admin-*.tsx", "proxy.ts"],
     },
   },
 })

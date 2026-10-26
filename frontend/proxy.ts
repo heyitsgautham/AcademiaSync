@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { roleRedirect } from "@/lib/role-routing"
 
 export default withAuth(
-  function middleware(req) {
+  function proxy(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 

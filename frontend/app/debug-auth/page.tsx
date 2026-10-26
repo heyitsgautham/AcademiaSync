@@ -62,6 +62,8 @@ export default async function DebugPage() {
 
                 <div className="bg-card border border-border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-foreground">Test Login</h2>
+                    {/* NextAuth's sign-in endpoint is an API route, not a page, so it needs a full navigation */}
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                     <a
                         href="/api/auth/signin/google"
                         className="inline-block bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"

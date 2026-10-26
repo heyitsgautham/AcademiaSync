@@ -16,7 +16,7 @@ describe("admin student routes", () => {
   let fetchMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 9 }), { status: 200 }))
+    fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ id: 9 }), { status: 200 }))
     vi.stubGlobal("fetch", fetchMock)
     vi.stubEnv("INTERNAL_BACKEND_URL", "http://users:5000")
   })
@@ -35,8 +35,8 @@ describe("admin student routes", () => {
   })
 
   it("updates and deletes a student by id", async () => {
-    await updateStudent(json({ firstName: "Sue", lastName: "S", email: "s@example.com" }, "PUT"), { params: { id: "40" } })
-    await deleteStudent(new Request("http://localhost/api", { method: "DELETE" }), { params: { id: "40" } })
+    await updateStudent(json({ firstName: "Sue", lastName: "S", email: "s@example.com" }, "PUT"), { params: Promise.resolve({ id: "40" }) })
+    await deleteStudent(new Request("http://localhost/api", { method: "DELETE" }), { params: Promise.resolve({ id: "40" }) })
 
     expect(fetchMock.mock.calls.map(([url, init]) => [init.method, url])).toEqual([
       ["PUT", "http://users:5000/admin/students/40"],

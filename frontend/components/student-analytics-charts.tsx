@@ -17,7 +17,7 @@ import {
 } from "recharts"
 import { ChartTooltip } from "@/components/ui/chart"
 import { useCssVariable } from "@/hooks/use-css-variable"
-import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
+import { WrappedAxisTick } from "@/components/wrapped-axis-tick"
 import type { StudentAnalytics } from "@/types/api"
 
 interface AnalyticsChartsProps {
@@ -35,11 +35,6 @@ const GRADE_COLORS = {
 
 export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps) {
   const mutedForegroundColor = useCssVariable("--muted-foreground", "#9ca3af")
-
-  // Wraps long course names onto two lines
-  const CustomXAxisTick = (props: AxisTickProps) => (
-    <WrappedAxisTick {...props} fill={mutedForegroundColor} />
-  )
 
   if (isLoading) {
     return (
@@ -160,7 +155,7 @@ export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="course"
-                  tick={<CustomXAxisTick />}
+                  tick={<WrappedAxisTick fill={mutedForegroundColor} />}
                   interval={0}
                   height={70}
                 />

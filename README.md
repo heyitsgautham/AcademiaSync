@@ -34,7 +34,7 @@ Teachers create and edit courses and assignments, see every enrolled student's s
 
 Admins list, create, edit and delete teachers and students, change anyone's role, drill into any student, teacher or course, and see ranked analytics behind an extra API key.
 
-Every page is behind Google sign-in, and the Next.js middleware sends each role to its own section.
+Every page is behind Google sign-in, and the Next.js proxy (`frontend/proxy.ts`) sends each role to its own section.
 
 ## Architecture
 
@@ -101,7 +101,7 @@ backend/
     seed/              Demo data, split into ordered steps
     seed-demo-data.sql Loads every seed step with psql
     check-seed.sql     Data consistency checks run in CI
-frontend/              Next.js 14 App Router app, NextAuth, shadcn/ui, Vitest tests
+frontend/              Next.js 16 App Router app on React 19, NextAuth, shadcn/ui, Vitest tests
 terraform/             AWS VPC, ECR, ECS Fargate, ALB, CloudWatch and SNS modules
 deployment/            Scripts for the earlier Google Cloud Run and Supabase deployment
 scripts/               seed-demo.sh and smoke-test.sh
@@ -337,7 +337,7 @@ The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy o
 | Job | What it does |
 |---|---|
 | Backend (each service) | `npm ci`, ESLint, Prettier check, Jest with the coverage threshold against Postgres 16, `npm audit --audit-level=high` on production dependencies |
-| Frontend | `npm ci`, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, and a report-only audit |
+| Frontend | `npm ci`, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, `npm audit --omit=dev --audit-level=high` |
 | Database | Applies `init.sql` twice, loads the demo seed and runs `check-seed.sql` |
 | Secret scan | gitleaks over the pushed commits |
 

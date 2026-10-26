@@ -1,9 +1,10 @@
 import { forwardToBackend } from "@/lib/backend-proxy"
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   return forwardToBackend({
     service: "course",
-    path: `/admin/students/${encodeURIComponent(params.id)}/courses`,
+    path: `/admin/students/${encodeURIComponent(id)}/courses`,
     requireRole: "Admin",
     error: { fallback: "Failed to fetch student courses" },
     action: "fetching student courses",

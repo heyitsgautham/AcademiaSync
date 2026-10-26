@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useCssVariable } from "@/hooks/use-css-variable"
-import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
+import { WrappedAxisTick } from "@/components/wrapped-axis-tick"
 
 interface AnalyticsData {
   studentsPerCourse: Array<{ course: string; students: number }>
@@ -50,11 +50,6 @@ export function TeacherAnalyticsSection({ analytics, isLoading }: AnalyticsSecti
     ? analytics.assignmentStatus
     : []
 
-  // Wraps long course names onto two lines
-  const CustomXAxisTick = (props: AxisTickProps) => (
-    <WrappedAxisTick {...props} fill={mutedForegroundColor} fontFamily="system-ui, -apple-system, sans-serif" />
-  )
-
   return (
     <Card>
       <CardHeader>
@@ -71,7 +66,7 @@ export function TeacherAnalyticsSection({ analytics, isLoading }: AnalyticsSecti
                 <XAxis
                   dataKey="course"
                   className="text-xs"
-                  tick={<CustomXAxisTick />}
+                  tick={<WrappedAxisTick fill={mutedForegroundColor} fontFamily="system-ui, -apple-system, sans-serif" />}
                   interval={0}
                   height={70}
                 />

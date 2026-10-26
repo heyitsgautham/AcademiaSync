@@ -116,10 +116,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: '1'
         run: npm run build
 
-      # Report-only until the Next.js 16 upgrade. The remaining advisories are in next itself
-      # and its bundled postcss, and no 14.x release fixes them.
       - name: Audit production dependencies
-        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   database:

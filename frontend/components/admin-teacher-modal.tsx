@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { errorMessage } from "@/lib/errors"
 
 interface Teacher {
     id: number
@@ -85,7 +86,7 @@ export function AdminTeacherModal({ open, onOpenChange, teacher, onSuccess, mode
             const url = mode === "create" ? "/api/admin/teachers" : `/api/admin/teachers/${teacher?.id}`
             const method = mode === "create" ? "POST" : "PUT"
 
-            const body: any = {
+            const body: { firstName: string; lastName: string; email: string; specialization: string; password?: string } = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
@@ -116,10 +117,10 @@ export function AdminTeacherModal({ open, onOpenChange, teacher, onSuccess, mode
             onSuccess()
             onOpenChange(false)
             reset()
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {

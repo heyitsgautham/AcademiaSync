@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StudentAnalyticsCharts } from "@/components/student-analytics-charts"
+import type { StudentAnalytics } from "@/types/api"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic'
 export default function StudentAnalyticsPage() {
   const [timeFilter, setTimeFilter] = useState("weekly")
 
-  const { data: analyticsData, isLoading } = useQuery({
+  const { data: analyticsData, isLoading } = useQuery<StudentAnalytics>({
     queryKey: ["student-analytics", timeFilter],
     queryFn: async () => {
       const res = await fetch(`/api/student/analytics?filter=${timeFilter}`)

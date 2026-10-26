@@ -49,7 +49,7 @@ From the repo root, `npm test`, `npm run test:coverage`, `npm run lint`, `npm ru
 
 `npm run format` fixes formatting in the backend services, which share the root `.prettierrc.json`.
 The backend coverage thresholds live in each `jest.config.js`, and a run below them fails.
-The frontend lint script fails above 130 warnings, and 125 already exist, mostly `any` types, so type new code fully.
+The frontend lint script fails on any warning, and `any` is an error, so type new code fully; shared API shapes live in `frontend/types/api.ts`.
 
 ## Open a pull request
 

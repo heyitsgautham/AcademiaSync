@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { errorMessage } from "@/lib/errors"
 
 interface Student {
     id: number
@@ -123,10 +124,10 @@ export function AdminStudentModal({ open, onOpenChange, student, onSuccess, mode
             onSuccess()
             onOpenChange(false)
             reset()
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {

@@ -182,7 +182,7 @@ export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsCha
                                     }}
                                     labelStyle={{ color: "hsl(var(--foreground))" }}
                                     itemStyle={{ color: "hsl(var(--foreground))" }}
-                                    formatter={(value: any, name: string) => {
+                                    formatter={(value: number | string, name: string) => {
                                         if (name === "avgGrade") return [value, "Average Grade"]
                                         return [value, name]
                                     }}

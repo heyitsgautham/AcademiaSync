@@ -6,9 +6,10 @@ import { Bar, BarChart, Line, LineChart, Pie, PieChart, Cell, XAxis, YAxis, Cart
 import { ChartTooltip } from "@/components/ui/chart"
 import { useCssVariable } from "@/hooks/use-css-variable"
 import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
+import type { TeacherDetailedAnalytics } from "@/types/api"
 
 interface AnalyticsChartsProps {
-  data: any
+  data: TeacherDetailedAnalytics | undefined
   isLoading: boolean
 }
 
@@ -187,7 +188,7 @@ export function TeacherAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps
                 outerRadius={65}
                 dataKey="value"
               >
-                {data?.gradeDistribution?.map((entry: any, index: number) => (
+                {data?.gradeDistribution?.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={GRADE_COLORS[entry.name as keyof typeof GRADE_COLORS]} />
                 ))}
               </Pie>

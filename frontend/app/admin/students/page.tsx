@@ -7,7 +7,7 @@ import { AdminThemeWrapper } from "@/components/admin-theme-wrapper"
 import { AdminDashboardSidebar } from "@/components/admin-dashboard-sidebar"
 import { AdminDashboardTopbar } from "@/components/admin-dashboard-topbar"
 import { AdminDashboardLogo } from "@/components/admin-dashboard-logo"
-import { AdminStudentsTable } from "@/components/admin-students-table"
+import { AdminStudentsTable, type Student } from "@/components/admin-students-table"
 import { AdminStudentModal } from "@/components/admin-student-modal"
 import { Button } from "@/components/ui/button"
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic"
 export default function AdminStudentsPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [studentModalOpen, setStudentModalOpen] = useState(false)
-    const [selectedStudent, setSelectedStudent] = useState(null)
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
     const [modalMode, setModalMode] = useState<"create" | "edit">("create")
     const queryClient = useQueryClient()
 
@@ -39,7 +39,7 @@ export default function AdminStudentsPage() {
         setStudentModalOpen(true)
     }
 
-    const handleEditStudent = (student: any) => {
+    const handleEditStudent = (student: Student) => {
         setSelectedStudent(student)
         setModalMode("edit")
         setStudentModalOpen(true)

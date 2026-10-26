@@ -7,7 +7,7 @@ import { AdminThemeWrapper } from "@/components/admin-theme-wrapper"
 import { AdminDashboardSidebar } from "@/components/admin-dashboard-sidebar"
 import { AdminDashboardTopbar } from "@/components/admin-dashboard-topbar"
 import { AdminDashboardLogo } from "@/components/admin-dashboard-logo"
-import { AdminTeachersTable } from "@/components/admin-teachers-table"
+import { AdminTeachersTable, type Teacher } from "@/components/admin-teachers-table"
 import { AdminTeacherModal } from "@/components/admin-teacher-modal"
 import { Button } from "@/components/ui/button"
 
@@ -17,11 +17,11 @@ export const dynamic = "force-dynamic"
 export default function AdminTeachersPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [teacherModalOpen, setTeacherModalOpen] = useState(false)
-    const [selectedTeacher, setSelectedTeacher] = useState(null)
+    const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
     const [modalMode, setModalMode] = useState<"create" | "edit">("create")
     const queryClient = useQueryClient()
 
-    const { data: teachersResponse, isLoading } = useQuery({
+    const { data: teachersResponse, isLoading } = useQuery<{ teachers: Teacher[] } | Teacher[]>({
         queryKey: ["admin-teachers"],
         queryFn: async () => {
             const res = await fetch("/api/admin/teachers")
@@ -30,8 +30,7 @@ export default function AdminTeachersPage() {
     })
 
     // Safe access with fallback - handle HATEOAS response structure
-    const teachers = (teachersResponse as any)?.teachers || teachersResponse || []
-    const teachersArray = Array.isArray(teachers) ? teachers : []
+    const teachersArray = Array.isArray(teachersResponse) ? teachersResponse : (teachersResponse?.teachers ?? [])
 
     const handleCreateTeacher = () => {
         setSelectedTeacher(null)
@@ -39,7 +38,7 @@ export default function AdminTeachersPage() {
         setTeacherModalOpen(true)
     }
 
-    const handleEditTeacher = (teacher: any) => {
+    const handleEditTeacher = (teacher: Teacher) => {
         setSelectedTeacher(teacher)
         setModalMode("edit")
         setTeacherModalOpen(true)

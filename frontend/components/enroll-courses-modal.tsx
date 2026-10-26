@@ -31,9 +31,9 @@ export function EnrollCoursesModal({ open, onOpenChange }: EnrollCoursesModalPro
     queryKey: ["available-courses"],
     queryFn: async () => {
       const res = await fetch("/api/student/available-courses")
-      const data = await res.json()
-      // Handle HATEOAS response structure
-      return (data as any)?.courses || data || []
+      const data: { courses?: Course[] } | Course[] = await res.json()
+      // course-service wraps the list as { courses, _links }
+      return Array.isArray(data) ? data : (data.courses ?? [])
     },
   })
 

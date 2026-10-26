@@ -32,8 +32,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { errorMessage } from "@/lib/errors"
 
-interface Student {
+export interface Student {
     id: number
     firstName: string
     lastName: string
@@ -126,10 +127,10 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
             setPromoteRole(null)
             setSpecialization("")
             setSpecializationDialogOpen(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {
@@ -171,10 +172,10 @@ export function AdminStudentsTable({ students, isLoading, onUpdate, onEdit, onDe
 
             onDelete(deleteStudentId)
             setDeleteStudentId(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {

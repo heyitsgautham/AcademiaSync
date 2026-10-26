@@ -22,8 +22,9 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { errorMessage } from "@/lib/errors"
 
-interface Teacher {
+export interface Teacher {
     id: number
     firstName: string
     lastName: string
@@ -88,10 +89,10 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
 
             onDelete(deleteTeacherId)
             setDeleteTeacherId(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {
@@ -126,10 +127,10 @@ export function AdminTeachersTable({ teachers, isLoading, onEdit, onDelete }: Ad
             onDelete(roleChangeTeacherId) // Refresh the table
             setRoleChangeTeacherId(null)
             setSelectedRoleChange(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: errorMessage(error),
                 variant: "destructive",
             })
         } finally {

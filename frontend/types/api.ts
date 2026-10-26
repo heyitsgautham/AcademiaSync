@@ -113,3 +113,19 @@ export interface StudentInCourse extends CourseStudent {
   courseName: string
   courseId: string
 }
+
+/** GET /api/student/analytics on course-service */
+export interface StudentAnalytics {
+  gradeTrends: Array<{ period: string; grade: number }>
+  assignmentCompletion: Array<{ period: string; completed: number; total: number }>
+  courseProgress: Array<{ course: string; progress: number }>
+  gradeDistribution: Array<{ name: string; value: number }>
+}
+
+/** GET /api/teacher/analytics/detailed on course-service */
+export interface TeacherDetailedAnalytics {
+  coursePerformance: Array<{ course: string; performance: number }>
+  studentProgress: Array<{ period: string; progress: number }>
+  completionRates: Array<{ assignment: string; rate: number }>
+  gradeDistribution: Array<{ name: string; value: number }>
+}

@@ -8,6 +8,7 @@ import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
 import { TeacherDashboardLogo } from "@/components/teacher-dashboard-logo"
 import { TeacherAnalyticsCharts } from "@/components/teacher-analytics-charts"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { TeacherDetailedAnalytics } from "@/types/api"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -16,7 +17,7 @@ export default function AnalyticsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState("monthly")
 
-  const { data: analyticsData, isLoading } = useQuery({
+  const { data: analyticsData, isLoading } = useQuery<TeacherDetailedAnalytics>({
     queryKey: ["detailed-analytics", timeFilter],
     queryFn: async () => {
       const res = await fetch(`/api/teacher/detailed-analytics?filter=${timeFilter}`)

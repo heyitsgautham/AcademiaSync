@@ -18,9 +18,10 @@ import {
 import { ChartTooltip } from "@/components/ui/chart"
 import { useCssVariable } from "@/hooks/use-css-variable"
 import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
+import type { StudentAnalytics } from "@/types/api"
 
 interface AnalyticsChartsProps {
-  data: any
+  data: StudentAnalytics | undefined
   isLoading: boolean
 }
 
@@ -235,7 +236,7 @@ export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps
                   outerRadius={65}
                   dataKey="value"
                 >
-                  {gradeDistribution.map((entry: any, index: number) => (
+                  {gradeDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={GRADE_COLORS[entry.name as keyof typeof GRADE_COLORS]} />
                   ))}
                 </Pie>

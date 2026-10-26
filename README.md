@@ -209,7 +209,7 @@ cd ../../frontend
 npm ci
 npm test                  # Vitest and Testing Library
 npm run test:coverage
-npm run lint              # ESLint, at most 130 warnings
+npm run lint              # ESLint, no warnings allowed
 npm run typecheck         # tsc --noEmit
 npm run build             # also type-checks and lints
 ```

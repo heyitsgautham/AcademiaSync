@@ -41,6 +41,8 @@ export function HeroSection() {
           className="mt-16 sm:mt-24"
         >
           <div className="relative rounded-xl bg-card shadow-2xl ring-1 ring-border overflow-hidden">
+            {/* A plain img keeps the screenshot at its natural aspect ratio; next.config.mjs serves images unoptimized anyway */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/academiasync.jpg" alt="AcademiaSync Dashboard" className="w-full h-auto" />
           </div>
         </motion.div>

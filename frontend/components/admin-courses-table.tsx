@@ -42,7 +42,7 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
     const [sortField, setSortField] = useState<SortField>("createdAt")
     const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
 
-    const coursesArray = Array.isArray(courses) ? courses : []
+    const coursesArray = useMemo(() => (Array.isArray(courses) ? courses : []), [courses])
 
     // Handle sorting
     const handleSort = (field: SortField) => {
@@ -74,12 +74,8 @@ export function AdminCoursesTable({ courses, isLoading }: AdminCoursesTableProps
 
         // Sort courses
         result.sort((a, b) => {
-            let aValue: any = a[sortField]
-            let bValue: any = b[sortField]
-
-            // Handle undefined values
-            if (aValue === undefined) aValue = ""
-            if (bValue === undefined) bValue = ""
+            let aValue: string | number = a[sortField] ?? ""
+            let bValue: string | number = b[sortField] ?? ""
 
             // Convert to lowercase for string comparison
             if (typeof aValue === "string") aValue = aValue.toLowerCase()

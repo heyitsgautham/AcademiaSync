@@ -25,8 +25,9 @@ services:
 
   user-service:
     build:
-      context: ./backend/user-service
-      dockerfile: Dockerfile
+      # The repo root is the context so the image installs from the workspaces lockfile
+      context: .
+      dockerfile: backend/user-service/Dockerfile
       target: runner
     container_name: academiasync-user-service
     environment:
@@ -65,8 +66,9 @@ services:
 
   course-service:
     build:
-      context: ./backend/course-service
-      dockerfile: Dockerfile
+      # The repo root is the context so the image installs from the workspaces lockfile
+      context: .
+      dockerfile: backend/course-service/Dockerfile
       target: runner
     container_name: academiasync-course-service
     environment:
@@ -94,8 +96,9 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      # The repo root is the context so the image installs from the workspaces lockfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: runner
     container_name: academiasync-frontend
     environment:

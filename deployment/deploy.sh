@@ -48,15 +48,15 @@ REGISTRY_URL="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY
 
 # Build & Push (with platform flag for Cloud Run compatibility)
 print_step "Building user-service"
-docker build --platform linux/amd64 -t ${REGISTRY_URL}/user-service:latest -f backend/user-service/Dockerfile.cloudrun backend/user-service
+docker build --platform linux/amd64 -t ${REGISTRY_URL}/user-service:latest -f backend/user-service/Dockerfile.cloudrun .
 docker push ${REGISTRY_URL}/user-service:latest
 
 print_step "Building course-service"
-docker build --platform linux/amd64 -t ${REGISTRY_URL}/course-service:latest -f backend/course-service/Dockerfile.cloudrun backend/course-service
+docker build --platform linux/amd64 -t ${REGISTRY_URL}/course-service:latest -f backend/course-service/Dockerfile.cloudrun .
 docker push ${REGISTRY_URL}/course-service:latest
 
 print_step "Building frontend"
-docker build --platform linux/amd64 -t ${REGISTRY_URL}/frontend:latest -f frontend/Dockerfile.cloudrun frontend
+docker build --platform linux/amd64 -t ${REGISTRY_URL}/frontend:latest -f frontend/Dockerfile.cloudrun .
 docker push ${REGISTRY_URL}/frontend:latest
 
 # Deploy Services
@@ -128,7 +128,7 @@ docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_COURSE_SERVICE_URL=${COURSE_SERVICE_URL} \
   --no-cache \
   -t ${REGISTRY_URL}/frontend:latest \
-  -f frontend/Dockerfile.cloudrun frontend
+  -f frontend/Dockerfile.cloudrun .
 docker push ${REGISTRY_URL}/frontend:latest
 
 print_step "Redeploying frontend with rebuilt image"

@@ -1,14 +1,22 @@
+# Build from the repo root, which holds the workspaces lockfile:
+#   docker build -f backend/course-service/Dockerfile .
+
 # ================================
 # Stage 1: Dependencies
 # ================================
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# npm ci checks the lockfile against every workspace manifest, so all three are copied
+COPY package.json package-lock.json ./
+COPY backend/user-service/package.json backend/user-service/
+COPY backend/course-service/package.json backend/course-service/
+COPY frontend/package.json frontend/
 
-# Install only production dependencies, exactly as pinned in package-lock.json
-RUN npm ci --omit=dev && \
+# Install this service's production dependencies, exactly as pinned in the root package-lock.json.
+# Shared versions land in /app/node_modules and service-specific ones in the service's own node_modules.
+RUN npm ci --workspace backend/course-service --omit=dev --no-audit --no-fund && \
+    mkdir -p backend/course-service/node_modules && \
     npm cache clean --force
 
 # ================================
@@ -26,15 +34,18 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copy production dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/backend/course-service/node_modules ./backend/course-service/node_modules
 
 # Copy application code
-COPY . .
+COPY backend/course-service/package.json ./backend/course-service/
+COPY backend/course-service/src ./backend/course-service/src
 
 # Give the runtime user ownership of the app directory
 RUN chown -R appuser:nodejs /app
 
 # Switch to non-root user
 USER appuser
+WORKDIR /app/backend/course-service
 
 # Expose port
 EXPOSE 5001

@@ -90,7 +90,7 @@ jobs:
             --tag ${IMAGE_URI_LATEST} \
             --file frontend/Dockerfile \
             --load \
-            frontend/
+            .
           
           echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT
@@ -169,7 +169,7 @@ jobs:
             --tag ${IMAGE_URI_LATEST} \
             --file backend/user-service/Dockerfile \
             --load \
-            backend/user-service/
+            .
           
           echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT
@@ -248,7 +248,7 @@ jobs:
             --tag ${IMAGE_URI_LATEST} \
             --file backend/course-service/Dockerfile \
             --load \
-            backend/course-service/
+            .
           
           echo "image=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "image-latest=${IMAGE_URI_LATEST}" >> $GITHUB_OUTPUT

@@ -12,7 +12,7 @@ Docker is only needed to run the full stack.
 git clone https://github.com/heyitsgautham/AcademiaSync.git
 cd AcademiaSync
 createdb academiasync_test
-npm run setup    # npm ci in backend/user-service, backend/course-service and frontend
+npm ci           # npm workspaces: installs all three packages from the root package-lock.json
 npm test         # every test suite
 ```
 
@@ -31,6 +31,8 @@ New SQL goes through the route's `pool` argument with `$1` placeholders, never s
 
 Keep source files under 500 lines.
 When a router grows past that, split it into a folder with an `index.js` that registers each group, as `course-service/src/routes/student/` does.
+
+Add or upgrade a dependency from the root with `npm install <name> --workspace <folder>`, so the root `package-lock.json` stays the only lockfile.
 
 Never commit a `.env` file or a real secret.
 Add any new variable to the matching `.env.example` and to the configuration table in the README.

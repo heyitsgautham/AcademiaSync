@@ -107,7 +107,8 @@ deployment/            Scripts for the earlier Google Cloud Run and Supabase dep
 scripts/               seed-demo.sh and smoke-test.sh
 docker-compose.yml     Local stack, with Prometheus behind the monitoring profile
 monitoring/            Prometheus scrape config
-package.json           Root scripts that install, test, lint and type-check every package
+package.json           npm workspaces root: lists the three packages and runs their scripts
+package-lock.json      The only lockfile, for every package
 .prettierrc.json       Formatting rules shared by the backend services
 eslint.config.base.cjs Lint rules shared by the backend services
 ```
@@ -151,25 +152,27 @@ It empties every table first.
 
 You need Node.js 22 (see `.nvmrc`) and a PostgreSQL 16 server.
 
+The repo is an npm workspaces monorepo, so one `npm ci` at the root installs all three packages from the root `package-lock.json`.
+
 ```bash
+npm ci                    # every package, from the root lockfile
 createdb academiasync
 psql -d academiasync -f backend/database/init.sql
 
 cd backend/user-service
 cp .env.example .env      # edit DB_* and the secrets
-npm ci
 npm run dev               # http://localhost:5000
 
 cd ../course-service
 cp .env.example .env      # JWT_SECRET must match user-service
-npm ci
 npm run dev               # http://localhost:5001
 
 cd ../../frontend
 cp .env.example .env.local
-npm ci
 npm run dev               # http://localhost:3000
 ```
+
+Add a dependency to one package with `npm install <name> --workspace backend/user-service`, never with `npm install` inside the package folder.
 
 ## Tests and checks
 
@@ -180,34 +183,31 @@ Jest applies `backend/database/init.sql` once per run and reads the `DB_*` varia
 The root `package.json` runs each check across all three packages.
 
 ```bash
-npm run setup             # npm ci in user-service, course-service and frontend
+npm ci                    # every package, from the root lockfile
 createdb academiasync_test
-npm test                  # every suite: 85 + 125 backend tests, then the frontend
+npm test                  # every suite: 117 + 149 backend tests, then 191 frontend tests
 npm run test:coverage     # the same with each package's coverage threshold
 npm run lint
 npm run format:check      # Prettier, backend services
 npm run typecheck         # tsc --noEmit, frontend
 ```
 
-To work on one package, run the same scripts inside its folder.
+To work on one package, run the same scripts inside its folder after the root `npm ci`.
 
 ```bash
 cd backend/user-service
-npm ci
-npm test                  # 85 tests
+npm test                  # 117 tests
 npm run test:coverage     # fails under 75% line coverage
 npm run lint
 npm run format:check
 
 cd ../course-service
-npm ci
-npm test                  # 125 tests
+npm test                  # 149 tests
 npm run test:coverage     # fails under 80% line coverage
 npm run lint
 npm run format:check
 
 cd ../../frontend
-npm ci
 npm test                  # Vitest and Testing Library
 npm run test:coverage     # fails under 85% line coverage of route handlers, lib/ and hooks/
 npm run lint              # ESLint, no warnings allowed
@@ -337,8 +337,8 @@ The `Terraform Infrastructure Deployment` workflow runs plan, apply or destroy o
 
 | Job | What it does |
 |---|---|
-| Backend (each service) | `npm ci`, ESLint, Prettier check, Jest with the coverage threshold against Postgres 16, `npm audit --audit-level=high` on production dependencies |
-| Frontend | `npm ci`, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, `npm audit --omit=dev --audit-level=high` |
+| Backend (each service) | `npm ci` at the root, ESLint, Prettier check, Jest with the coverage threshold against Postgres 16, `npm audit --workspace <service> --omit=dev --audit-level=high` |
+| Frontend | `npm ci` at the root, ESLint, `tsc --noEmit`, Vitest with coverage, `next build`, `npm audit --workspace frontend --omit=dev --audit-level=high` |
 | Database | Applies `init.sql` twice, loads the demo seed and runs `check-seed.sql` |
 | Secret scan | gitleaks over the pushed commits |
 

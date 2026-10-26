@@ -1,23 +1,8 @@
 version: 2
 updates:
+  # One npm workspaces lockfile at the root covers user-service, course-service and the frontend
   - package-ecosystem: npm
-    directory: /backend/user-service
-    schedule:
-      interval: weekly
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
-
-  - package-ecosystem: npm
-    directory: /backend/course-service
-    schedule:
-      interval: weekly
-    groups:
-      minor-and-patch:
-        update-types: [minor, patch]
-
-  - package-ecosystem: npm
-    directory: /frontend
+    directory: /
     schedule:
       interval: weekly
     groups:

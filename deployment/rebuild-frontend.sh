@@ -35,7 +35,7 @@ docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_COURSE_SERVICE_URL=${COURSE_SERVICE_URL} \
   --no-cache \
   -t ${REGISTRY_URL}/frontend:latest \
-  -f frontend/Dockerfile.cloudrun frontend
+  -f frontend/Dockerfile.cloudrun .
 
 print_step "Pushing frontend image"
 docker push ${REGISTRY_URL}/frontend:latest

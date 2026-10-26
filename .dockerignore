@@ -1,0 +1,18 @@
+# Every image builds with the repo root as its context, for the workspaces lockfile.
+# Each Dockerfile copies only the paths it needs; this keeps the context small.
+**/node_modules
+**/.next
+**/coverage
+**/logs
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+terraform
+deployment
+monitoring
+backend/database
+**/*.md
+**/.DS_Store

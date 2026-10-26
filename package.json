@@ -8,12 +8,16 @@
         "node": ">=22"
     },
     "scripts": {
-        "setup": "npm --prefix backend/user-service ci && npm --prefix backend/course-service ci && npm --prefix frontend ci",
-        "test": "npm --prefix backend/user-service test && npm --prefix backend/course-service test && npm --prefix frontend test",
-        "test:coverage": "npm --prefix backend/user-service run test:coverage && npm --prefix backend/course-service run test:coverage && npm --prefix frontend run test:coverage",
-        "lint": "npm --prefix backend/user-service run lint && npm --prefix backend/course-service run lint && npm --prefix frontend run lint",
-        "format:check": "npm --prefix backend/user-service run format:check && npm --prefix backend/course-service run format:check",
-        "typecheck": "npm --prefix frontend run typecheck",
-        "build": "npm --prefix frontend run build"
-    }
+        "test": "npm run test --workspace backend/user-service && npm run test --workspace backend/course-service && npm run test --workspace frontend",
+        "test:coverage": "npm run test:coverage --workspace backend/user-service && npm run test:coverage --workspace backend/course-service && npm run test:coverage --workspace frontend",
+        "lint": "npm run lint --workspace backend/user-service && npm run lint --workspace backend/course-service && npm run lint --workspace frontend",
+        "format:check": "npm run format:check --workspace backend/user-service && npm run format:check --workspace backend/course-service",
+        "typecheck": "npm run typecheck --workspace frontend",
+        "build": "npm run build --workspace frontend"
+    },
+    "workspaces": [
+        "backend/user-service",
+        "backend/course-service",
+        "frontend"
+    ]
 }

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { fetchJson } from "@/lib/http"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -46,13 +47,7 @@ export default function AdminCourseDetailPage() {
 
     const { data: courseData, isLoading } = useQuery<CourseData>({
         queryKey: ["admin-course-detail", courseId],
-        queryFn: async () => {
-            const res = await fetch(`/api/admin/courses/${courseId}/students`)
-            if (!res.ok) {
-                throw new Error("Failed to fetch course data")
-            }
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/admin/courses/${courseId}/students`, "Failed to fetch course data"),
     })
 
     const students = Array.isArray(courseData?.students) ? courseData.students : []

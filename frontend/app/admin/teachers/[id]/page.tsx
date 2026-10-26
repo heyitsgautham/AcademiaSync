@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { fetchJson } from "@/lib/http"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -43,13 +44,7 @@ export default function AdminTeacherDetailPage() {
 
     const { data: teacherData, isLoading } = useQuery<TeacherData>({
         queryKey: ["admin-teacher-detail", teacherId],
-        queryFn: async () => {
-            const res = await fetch(`/api/admin/teachers/${teacherId}/courses`)
-            if (!res.ok) {
-                throw new Error("Failed to fetch teacher data")
-            }
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/admin/teachers/${teacherId}/courses`, "Failed to fetch teacher data"),
     })
 
     const courses = Array.isArray(teacherData?.courses) ? teacherData.courses : []

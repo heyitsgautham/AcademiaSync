@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { fetchJson } from "@/lib/http"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -47,13 +48,7 @@ export default function AdminTeacherCourseStudentsPage() {
 
     const { data: courseData, isLoading } = useQuery<CourseStudentsData>({
         queryKey: ["admin-teacher-course-students", teacherId, courseId],
-        queryFn: async () => {
-            const res = await fetch(`/api/admin/teachers/${teacherId}/courses/${courseId}/students`)
-            if (!res.ok) {
-                throw new Error("Failed to fetch course students")
-            }
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/admin/teachers/${teacherId}/courses/${courseId}/students`, "Failed to fetch course students"),
     })
 
     const students = Array.isArray(courseData?.students) ? courseData.students : []

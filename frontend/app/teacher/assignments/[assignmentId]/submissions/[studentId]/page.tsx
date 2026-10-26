@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
+import { fetchJson } from "@/lib/http"
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic"
@@ -30,6 +31,12 @@ interface Submission {
     status: string
 }
 
+/** GET /api/teacher/assignments/:assignmentId/submissions */
+interface AssignmentSubmissions {
+    assignment: { id: number; title: string; description: string; due_date: string | null }
+    submissions: Submission[]
+}
+
 export default function SubmissionDetailPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [grade, setGrade] = useState("")
@@ -41,13 +48,9 @@ export default function SubmissionDetailPage() {
     const assignmentId = params.assignmentId as string
     const studentId = params.studentId as string
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading } = useQuery<AssignmentSubmissions>({
         queryKey: ["assignment-submissions", assignmentId],
-        queryFn: async () => {
-            const res = await fetch(`/api/teacher/assignments/${assignmentId}/submissions`)
-            if (!res.ok) throw new Error("Failed to fetch submissions")
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/teacher/assignments/${assignmentId}/submissions`, "Failed to fetch submissions"),
     })
 
     const updateMutation = useMutation({

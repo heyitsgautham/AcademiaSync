@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
+import { fetchJson } from "@/lib/http"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -41,11 +42,7 @@ export default function StudentAssignmentDetailsPage() {
 
     const { data: assignment, isLoading } = useQuery<AssignmentDetails>({
         queryKey: ["assignment-details", assignmentId],
-        queryFn: async () => {
-            const res = await fetch(`/api/student/assignments/${assignmentId}`)
-            if (!res.ok) throw new Error("Failed to fetch assignment details")
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/student/assignments/${assignmentId}`, "Failed to fetch assignment details"),
     })
 
     // Set initial submission if already submitted

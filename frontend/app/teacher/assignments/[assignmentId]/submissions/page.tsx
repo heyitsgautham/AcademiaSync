@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { fetchJson } from "@/lib/http"
 import {
     Table,
     TableBody,
@@ -34,6 +35,12 @@ interface Submission {
     grade: number | null
     feedback: string | null
     status: string
+}
+
+/** GET /api/teacher/assignments/:assignmentId/submissions */
+interface AssignmentSubmissions {
+    assignment: { id: number; title: string; description: string; due_date: string | null }
+    submissions: Submission[]
 }
 
 export default function SubmissionsPage() {
@@ -79,13 +86,9 @@ export default function SubmissionsPage() {
         }
     }, [searchParams])
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading } = useQuery<AssignmentSubmissions>({
         queryKey: ["assignment-submissions", assignmentId],
-        queryFn: async () => {
-            const res = await fetch(`/api/teacher/assignments/${assignmentId}/submissions`)
-            if (!res.ok) throw new Error("Failed to fetch submissions")
-            return res.json()
-        },
+        queryFn: () => fetchJson(`/api/teacher/assignments/${assignmentId}/submissions`, "Failed to fetch submissions"),
     })
 
     const assignment = data?.assignment

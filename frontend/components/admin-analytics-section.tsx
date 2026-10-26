@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useCssVariable } from "@/hooks/use-css-variable"
 
 interface AnalyticsData {
     userRoleDistribution: Array<{ name: string; value: number }>
@@ -18,33 +18,7 @@ interface AnalyticsSectionProps {
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b"]
 
 export function AdminAnalyticsSection({ analytics, isLoading }: AnalyticsSectionProps) {
-    const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
-
-    useEffect(() => {
-        // Get computed color from CSS variable for muted-foreground
-        const updateColor = () => {
-            const color = getComputedStyle(document.documentElement)
-                .getPropertyValue('--muted-foreground')
-                .trim()
-
-            if (color) {
-                // Color is already in hex format (#9ca3af), use it directly
-                setMutedForegroundColor(color)
-            }
-        }
-
-        // Update color initially
-        updateColor()
-
-        // Listen for theme changes (when user toggles theme)
-        const observer = new MutationObserver(updateColor)
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['class', 'data-theme', 'style']
-        })
-
-        return () => observer.disconnect()
-    }, [])
+    const mutedForegroundColor = useCssVariable("--muted-foreground", "#9ca3af")
 
     if (isLoading) {
         return (

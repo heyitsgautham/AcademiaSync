@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useCssVariable } from "@/hooks/use-css-variable"
+import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
 
 interface AnalyticsData {
   courseProgress: Array<{ course: string; progress: number }>
@@ -18,33 +19,7 @@ interface StudentDashboardAnalyticsProps {
 const STATUS_COLORS = ["#34d399", "#fbbf24", "#f87171"]
 
 export function StudentDashboardAnalytics({ analytics, isLoading }: StudentDashboardAnalyticsProps) {
-  const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
-
-  useEffect(() => {
-    // Get computed color from CSS variable for muted-foreground
-    const updateColor = () => {
-      const color = getComputedStyle(document.documentElement)
-        .getPropertyValue('--muted-foreground')
-        .trim()
-
-      if (color) {
-        // Color is already in hex format (#9ca3af), use it directly
-        setMutedForegroundColor(color)
-      }
-    }
-
-    // Update color initially
-    updateColor()
-
-    // Listen for theme changes (when user toggles theme)
-    const observer = new MutationObserver(updateColor)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme', 'style']
-    })
-
-    return () => observer.disconnect()
-  }, [])
+  const mutedForegroundColor = useCssVariable("--muted-foreground", "#9ca3af")
 
   if (isLoading) {
     return (
@@ -76,54 +51,10 @@ export function StudentDashboardAnalytics({ analytics, isLoading }: StudentDashb
     ? analytics.submissionStatus
     : []
 
-  // Custom tick component for X-axis to handle long course names
-  const CustomXAxisTick = ({ x, y, payload }: any) => {
-    const text = payload.value
-    const maxCharsPerLine = 15 // Maximum characters per line
-    const words = text.split(' ')
-    const lines: string[] = []
-    let currentLine = ''
-
-    words.forEach((word: string) => {
-      const testLine = currentLine ? `${currentLine} ${word}` : word
-
-      if (testLine.length > maxCharsPerLine && currentLine) {
-        lines.push(currentLine)
-        currentLine = word
-      } else {
-        currentLine = testLine
-      }
-    })
-
-    if (currentLine) {
-      lines.push(currentLine)
-    }
-
-    // Limit to 2 lines and add ellipsis if needed
-    const displayLines = lines.slice(0, 2)
-    if (lines.length > 2) {
-      displayLines[1] = displayLines[1].substring(0, 12) + '...'
-    }
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        {displayLines.map((line, index) => (
-          <text
-            key={index}
-            x={0}
-            y={0}
-            dy={index * 14 + 8}
-            textAnchor="middle"
-            fill={mutedForegroundColor}
-            fontSize="11"
-            style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-          >
-            {line}
-          </text>
-        ))}
-      </g>
-    )
-  }
+  // Wraps long course names onto two lines
+  const CustomXAxisTick = (props: AxisTickProps) => (
+    <WrappedAxisTick {...props} fill={mutedForegroundColor} fontFamily="system-ui, -apple-system, sans-serif" />
+  )
 
   return (
     <Card>

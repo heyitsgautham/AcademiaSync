@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -17,6 +16,8 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { ChartTooltip } from "@/components/ui/chart"
+import { useCssVariable } from "@/hooks/use-css-variable"
+import { type AxisTickProps, WrappedAxisTick } from "@/components/wrapped-axis-tick"
 
 interface AnalyticsChartsProps {
   data: any
@@ -32,78 +33,12 @@ const GRADE_COLORS = {
 }
 
 export function StudentAnalyticsCharts({ data, isLoading }: AnalyticsChartsProps) {
-  const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
+  const mutedForegroundColor = useCssVariable("--muted-foreground", "#9ca3af")
 
-  useEffect(() => {
-    const updateColor = () => {
-      const color = getComputedStyle(document.documentElement)
-        .getPropertyValue('--muted-foreground')
-        .trim()
-
-      if (color) {
-        setMutedForegroundColor(color)
-      }
-    }
-
-    updateColor()
-
-    // Listen for theme changes
-    const observer = new MutationObserver(updateColor)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'data-theme', 'style']
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  // Custom X-Axis Tick component for wrapping long labels
-  const CustomXAxisTick = ({ x, y, payload }: any) => {
-    const text = payload.value
-    const maxCharsPerLine = 15
-    const words = text.split(' ')
-    const lines: string[] = []
-    let currentLine = ''
-
-    words.forEach((word: string) => {
-      const testLine = currentLine ? `${currentLine} ${word}` : word
-
-      if (testLine.length > maxCharsPerLine && currentLine) {
-        lines.push(currentLine)
-        currentLine = word
-      } else {
-        currentLine = testLine
-      }
-    })
-
-    if (currentLine) {
-      lines.push(currentLine)
-    }
-
-    // Limit to 2 lines with ellipsis
-    const displayLines = lines.slice(0, 2)
-    if (lines.length > 2) {
-      displayLines[1] = displayLines[1].substring(0, 12) + '...'
-    }
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        {displayLines.map((line, index) => (
-          <text
-            key={index}
-            x={0}
-            y={0}
-            dy={index * 14 + 8}
-            textAnchor="middle"
-            fill={mutedForegroundColor}
-            fontSize="11"
-          >
-            {line}
-          </text>
-        ))}
-      </g>
-    )
-  }
+  // Wraps long course names onto two lines
+  const CustomXAxisTick = (props: AxisTickProps) => (
+    <WrappedAxisTick {...props} fill={mutedForegroundColor} />
+  )
 
   if (isLoading) {
     return (

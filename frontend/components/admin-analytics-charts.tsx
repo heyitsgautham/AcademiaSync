@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useCssVariable } from "@/hooks/use-css-variable"
 
 interface AnalyticsData {
     studentsPerTeacher?: Array<{
@@ -41,30 +41,7 @@ interface AdminAnalyticsChartsProps {
 
 export function AdminAnalyticsCharts({ analytics, isLoading }: AdminAnalyticsChartsProps) {
     const router = useRouter()
-    const [mutedForegroundColor, setMutedForegroundColor] = useState("#9ca3af")
-
-    useEffect(() => {
-        const updateColor = () => {
-            const color = getComputedStyle(document.documentElement)
-                .getPropertyValue("--muted-foreground")
-                .trim()
-
-            if (color) {
-                setMutedForegroundColor(color)
-            }
-        }
-
-        updateColor()
-
-        // Listen for theme changes
-        const observer = new MutationObserver(updateColor)
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ["class", "data-theme", "style"],
-        })
-
-        return () => observer.disconnect()
-    }, [])
+    const mutedForegroundColor = useCssVariable("--muted-foreground", "#9ca3af")
 
     const studentsPerTeacherData = Array.isArray(analytics?.studentsPerTeacher)
         ? analytics.studentsPerTeacher

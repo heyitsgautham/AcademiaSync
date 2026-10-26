@@ -1,45 +1,12 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { forwardToBackend } from "@/lib/backend-proxy"
 
 export async function GET(request: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.backendAccessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const filter = searchParams.get("filter") || "weekly"
-
-    const COURSE_SERVICE_URL =
-      process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
-
-    const response = await fetch(`${COURSE_SERVICE_URL}/api/student/analytics?filter=${filter}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${session.backendAccessToken}`,
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Backend error:", errorText)
-      return NextResponse.json(
-        { error: "Failed to fetch student analytics" },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error fetching student analytics:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-  }
+  const filter = new URL(request.url).searchParams.get("filter") || "weekly"
+  return forwardToBackend({
+    service: "course",
+    path: "/api/student/analytics",
+    query: { filter },
+    error: { fallback: "Failed to fetch student analytics", from: "none" },
+    action: "fetching student analytics",
+  })
 }

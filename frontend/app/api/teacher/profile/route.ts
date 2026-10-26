@@ -1,80 +1,32 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-
-const BACKEND_URL = process.env.INTERNAL_BACKEND_URL || "http://user-service:5000"
+import { forwardToBackend, invalidJson, readJson } from "@/lib/backend-proxy"
+import { firstIssue, teacherProfileUpdate } from "@/lib/schemas"
 
 export async function GET() {
-    try {
-        const session = await getServerSession(authOptions)
-
-        if (!session?.backendAccessToken) {
-            console.error("No backend access token in session")
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
-
-        const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
-            headers: {
-                Authorization: `Bearer ${session.backendAccessToken}`,
-            },
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            return NextResponse.json({ error: error.message || "Failed to fetch profile" }, { status: response.status })
-        }
-
-        const data = await response.json()
-        return NextResponse.json(data)
-    } catch (error) {
-        console.error("Error fetching teacher profile:", error)
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-    }
+  return forwardToBackend({
+    service: "user",
+    path: "/api/users/profile",
+    error: { fallback: "Failed to fetch profile", from: "message" },
+    action: "fetching teacher profile",
+  })
 }
 
 export async function PUT(request: Request) {
-    try {
-        const session = await getServerSession(authOptions)
+  const raw = await readJson(request)
+  if (!raw) return invalidJson()
 
-        if (!session?.backendAccessToken) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
+  const parsed = teacherProfileUpdate.safeParse(raw)
+  if (!parsed.success) {
+    return NextResponse.json({ error: firstIssue(parsed.error) }, { status: 400 })
+  }
 
-        const body = await request.json()
-
-        // Validate required fields
-        if (!body.first_name) {
-            return NextResponse.json({ error: "First name is required" }, { status: 400 })
-        }
-
-        // Validate age if provided
-        if (body.age !== null && body.age !== undefined && (body.age < 18 || body.age > 100)) {
-            return NextResponse.json({ error: "Age must be between 18 and 100" }, { status: 400 })
-        }
-
-        const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.backendAccessToken}`,
-            },
-            body: JSON.stringify({
-                first_name: body.first_name,
-                last_name: body.last_name,
-                age: body.age,
-                specialization: body.specialization,
-            }),
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            return NextResponse.json({ error: error.message || "Failed to update profile" }, { status: response.status })
-        }
-
-        const data = await response.json()
-        return NextResponse.json(data)
-    } catch (error) {
-        console.error("Error updating teacher profile:", error)
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-    }
+  const { first_name, last_name, age, specialization } = parsed.data
+  return forwardToBackend({
+    service: "user",
+    path: "/api/users/profile",
+    method: "PUT",
+    body: { first_name, last_name, age, specialization },
+    error: { fallback: "Failed to update profile", from: "message" },
+    action: "updating teacher profile",
+  })
 }

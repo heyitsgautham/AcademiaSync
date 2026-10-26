@@ -40,7 +40,8 @@
     "react-hook-form": "^7.90.0",
     "recharts": "2.15.4",
     "tailwind-merge": "^2.5.5",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

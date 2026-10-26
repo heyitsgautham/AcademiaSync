@@ -1,39 +1,27 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { backendSession, backendUrl } from "@/lib/backend-proxy"
 
+// The dashboard widget treats any failure as "no recent submissions", so every error path returns [].
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.backendAccessToken) {
+    const session = await backendSession()
+    if (!session) {
       console.error("No backend access token found in session")
-      // Return empty array instead of error to prevent frontend crash
       return NextResponse.json([])
     }
 
-    const COURSE_SERVICE_URL =
-      process.env.INTERNAL_COURSE_SERVICE_URL || "http://course-service:5001"
-
-    const response = await fetch(`${COURSE_SERVICE_URL}/api/teacher/recent-submissions?limit=5`, {
-      headers: {
-        Authorization: `Bearer ${session.backendAccessToken}`,
-        "Content-Type": "application/json",
-      },
+    const response = await fetch(`${backendUrl("course")}/api/teacher/recent-submissions?limit=5`, {
+      headers: { Authorization: `Bearer ${session.backendAccessToken}` },
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error("Failed to fetch recent submissions:", errorData)
-      // Return empty array instead of error to prevent frontend crash
+      console.error("Failed to fetch recent submissions:", response.status)
       return NextResponse.json([])
     }
 
-    const submissions = await response.json()
-    return NextResponse.json(submissions)
+    return NextResponse.json(await response.json())
   } catch (error) {
     console.error("Error fetching recent submissions:", error)
-    // Return empty array instead of error to prevent frontend crash
     return NextResponse.json([])
   }
 }

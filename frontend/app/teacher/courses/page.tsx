@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { Menu, X, Plus, Search } from "lucide-react"
 import { TeacherDashboardSidebar } from "@/components/teacher-dashboard-sidebar"
 import { TeacherDashboardTopbar } from "@/components/teacher-dashboard-topbar"
@@ -11,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { TeacherCourseCard } from "@/components/teacher-course-card"
 import { TeacherCourseModal } from "@/components/teacher-course-modal"
 import { Skeleton } from "@/components/ui/skeleton"
-import { courseApi } from "@/lib/api-client"
+import { useTeacherCourses } from "@/hooks/use-teacher-courses"
+import type { TeacherCourse } from "@/types/api"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -19,19 +19,12 @@ export const dynamic = 'force-dynamic'
 export default function CoursesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [courseModalOpen, setCourseModalOpen] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<any>(null)
+  const [selectedCourse, setSelectedCourse] = useState<TeacherCourse | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const { data: coursesResponse, isLoading } = useQuery({
-    queryKey: ["courses"],
-    queryFn: courseApi.getCourses,
-  })
+  const { courses, isLoading } = useTeacherCourses()
 
-  // Safe access with fallback - handle HATEOAS response structure
-  const courses = (coursesResponse as any)?.courses || coursesResponse || []
-  const coursesArray = Array.isArray(courses) ? courses : []
-
-  const filteredCourses = coursesArray.filter((course: any) =>
+  const filteredCourses = courses.filter((course) =>
     course.title.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
@@ -40,7 +33,7 @@ export default function CoursesPage() {
     setCourseModalOpen(true)
   }
 
-  const handleEditCourse = (course: any) => {
+  const handleEditCourse = (course: TeacherCourse) => {
     setSelectedCourse(course)
     setCourseModalOpen(true)
   }
@@ -106,7 +99,7 @@ export default function CoursesPage() {
               </div>
             ) : filteredCourses && filteredCourses.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCourses?.map((course: any) => (
+                {filteredCourses?.map((course) => (
                   <TeacherCourseCard key={course.id} course={course} onEdit={handleEditCourse} />
                 ))}
               </div>

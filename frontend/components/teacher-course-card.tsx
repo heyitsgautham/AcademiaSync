@@ -25,18 +25,17 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { courseApi } from "@/lib/api-client"
+import type { TeacherCourse } from "@/types/api"
+
+type CardCourse = TeacherCourse & {
+  studentsEnrolled?: number
+  progress?: number
+  color?: string
+}
 
 interface CourseCardProps {
-  course: {
-    id: string
-    title: string
-    description: string
-    studentsEnrolled?: number
-    students_enrolled?: number
-    progress?: number
-    color?: string
-  }
-  onEdit: (course: any) => void
+  course: CardCourse
+  onEdit: (course: TeacherCourse) => void
 }
 
 export function TeacherCourseCard({ course, onEdit }: CourseCardProps) {

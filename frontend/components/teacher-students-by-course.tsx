@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import type { StudentInCourse, StudentsInCourse } from "@/types/api"
 
 interface StudentsByCourseProps {
-  studentsByCourse: any[]
+  studentsByCourse: StudentsInCourse[]
   searchQuery: string
   courseFilter?: string
   selectedCourseName?: string | null
-  onStudentClick: (student: any) => void
+  onStudentClick: (student: StudentInCourse) => void
   currentPage: number
   itemsPerPage: number
   sortBy: "name" | "grade"
@@ -47,7 +48,7 @@ export function TeacherStudentsByCourse({
       ...course,
       students: Array.isArray(course.students)
         ? course.students.filter(
-          (student: any) =>
+          (student) =>
             student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             student.email.toLowerCase().includes(searchQuery.toLowerCase()),
         )
@@ -56,8 +57,8 @@ export function TeacherStudentsByCourse({
     .filter((course) => course.students.length > 0)
 
   // Flatten all students for sorting and pagination
-  const allStudents = filteredData.flatMap((course) =>
-    course.students.map((student: any) => ({
+  const allStudents: StudentInCourse[] = filteredData.flatMap((course) =>
+    course.students.map((student) => ({
       ...student,
       courseName: course.courseName,
       courseId: course.courseId
@@ -70,8 +71,9 @@ export function TeacherStudentsByCourse({
       const comparison = a.name.localeCompare(b.name)
       return sortOrder === "asc" ? comparison : -comparison
     } else if (sortBy === "grade") {
-      const gradeA = a.performance ?? -1
-      const gradeB = b.performance ?? -1
+      // performance arrives as a numeric string; Number() matches how the subtraction coerced it before
+      const gradeA = Number(a.performance ?? -1)
+      const gradeB = Number(b.performance ?? -1)
       return sortOrder === "asc" ? gradeA - gradeB : gradeB - gradeA
     }
     return 0
@@ -137,7 +139,7 @@ export function TeacherStudentsByCourse({
                 No students found
               </div>
             ) : (
-              paginatedStudents.map((student: any) => (
+              paginatedStudents.map((student) => (
                 <div
                   key={`${student.courseId}-${student.id}`}
                   onClick={() => onStudentClick(student)}
@@ -170,16 +172,16 @@ export function TeacherStudentsByCourse({
                   <div className="flex items-center gap-4 justify-end">
                     <Badge
                       variant={
-                        student.performance >= 80
+                        Number(student.performance) >= 80
                           ? "default"
-                          : student.performance >= 60
+                          : Number(student.performance) >= 60
                             ? "secondary"
                             : "destructive"
                       }
                     >
-                      {student.performance >= 80
+                      {Number(student.performance) >= 80
                         ? "Excellent"
-                        : student.performance >= 60
+                        : Number(student.performance) >= 60
                           ? "Good"
                           : "Needs Improvement"}
                     </Badge>

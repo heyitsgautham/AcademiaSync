@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import { TeacherStudentsByCourse } from "@/components/teacher-students-by-course"
 import { TeacherStudentDetailModal } from "@/components/teacher-student-detail-modal"
 import { Skeleton } from "@/components/ui/skeleton"
-import { courseApi } from "@/lib/api-client"
+import { useTeacherCourses } from "@/hooks/use-teacher-courses"
+import type { StudentInCourse, StudentsByCourseResponse, StudentsInCourse } from "@/types/api"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic'
 export default function StudentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [selectedStudent, setSelectedStudent] = useState<StudentInCourse | null>(null)
   const [studentModalOpen, setStudentModalOpen] = useState(false)
   const [selectedCourseId, setSelectedCourseId] = useState<string>("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -68,33 +69,26 @@ export default function StudentsPage() {
   }, [searchParams])
 
   // Fetch all courses
-  const { data: coursesResponse, isLoading: coursesLoading } = useQuery({
-    queryKey: ["courses"],
-    queryFn: courseApi.getCourses,
-  })
+  const { courses: coursesArray, isLoading: coursesLoading } = useTeacherCourses()
 
-  // Safe access with fallback - handle HATEOAS response structure
-  const courses = (coursesResponse as any)?.courses || coursesResponse || []
-  const coursesArray = Array.isArray(courses) ? courses : []
-
-  const { data: studentsByCourse, isLoading } = useQuery({
+  const { data: studentsByCourse, isLoading } = useQuery<StudentsInCourse[]>({
     queryKey: ["students-by-course"],
     queryFn: async () => {
       const res = await fetch("/api/teacher/students-by-course")
-      const json = await res.json()
+      const json: StudentsByCourseResponse | StudentsInCourse[] = await res.json()
       // Backend returns { data: [...], pagination: {...} }
-      return json.data || json
+      return Array.isArray(json) ? json : json.data
     },
   })
 
-  const handleStudentClick = (student: any) => {
+  const handleStudentClick = (student: StudentInCourse) => {
     setSelectedStudent(student)
     setStudentModalOpen(true)
   }
 
   // Get selected course name
   const selectedCourseName = selectedCourseId && coursesArray
-    ? coursesArray.find((course: any) => course.id.toString() === selectedCourseId)?.title
+    ? coursesArray.find((course) => course.id.toString() === selectedCourseId)?.title
     : null
 
   // Helper function to update URL params
@@ -271,7 +265,7 @@ export default function StudentsPage() {
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {coursesArray.map((course: any) => (
+                      {coursesArray.map((course) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
@@ -295,7 +289,7 @@ export default function StudentsPage() {
               </div>
             ) : (
               <TeacherStudentsByCourse
-                studentsByCourse={studentsByCourse}
+                studentsByCourse={studentsByCourse ?? []}
                 searchQuery={searchQuery}
                 courseFilter={selectedCourseId}
                 selectedCourseName={selectedCourseName}

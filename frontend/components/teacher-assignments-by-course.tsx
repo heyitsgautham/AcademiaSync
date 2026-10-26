@@ -19,17 +19,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { courseApi } from "@/lib/api-client"
+import type { AssignmentWithStatus, CourseAssignments } from "@/types/api"
 
 interface AssignmentsByCourseProps {
-  assignmentsByCourse: any[]
+  assignmentsByCourse: CourseAssignments[]
   searchQuery: string
   courseFilter?: string
-  onEdit: (assignment: any) => void
+  onEdit: (assignment: AssignmentWithStatus) => void
 }
 
 export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, courseFilter, onEdit }: AssignmentsByCourseProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null)
+  const [assignmentToDelete, setAssignmentToDelete] = useState<AssignmentWithStatus | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -42,7 +43,7 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
     .map((course) => ({
       ...course,
       assignments: Array.isArray(course.assignments)
-        ? course.assignments.filter((assignment: any) =>
+        ? course.assignments.filter((assignment) =>
           assignment.title.toLowerCase().includes(searchQuery.toLowerCase()),
         )
         : [],
@@ -72,7 +73,7 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
     },
   })
 
-  const handleDeleteClick = (assignment: any) => {
+  const handleDeleteClick = (assignment: AssignmentWithStatus) => {
     setAssignmentToDelete(assignment)
     setDeleteDialogOpen(true)
   }
@@ -83,7 +84,7 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return "No due date"
     const date = new Date(dateString)
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -99,7 +100,7 @@ export function TeacherAssignmentsByCourse({ assignmentsByCourse, searchQuery, c
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {course.assignments.map((assignment: any) => (
+                {course.assignments.map((assignment) => (
                   <div
                     key={assignment.id}
                     className="flex flex-col gap-4 p-4 rounded-lg border border-border hover:bg-accent transition-colors cursor-pointer"

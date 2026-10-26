@@ -7,18 +7,26 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react"
+import type { ComponentProps } from "react"
+import type { StudentAssignment } from "@/lib/student-assignments"
+import type { StudentInCourse } from "@/types/api"
+
+interface StudentDetails {
+  id: string
+  assignments: StudentAssignment[]
+}
 
 interface StudentDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  student: any
+  student: StudentInCourse | null
 }
 
 export function TeacherStudentDetailModal({ open, onOpenChange, student }: StudentDetailModalProps) {
-  const { data: studentDetails, isLoading } = useQuery({
+  const { data: studentDetails, isLoading } = useQuery<StudentDetails>({
     queryKey: ["student-details", student?.id, student?.courseId],
     queryFn: async () => {
-      const res = await fetch(`/api/teacher/student-details?id=${student.id}&courseId=${student.courseId}`)
+      const res = await fetch(`/api/teacher/student-details?id=${student!.id}&courseId=${student!.courseId}`)
       return res.json()
     },
     enabled: !!student?.id && !!student?.courseId && open,
@@ -40,7 +48,7 @@ export function TeacherStudentDetailModal({ open, onOpenChange, student }: Stude
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: any = {
+    const variants: Record<string, ComponentProps<typeof Badge>["variant"]> = {
       completed: "default",
       pending: "secondary",
       late: "destructive",
@@ -98,7 +106,7 @@ export function TeacherStudentDetailModal({ open, onOpenChange, student }: Stude
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {studentDetails?.assignments?.map((assignment: any) => (
+                  {studentDetails?.assignments?.map((assignment) => (
                     <div
                       key={assignment.id}
                       className="flex items-center justify-between p-4 rounded-lg border border-border"

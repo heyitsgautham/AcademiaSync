@@ -13,10 +13,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { courseApi } from "@/lib/api-client"
 
+import type { Assignment } from "@/types/api"
+
 interface AssignmentModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  assignment?: any
+  assignment?: Assignment | null
   courseId: number | string
 }
 
@@ -80,8 +82,11 @@ export function TeacherAssignmentModal({ open, onOpenChange, assignment, courseI
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: { title: string; description: string; due_date?: string }) =>
-      courseApi.updateAssignment(assignment.id, data),
+    mutationFn: (data: { title: string; description: string; due_date?: string }) => {
+      // The form only submits an update while editing an existing assignment
+      if (!assignment) throw new Error("No assignment selected")
+      return courseApi.updateAssignment(assignment.id, data)
+    },
     onSuccess: () => {
       // Invalidate all assignment-related queries
       queryClient.invalidateQueries({ queryKey: ["assignments", courseId] })

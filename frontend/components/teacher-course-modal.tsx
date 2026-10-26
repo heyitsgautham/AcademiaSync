@@ -13,10 +13,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { courseApi } from "@/lib/api-client"
 
+import type { TeacherCourse } from "@/types/api"
+
 interface CourseModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  course?: any
+  course?: TeacherCourse | null
 }
 
 const courseSchema = yup.object({
@@ -72,11 +74,15 @@ export function TeacherCourseModal({ open, onOpenChange, course }: CourseModalPr
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: CourseFormData) => courseApi.updateCourse(course.id, {
-      title: data.title,
-      description: data.description,
-      weeks: data.weeks ?? undefined,
-    }),
+    mutationFn: (data: CourseFormData) => {
+      // The form only submits an update while editing an existing course
+      if (!course) throw new Error("No course selected")
+      return courseApi.updateCourse(course.id, {
+        title: data.title,
+        description: data.description,
+        weeks: data.weeks ?? undefined,
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] })
       toast({

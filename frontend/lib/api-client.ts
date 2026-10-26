@@ -4,6 +4,7 @@
  */
 
 import { getSession } from "next-auth/react";
+import type { Assignment, AssignmentList, TeacherCourse, TeacherCourseList } from "@/types/api";
 
 const COURSE_SERVICE_URL = process.env.NEXT_PUBLIC_COURSE_SERVICE_URL || 'http://localhost:5001';
 
@@ -29,8 +30,8 @@ async function apiRequest<T>(
 
   // Get backend access token from NextAuth session
   const session = await getSession();
-  if (session && (session as any).backendAccessToken) {
-    headers['Authorization'] = `Bearer ${(session as any).backendAccessToken}`;
+  if (session?.backendAccessToken) {
+    headers['Authorization'] = `Bearer ${session.backendAccessToken}`;
   }
 
   const response = await fetch(url, {
@@ -52,25 +53,39 @@ async function apiRequest<T>(
   return response.json();
 }
 
+/** Body for creating or updating a course. */
+export interface CourseInput {
+  title: string
+  description: string
+  weeks?: number | null
+}
+
+/** Body for creating or updating an assignment; due_date is YYYY-MM-DD. */
+export interface AssignmentInput {
+  title: string
+  description: string
+  due_date?: string | null
+}
+
 /**
  * Course Service API Client
  */
 export const courseApi = {
   // Courses
   getCourses: () =>
-    apiRequest<any[]>(`${COURSE_SERVICE_URL}/api/teacher/courses`),
+    apiRequest<TeacherCourseList>(`${COURSE_SERVICE_URL}/api/teacher/courses`),
 
   getCourse: (id: number | string) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/courses/${id}`),
+    apiRequest<TeacherCourse>(`${COURSE_SERVICE_URL}/api/teacher/courses/${id}`),
 
-  createCourse: (data: { title: string; description: string; weeks?: number }) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/courses`, {
+  createCourse: (data: CourseInput) =>
+    apiRequest<TeacherCourse>(`${COURSE_SERVICE_URL}/api/teacher/courses`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  updateCourse: (id: number | string, data: { title: string; description: string; weeks?: number }) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/courses/${id}`, {
+  updateCourse: (id: number | string, data: CourseInput) =>
+    apiRequest<TeacherCourse>(`${COURSE_SERVICE_URL}/api/teacher/courses/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
@@ -82,19 +97,19 @@ export const courseApi = {
 
   // Assignments
   getAssignments: (courseId: number | string) =>
-    apiRequest<any[]>(`${COURSE_SERVICE_URL}/api/teacher/courses/${courseId}/assignments`),
+    apiRequest<AssignmentList>(`${COURSE_SERVICE_URL}/api/teacher/courses/${courseId}/assignments`),
 
   getAssignment: (id: number | string) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/assignments/${id}`),
+    apiRequest<Assignment>(`${COURSE_SERVICE_URL}/api/teacher/assignments/${id}`),
 
-  createAssignment: (courseId: number | string, data: { title: string; description: string; due_date?: string }) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/courses/${courseId}/assignments`, {
+  createAssignment: (courseId: number | string, data: AssignmentInput) =>
+    apiRequest<Assignment>(`${COURSE_SERVICE_URL}/api/teacher/courses/${courseId}/assignments`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  updateAssignment: (id: number | string, data: { title: string; description: string; due_date?: string }) =>
-    apiRequest<any>(`${COURSE_SERVICE_URL}/api/teacher/assignments/${id}`, {
+  updateAssignment: (id: number | string, data: AssignmentInput) =>
+    apiRequest<Assignment>(`${COURSE_SERVICE_URL}/api/teacher/assignments/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

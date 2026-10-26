@@ -13,7 +13,8 @@ import { TeacherAssignmentsByCourse } from "@/components/teacher-assignments-by-
 import { TeacherAssignmentModal } from "@/components/teacher-assignment-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { courseApi } from "@/lib/api-client"
+import { useTeacherCourses } from "@/hooks/use-teacher-courses"
+import type { AssignmentWithStatus, CourseAssignments } from "@/types/api"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,7 @@ export default function AssignmentsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null)
+  const [selectedAssignment, setSelectedAssignment] = useState<AssignmentWithStatus | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<string>("")
   const [courseFilterId, setCourseFilterId] = useState<string>("")
   const [statusFilter, setStatusFilter] = useState<string>("")
@@ -46,17 +47,10 @@ export default function AssignmentsPage() {
   }, [searchParams])
 
   // Fetch all courses
-  const { data: coursesResponse, isLoading: coursesLoading } = useQuery({
-    queryKey: ["courses"],
-    queryFn: courseApi.getCourses,
-  })
-
-  // Safe access with fallback - handle HATEOAS response structure
-  const courses = (coursesResponse as any)?.courses || coursesResponse || []
-  const coursesArray = Array.isArray(courses) ? courses : []
+  const { courses: coursesArray, isLoading: coursesLoading } = useTeacherCourses()
 
   // Fetch assignments with status information
-  const { data: assignmentsWithStatus, isLoading: assignmentsLoading } = useQuery({
+  const { data: assignmentsWithStatus, isLoading: assignmentsLoading } = useQuery<AssignmentWithStatus[]>({
     queryKey: ["assignments-with-status", statusFilter],
     queryFn: async () => {
       const url = statusFilter
@@ -68,14 +62,14 @@ export default function AssignmentsPage() {
   })
 
   // Group assignments by course for display
-  const assignmentsByCourse = assignmentsWithStatus && coursesArray
-    ? coursesArray.map((course: any) => ({
+  const assignmentsByCourse: CourseAssignments[] = assignmentsWithStatus
+    ? coursesArray.map((course) => ({
       courseId: course.id,
       courseName: course.title,
       assignments: Array.isArray(assignmentsWithStatus)
-        ? assignmentsWithStatus.filter((a: any) => a.course_id === course.id)
+        ? assignmentsWithStatus.filter((a) => a.course_id === course.id)
         : [],
-    })).filter((c: any) => c.assignments.length > 0)
+    })).filter((c) => c.assignments.length > 0)
     : []
 
   const handleCreateAssignment = () => {
@@ -83,9 +77,9 @@ export default function AssignmentsPage() {
     setAssignmentModalOpen(true)
   }
 
-  const handleEditAssignment = (assignment: any) => {
+  const handleEditAssignment = (assignment: AssignmentWithStatus) => {
     setSelectedAssignment(assignment)
-    setSelectedCourseId(assignment.course_id)
+    setSelectedCourseId(String(assignment.course_id))
     setAssignmentModalOpen(true)
   }
 
@@ -166,7 +160,7 @@ export default function AssignmentsPage() {
                       <SelectValue placeholder="Select course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {coursesArray.map((course: any) => (
+                      {coursesArray.map((course) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
@@ -202,7 +196,7 @@ export default function AssignmentsPage() {
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {coursesArray.map((course: any) => (
+                      {coursesArray.map((course) => (
                         <SelectItem key={course.id} value={course.id.toString()}>
                           {course.title}
                         </SelectItem>
